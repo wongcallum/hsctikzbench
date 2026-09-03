@@ -1,0 +1,60 @@
+import { Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
+import { StatusBadge } from "./StatusBadge.tsx";
+import type { RunSummary } from "./types.ts";
+
+interface Props {
+  runs: RunSummary[];
+  selected: string | null;
+  loading: boolean;
+  onSelect: (name: string) => void;
+  onRefresh: () => void;
+}
+
+export function Sidebar({ runs, selected, loading, onSelect, onRefresh }: Props) {
+  return (
+    <Flex direction="column" minHeight="0">
+      <Flex align="center" justify="between" p="3" gap="2">
+        <Heading size="3">Runs</Heading>
+        <Button size="1" variant="soft" onClick={onRefresh} disabled={loading}>
+          Refresh
+        </Button>
+      </Flex>
+      <Box flexGrow="1" minHeight="0">
+        <ScrollArea type="auto" scrollbars="vertical">
+          <Box px="3" pb="3">
+            {runs.length === 0 && !loading && (
+              <Text as="p" size="2" color="gray">
+                No runs found.
+              </Text>
+            )}
+            <RadioCards.Root
+              columns="1"
+              gap="2"
+              size="1"
+              value={selected ?? ""}
+              onValueChange={onSelect}
+            >
+              {runs.map((run) => (
+                <RadioCards.Item key={run.name} value={run.name}>
+                  <Flex direction="column" gap="1" width="100%" minWidth="0">
+                    <Text size="2" weight="medium" truncate>
+                      {run.name}
+                    </Text>
+                    <Flex align="center" gap="2">
+                      <StatusBadge run={run} />
+                      {run.result && (
+                        <Text size="1" color="gray" truncate>
+                          {run.result.model}@{run.result.reasoning}
+                        </Text>
+                      )}
+                    </Flex>
+                  </Flex>
+                </RadioCards.Item>
+              ))}
+            </RadioCards.Root>
+          </Box>
+        </ScrollArea>
+      </Box>
+    </Flex>
+  );
+}
