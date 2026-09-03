@@ -6,15 +6,23 @@
 let
   tex = texlive.withPackages (
     ps: with ps; [
-      scheme-minimal
+      scheme-small
       latex
       latex-bin
       luatex
       luaotfload
+      luatex85
       lm
       amsmath
       amsfonts
       xcolor
+      latexmk
+      epstopdf-pkg
+      pgf
+      pgfplots
+      standalone
+      pict2e
+      geometry
     ]
   );
 in
