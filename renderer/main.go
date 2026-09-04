@@ -114,7 +114,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer) error {
 		return fail(exitCompile, "lualatex produced no PDF")
 	}
 	if string(m[1]) != "1" {
-		return fail(exitTooLarge, "document has %s pages, expected exactly 1", m[1])
+		return fail(exitTooLarge, "document has %s pages, expected exactly 1; keep all content in a single tikzpicture", m[1])
 	}
 
 	info, err := step(exitRaster, gsPath,
@@ -133,7 +133,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	w, h := (x1-x0)*dpi/72, (y1-y0)*dpi/72
 	if w > maxPixels || h > maxPixels {
-		return fail(exitTooLarge, "page would be %.0fx%.0fpx, limit is %dpx per side", w, h, maxPixels)
+		return fail(exitTooLarge, "page would be %.0fx%.0fpx, limit is %dpx per side; the page is rasterised at 300 dpi, use smaller coordinates or a smaller unit", w, h, maxPixels)
 	}
 
 	if _, err := step(exitRaster, gsPath,
