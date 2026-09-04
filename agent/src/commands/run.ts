@@ -4,6 +4,7 @@ import { getSupportedThinkingLevels, type ModelThinkingLevel } from "@earendil-w
 import { authFlag, createModels, type LocalContext } from "../context.ts";
 import { runAgent } from "../loop.ts";
 import { OutputDir } from "../output.ts";
+import { buildSystemPrompt, checkTexCapabilities } from "../prompt.ts";
 import { checkContainer } from "../render.ts";
 
 const REASONING_LEVELS = [
@@ -64,11 +65,13 @@ export const runCommand = buildCommand({
     }
 
     await checkContainer(flags.container);
+    await checkTexCapabilities(flags.container);
     const referencePng = await readFile(reference);
-    const systemPrompt = await readFile(
+    const promptTemplate = await readFile(
       flags.prompt ?? new URL("../../prompt.md", import.meta.url),
       "utf8"
     );
+    const systemPrompt = buildSystemPrompt(promptTemplate);
     const out = new OutputDir(flags.out);
     await out.prepare(referencePng);
 

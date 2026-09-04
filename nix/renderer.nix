@@ -6,23 +6,18 @@
 let
   tex = texlive.withPackages (
     ps: with ps; [
-      scheme-small
-      latex
-      latex-bin
-      luatex
+      scheme-basic # latex, amsmath, luatex
       luaotfload
-      luatex85
-      lm
-      amsmath
-      amsfonts
-      xcolor
-      latexmk
-      epstopdf-pkg
+      lm # default font
       pgf
       pgfplots
       standalone
-      pict2e
-      geometry
+      luatex85 # required by standalone.cls
+      fontspec
+      unicode-math
+      lualatex-math
+      tex-gyre
+      tex-gyre-math
     ]
   );
 in
