@@ -39,6 +39,11 @@ const tools: Tool[] = [
   }
 ];
 
+const PROVIDER_RETRIES = 3;
+const PROVIDER_RETRY_BASE_MS = 5_000;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export interface RunOptions {
   models: Models;
   model: Model<Api>;
@@ -109,11 +114,21 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
   while (turns < maxTurns) {
     turns++;
 
-    const reply = await models.completeSimple(
-      model,
-      context,
-      opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
-    );
+    const complete = () =>
+      models.completeSimple(
+        model,
+        context,
+        opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
+      );
+    let reply = await complete();
+    for (let attempt = 1; reply.stopReason === "error" && attempt <= PROVIDER_RETRIES; attempt++) {
+      const delay = PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1);
+      log(
+        `turn ${turns}/${maxTurns}  provider error: ${reply.errorMessage ?? "unknown"}; retry ${attempt}/${PROVIDER_RETRIES} in ${delay / 1000}s`
+      );
+      await sleep(delay);
+      reply = await complete();
+    }
     push(reply);
 
     usage.input += reply.usage.input;
