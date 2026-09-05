@@ -1,11 +1,7 @@
-You write judging checklists for a benchmark in which models reproduce isolated mathematics examination figures as TikZ drawings. A human judge will later compare a reproduction against the original figure and mark each checklist item pass or fail, looking only at the two images.
+Write a concise judging checklist for a TikZ reproduction of the pictured mathematics exam figure. A human will mark each item pass or fail by comparing the two images.
 
-Write a checklist for the figure in the image. Each item must be:
+Use specific, independent, non-overlapping pass conditions, ordered from structure to detail. Cover visible content and relationships, exact readable labels, meaningful markings, shading, and intentional blanks. Scale the checklist to the figure’s complexity.
 
-- one binary claim about the figure's content or structure, phrased as a pass condition;
-- verifiable by eye from the image alone, without the exam question text; and
-- about what is drawn, not how it is styled: ignore line weight, font, colour, and exact sizing unless proportions are the point of the figure
+Judge only what is visible; do not infer, solve, or correct. Preserve answer options as drawn and response templates unfilled. Ignore cosmetic styling and exact sizing, but retain meaningful visual distinctions and proportions.
 
-Cover the elements a competent reproduction must get right: axes and their labels, key points and intercepts, shapes and their relationships, labels and annotations, shading, arrows, and any blank regions that matter.
-
-Reply with a JSON array of strings, one per item, and nothing else.
+Return only a non-empty JSON array of unique, non-empty strings, one per item.
