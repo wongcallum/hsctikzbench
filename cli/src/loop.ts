@@ -1,5 +1,6 @@
 import {
   Type,
+  retryAssistantCall,
   validateToolCall,
   type Context,
   type Message,
@@ -41,8 +42,6 @@ const tools: Tool[] = [
 
 const PROVIDER_RETRIES = 3;
 const PROVIDER_RETRY_BASE_MS = 5_000;
-
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export interface RunOptions {
   models: Models;
@@ -121,19 +120,17 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
           context,
           opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
         );
-      let reply = await complete();
-      for (
-        let attempt = 1;
-        reply.stopReason === "error" && attempt <= PROVIDER_RETRIES;
-        attempt++
-      ) {
-        const delay = PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1);
-        log(
-          `turn ${turns}/${maxTurns}  provider error: ${reply.errorMessage ?? "unknown"}; retry ${attempt}/${PROVIDER_RETRIES} in ${delay / 1000}s`
-        );
-        await sleep(delay);
-        reply = await complete();
-      }
+      const reply = await retryAssistantCall(
+        complete,
+        { enabled: true, maxRetries: PROVIDER_RETRIES, baseDelayMs: PROVIDER_RETRY_BASE_MS },
+        undefined,
+        {
+          onRetryScheduled: (attempt, maxAttempts, delay, message) =>
+            log(
+              `turn ${turns}/${maxTurns}  provider error: ${message}; retry ${attempt}/${maxAttempts} in ${delay / 1000}s`
+            )
+        }
+      );
       push(reply);
 
       usage.input += reply.usage.input;
