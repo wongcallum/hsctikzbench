@@ -32,6 +32,7 @@ const (
 	exitTimeout  = 3
 	exitTooLarge = 4
 	exitRaster   = 5
+	exitSpec     = 6
 )
 
 type failure struct {
@@ -51,14 +52,28 @@ var (
 )
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "idle" {
-		stop := make(chan os.Signal, 1)
-		signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-		<-stop
-		return
+	name, args := "render", os.Args[1:]
+	if len(args) > 0 {
+		switch args[0] {
+		case "idle":
+			stop := make(chan os.Signal, 1)
+			signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+			<-stop
+			return
+		case "render", "crop":
+			name, args = args[0], args[1:]
+		}
 	}
-	if err := run(os.Stdin, os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "render: %v\n", err)
+
+	var err error
+	switch name {
+	case "render":
+		err = render(os.Stdin, os.Stdout, os.Stderr)
+	case "crop":
+		err = crop(args, os.Stdin, os.Stdout, os.Stderr)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", name, err)
 		var f *failure
 		if errors.As(err, &f) {
 			os.Exit(f.code)
@@ -67,44 +82,85 @@ func main() {
 	}
 }
 
-func run(stdin io.Reader, stdout, stderr io.Writer) error {
-	work, err := os.MkdirTemp("", "render-")
+// a temporary directory in which external tools run under a shared deadline
+type workspace struct {
+	dir    string
+	ctx    context.Context
+	cancel context.CancelFunc
+	stderr io.Writer
+}
+
+func newWorkspace(prefix string, stderr io.Writer) (*workspace, error) {
+	dir, err := os.MkdirTemp("", prefix)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	return &workspace{dir, ctx, cancel, stderr}, nil
+}
+
+func (w *workspace) close() {
+	w.cancel()
+	os.RemoveAll(w.dir)
+}
+
+func (w *workspace) path(name string) string { return filepath.Join(w.dir, name) }
+
+func (w *workspace) step(code int, name string, args ...string) ([]byte, error) {
+	cmd := exec.CommandContext(w.ctx, name, args...)
+	cmd.Dir = w.dir
+	cmd.Env = []string{"HOME=" + w.dir}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
+	cmd.WaitDelay = 5 * time.Second
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		w.stderr.Write(out)
+		if w.ctx.Err() != nil {
+			return nil, fail(exitTimeout, "timed out after %v", timeout)
+		}
+		return nil, fail(code, "%s failed: %v", filepath.Base(name), err)
+	}
+	return out, nil
+}
+
+func (w *workspace) pdfInfo(pdf string) ([]byte, error) {
+	return w.step(exitRaster, gsPath,
+		"-q", "-dNODISPLAY", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-dPDFINFO", pdf)
+}
+
+func (w *workspace) rasterize(pdf string, page int) ([]byte, error) {
+	if _, err := w.step(exitRaster, gsPath,
+		"-q", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-sDEVICE=png16m",
+		fmt.Sprintf("-r%d", dpi), "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+		fmt.Sprintf("-dFirstPage=%d", page), fmt.Sprintf("-dLastPage=%d", page),
+		"-sOutputFile=page.png", pdf); err != nil {
+		return nil, err
+	}
+	png, err := os.ReadFile(w.path("page.png"))
+	if err != nil {
+		return nil, fail(exitRaster, "gs produced no PNG")
+	}
+	return png, nil
+}
+
+func render(stdin io.Reader, stdout, stderr io.Writer) error {
+	w, err := newWorkspace("render-", stderr)
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(work)
+	defer w.close()
 
 	tex, err := io.ReadAll(stdin)
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(work, "doc.tex"), tex, 0o644); err != nil {
+	if err := os.WriteFile(w.path("doc.tex"), tex, 0o644); err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	step := func(code int, name string, args ...string) ([]byte, error) {
-		cmd := exec.CommandContext(ctx, name, args...)
-		cmd.Dir = work
-		cmd.Env = []string{"HOME=" + work}
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-		cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
-		cmd.WaitDelay = 5 * time.Second
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			stderr.Write(out)
-			if ctx.Err() != nil {
-				return nil, fail(exitTimeout, "timed out after %v", timeout)
-			}
-			return nil, fail(code, "%s failed: %v", filepath.Base(name), err)
-		}
-		return out, nil
-	}
-
-	_, latexErr := step(exitCompile, lualatexPath, "-interaction=batchmode", "-halt-on-error", "-no-shell-escape", "doc.tex")
-	log, _ := os.ReadFile(filepath.Join(work, "doc.log"))
+	_, latexErr := w.step(exitCompile, lualatexPath, "-interaction=batchmode", "-halt-on-error", "-no-shell-escape", "doc.tex")
+	log, _ := os.ReadFile(w.path("doc.log"))
 	stderr.Write(log)
 	if latexErr != nil {
 		return latexErr
@@ -117,8 +173,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer) error {
 		return fail(exitTooLarge, "document has %s pages, expected exactly 1; keep all content in a single tikzpicture", m[1])
 	}
 
-	info, err := step(exitRaster, gsPath,
-		"-q", "-dNODISPLAY", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-dPDFINFO", "doc.pdf")
+	info, err := w.pdfInfo("doc.pdf")
 	if err != nil {
 		return err
 	}
@@ -131,20 +186,14 @@ func run(stdin io.Reader, stdout, stderr io.Writer) error {
 		stderr.Write(info)
 		return fail(exitRaster, "could not parse page size: %v", err)
 	}
-	w, h := (x1-x0)*dpi/72, (y1-y0)*dpi/72
-	if w > maxPixels || h > maxPixels {
-		return fail(exitTooLarge, "page would be %.0fx%.0fpx, limit is %dpx per side; the page is rasterised at 300 dpi, use smaller coordinates or a smaller unit", w, h, maxPixels)
+	pw, ph := (x1-x0)*dpi/72, (y1-y0)*dpi/72
+	if pw > maxPixels || ph > maxPixels {
+		return fail(exitTooLarge, "page would be %.0fx%.0fpx, limit is %dpx per side; the page is rasterised at 300 dpi, use smaller coordinates or a smaller unit", pw, ph, maxPixels)
 	}
 
-	if _, err := step(exitRaster, gsPath,
-		"-q", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-sDEVICE=png16m",
-		fmt.Sprintf("-r%d", dpi), "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
-		"-sOutputFile=doc.png", "doc.pdf"); err != nil {
-		return err
-	}
-	png, err := os.ReadFile(filepath.Join(work, "doc.png"))
+	png, err := w.rasterize("doc.pdf", 1)
 	if err != nil {
-		return fail(exitRaster, "gs produced no PNG")
+		return err
 	}
 	_, err = stdout.Write(png)
 	return err

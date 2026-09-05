@@ -37,7 +37,7 @@ buildGoModule {
   ];
 
   meta = {
-    description = "Renders a LaTeX document from stdin to a PNG on stdout";
+    description = "Renders LaTeX documents and crops PDFs to PNGs";
     mainProgram = "render";
     platforms = [ "x86_64-linux" ];
   };

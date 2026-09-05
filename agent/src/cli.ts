@@ -1,14 +1,16 @@
 import { buildApplication, buildRouteMap, run, text_en } from "@stricli/core";
+import { datasetRoutes } from "./commands/dataset.ts";
 import { loginCommand } from "./commands/login.ts";
 import { runCommand } from "./commands/run.ts";
 
 const routes = buildRouteMap({
-  routes: { run: runCommand, login: loginCommand },
+  routes: { run: runCommand, login: loginCommand, dataset: datasetRoutes },
   docs: { brief: "HSCTikZBench agent" }
 });
 
 export const app = buildApplication(routes, {
   name: "agent",
+  scanner: { caseStyle: "allow-kebab-for-camel" },
   localization: {
     loadText: () => ({
       ...text_en,

@@ -1,0 +1,5292 @@
+[
+  {
+    "course": "mathematics_advanced",
+    "year": 2020,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2020-hsc-mathematics-advanced.pdf",
+    "sha256": "9b14ae156dc0b06ec672b2f17cede75f130a3501822c718f1ba9a9191efed115",
+    "samples": [
+      {
+        "question": "5",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.142587,
+          "y": 0.34711,
+          "w": 0.345098,
+          "h": 0.206492
+        },
+        "masks": [
+          {
+            "x": 0.156414,
+            "y": 0.359145,
+            "w": 0.046611,
+            "h": 0.024703
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 856,
+          "height": 726,
+          "sha256": "db2331ba7994dc68da51796803e81c38c1271b9a0340d0c5f1de3d7317671fa6"
+        }
+      },
+      {
+        "question": "5",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.527126,
+          "y": 0.347743,
+          "w": 0.342409,
+          "h": 0.205226
+        },
+        "masks": [
+          {
+            "x": 0.538779,
+            "y": 0.357878,
+            "w": 0.035854,
+            "h": 0.02597
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 850,
+          "height": 721,
+          "sha256": "51fea0c13e92c508dd12dc762b2c6b254d195ff5572125a7523c44774a3615d2"
+        }
+      },
+      {
+        "question": "5",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.528919,
+          "y": 0.56627,
+          "w": 0.345994,
+          "h": 0.203325
+        },
+        "masks": [
+          {
+            "x": 0.541468,
+            "y": 0.565637,
+            "w": 0.038543,
+            "h": 0.028504
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 858,
+          "height": 714,
+          "sha256": "fec78592608a486549a87ce46e03ee6ec25228d6d4f87560647b75fe0e57df21"
+        }
+      },
+      {
+        "question": "5",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.141692,
+          "y": 0.566904,
+          "w": 0.346891,
+          "h": 0.200792
+        },
+        "masks": [
+          {
+            "x": 0.159619,
+            "y": 0.567538,
+            "w": 0.034061,
+            "h": 0.029137
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 861,
+          "height": 706,
+          "sha256": "dc76e1bb7c86184be2808c28f6ca7548475e69f0849707c9ae2f11e4876c369b"
+        }
+      },
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.259115,
+          "y": 0.296437,
+          "w": 0.458039,
+          "h": 0.221061
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1136,
+          "height": 777,
+          "sha256": "a1e5e02827ccebbfcd906a522af16efaf3c737e53711cf836e8be80b0e83e429"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.306622,
+          "y": 0.108947,
+          "w": 0.373782,
+          "h": 0.199525
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 927,
+          "height": 701,
+          "sha256": "6a6462989ff48ce77c75f83eb794b24de539eee6c8e26590b58733461de27309"
+        }
+      },
+      {
+        "question": "9",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.15693,
+          "y": 0.613777,
+          "w": 0.345098,
+          "h": 0.146952
+        },
+        "masks": [
+          {
+            "x": 0.160515,
+            "y": 0.619477,
+            "w": 0.030476,
+            "h": 0.02977
+          }
+        ],
+        "category": "statistical_chart",
+        "output": {
+          "width": 856,
+          "height": 516,
+          "sha256": "73e4d7ebb872e8892bb9c5709e0f9e5c2797b4d5abda704f99ed5374f07c21a5"
+        }
+      },
+      {
+        "question": "9",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.536986,
+          "y": 0.616944,
+          "w": 0.352269,
+          "h": 0.142518
+        },
+        "masks": [
+          {
+            "x": 0.538779,
+            "y": 0.620744,
+            "w": 0.036751,
+            "h": 0.02787
+          }
+        ],
+        "category": "statistical_chart",
+        "output": {
+          "width": 874,
+          "height": 501,
+          "sha256": "3d592dff56dd2a783523a694fdbed21fac86983565440500015ab2fad93ef895"
+        }
+      },
+      {
+        "question": "9",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.156034,
+          "y": 0.775297,
+          "w": 0.340616,
+          "h": 0.141884
+        },
+        "masks": [
+          {
+            "x": 0.159619,
+            "y": 0.778464,
+            "w": 0.035854,
+            "h": 0.022803
+          }
+        ],
+        "category": "statistical_chart",
+        "output": {
+          "width": 846,
+          "height": 499,
+          "sha256": "0acec0e7238db24164a106977db10cf0040fd455feef4efdc9703d8c5d6cf79a"
+        }
+      },
+      {
+        "question": "9",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.535193,
+          "y": 0.775297,
+          "w": 0.350476,
+          "h": 0.143785
+        },
+        "masks": [
+          {
+            "x": 0.54326,
+            "y": 0.777831,
+            "w": 0.035854,
+            "h": 0.025337
+          }
+        ],
+        "category": "statistical_chart",
+        "output": {
+          "width": 870,
+          "height": 506,
+          "sha256": "189cab6bf64946acdcb73b42956f90da4a41e4ae0e99c4f2a65df7965df39023"
+        }
+      },
+      {
+        "question": "10",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.243877,
+          "y": 0.10768,
+          "w": 0.518992,
+          "h": 0.271101
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1288,
+          "height": 952,
+          "sha256": "beaac0ec09d075c7862c6036ed905ce0f2d7078b74b577614da97a785aa0918f"
+        }
+      },
+      {
+        "question": "11",
+        "role": "response_template",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.135417,
+          "y": 0.253365,
+          "w": 0.788796,
+          "h": 0.528899
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1957,
+          "height": 1857,
+          "sha256": "79a4648a14b2894d274f0ec58038333bc6affc5e266becb08da477cdff33f204"
+        }
+      },
+      {
+        "question": "15",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.286902,
+          "y": 0.183056,
+          "w": 0.409636,
+          "h": 0.165954
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1016,
+          "height": 583,
+          "sha256": "842ade874baef69ce43cdf89fcb636319ecae630a2f809b34d6807aaf4423f11"
+        }
+      },
+      {
+        "question": "22",
+        "role": "question_figure",
+        "index": 1,
+        "page": 23,
+        "box": {
+          "x": 0.381916,
+          "y": 0.155186,
+          "w": 0.235742,
+          "h": 0.165321
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 586,
+          "height": 581,
+          "sha256": "8be4a7330723a86cbfab5687a27f2eac25deb6f42c0dc031226db181cac6216a"
+        }
+      },
+      {
+        "question": "25",
+        "role": "question_figure",
+        "index": 1,
+        "page": 26,
+        "box": {
+          "x": 0.24298,
+          "y": 0.167854,
+          "w": 0.491204,
+          "h": 0.125416
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1219,
+          "height": 441,
+          "sha256": "c27ad29772771bd3febb31eafdf603aa704c5182b99dd16fb5b86a03b7cf4d8b"
+        }
+      },
+      {
+        "question": "27",
+        "role": "question_figure",
+        "index": 1,
+        "page": 30,
+        "box": {
+          "x": 0.135417,
+          "y": 0.2635,
+          "w": 0.64986,
+          "h": 0.150752
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1612,
+          "height": 530,
+          "sha256": "50125ac0a43fc2d0af72baf316105fc8a0d11cb64180feb05fec8234e98e53aa"
+        }
+      },
+      {
+        "question": "29",
+        "role": "question_figure",
+        "index": 1,
+        "page": 33,
+        "box": {
+          "x": 0.258218,
+          "y": 0.134917,
+          "w": 0.492101,
+          "h": 0.21346
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1221,
+          "height": 750,
+          "sha256": "7f0c68fbe68ae0a338d0e1f3372fd6fa9d0dc5211d94599c3012dc5a6abc1162"
+        }
+      },
+      {
+        "question": "30",
+        "role": "question_figure",
+        "index": 1,
+        "page": 34,
+        "box": {
+          "x": 0.264493,
+          "y": 0.156453,
+          "w": 0.462521,
+          "h": 0.238163
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1148,
+          "height": 837,
+          "sha256": "5039e30efa38c14ece46d9820a18eb63801c24bb83f59e7d489f3dd24a22a2b5"
+        }
+      },
+      {
+        "question": "31",
+        "role": "question_figure",
+        "index": 1,
+        "page": 36,
+        "box": {
+          "x": 0.264493,
+          "y": 0.257165,
+          "w": 0.462521,
+          "h": 0.212827
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1148,
+          "height": 747,
+          "sha256": "5fefd82fa2b0786469f7b21e1e360a6b529a201ce365e92e1f98022888bd4fb7"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_1",
+    "year": 2020,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2020-hsc-mathematics-extension-1.pdf",
+    "sha256": "ca8aa245f5af3b3e53572bc29099abe1e264bc40a005480082af6cec968f51da",
+    "samples": [
+      {
+        "question": "1",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.556706,
+          "y": 0.264766,
+          "w": 0.2707,
+          "h": 0.057007
+        },
+        "category": "number_line_or_scale",
+        "output": {
+          "width": 672,
+          "height": 201,
+          "sha256": "a51c819243d3749c6eca685e0d9c113eba7640a6aa00654ee3867d38d4e61a44"
+        }
+      },
+      {
+        "question": "1",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.197266,
+          "y": 0.2654,
+          "w": 0.267115,
+          "h": 0.056374
+        },
+        "category": "number_line_or_scale",
+        "output": {
+          "width": 663,
+          "height": 198,
+          "sha256": "40354057db78a56baf943ab636e682750bd71559876e4875eb5014a41fc5e3b4"
+        }
+      },
+      {
+        "question": "1",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.20623,
+          "y": 0.347743,
+          "w": 0.245602,
+          "h": 0.048139
+        },
+        "category": "number_line_or_scale",
+        "output": {
+          "width": 610,
+          "height": 170,
+          "sha256": "f2d6008e1b32b3feefc08def1db215f6eb90e3b293281244724212a412b6ac5f"
+        }
+      },
+      {
+        "question": "1",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.577322,
+          "y": 0.347743,
+          "w": 0.229468,
+          "h": 0.048773
+        },
+        "category": "number_line_or_scale",
+        "output": {
+          "width": 570,
+          "height": 172,
+          "sha256": "302cfa6a94a4dd3a40c5e3aa48692a7c69395f7ada55a707e9a6624abdfb2389"
+        }
+      },
+      {
+        "question": "5",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.148863,
+          "y": 0.407284,
+          "w": 0.346891,
+          "h": 0.175455
+        },
+        "masks": [
+          {
+            "x": 0.163204,
+            "y": 0.407284,
+            "w": 0.030477,
+            "h": 0.028504
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 860,
+          "height": 617,
+          "sha256": "5915cb1fbc7c762a1e56cf41f25fa4e60b8960778ed9ee67d75ca80e1a54b069"
+        }
+      },
+      {
+        "question": "5",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.518162,
+          "y": 0.407284,
+          "w": 0.330756,
+          "h": 0.175455
+        },
+        "masks": [
+          {
+            "x": 0.519059,
+            "y": 0.407284,
+            "w": 0.037647,
+            "h": 0.020903
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 821,
+          "height": 617,
+          "sha256": "f052690234c9c21ba95763c3245a2bda0661851ef93da7a93b9f2f0525f4a092"
+        }
+      },
+      {
+        "question": "5",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.51637,
+          "y": 0.58844,
+          "w": 0.330756,
+          "h": 0.179889
+        },
+        "masks": [
+          {
+            "x": 0.522644,
+            "y": 0.592241,
+            "w": 0.034958,
+            "h": 0.025337
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 821,
+          "height": 632,
+          "sha256": "a34e98a0c3618c1cdf21b7fe2be3e18243b186149b87c448af44b57e4092c9af"
+        }
+      },
+      {
+        "question": "5",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.148863,
+          "y": 0.592874,
+          "w": 0.345098,
+          "h": 0.175455
+        },
+        "masks": [
+          {
+            "x": 0.162308,
+            "y": 0.590974,
+            "w": 0.035854,
+            "h": 0.028504
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 856,
+          "height": 617,
+          "sha256": "a1c1217b9bd143839c1e84b5713c80e98aed52014f362455c0aaa3fb78661c2d"
+        }
+      },
+      {
+        "question": "6",
+        "role": "question_figure",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.332616,
+          "y": 0.101346,
+          "w": 0.327171,
+          "h": 0.085511
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 812,
+          "height": 301,
+          "sha256": "3c1aa554894580679b97a16d9113eb4b130728691dcd1924070b044ba2d66119"
+        }
+      },
+      {
+        "question": "6",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.237602,
+          "y": 0.217894,
+          "w": 0.201681,
+          "h": 0.118448
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 500,
+          "height": 416,
+          "sha256": "eb335850b3f56f646bbb7bdfce967059be34ef50beb782a96c7f11f1600260ad"
+        }
+      },
+      {
+        "question": "6",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.214297,
+          "y": 0.34521,
+          "w": 0.24112,
+          "h": 0.093745
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 598,
+          "height": 330,
+          "sha256": "92b49791cc1c94953280e19cfb115a346bfa96b1d5deba83831055a0f8f7baea"
+        }
+      },
+      {
+        "question": "6",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.209815,
+          "y": 0.459224,
+          "w": 0.258151,
+          "h": 0.101979
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 641,
+          "height": 359,
+          "sha256": "bfb9e4f69504598ad32156cb55598519889924875ee0e907c818c8b6312ee5b9"
+        }
+      },
+      {
+        "question": "6",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.227742,
+          "y": 0.571338,
+          "w": 0.217815,
+          "h": 0.115914
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 541,
+          "height": 407,
+          "sha256": "957b32e29a36784cbc6dd03a1e263cf9f7ffcb54506b1c14f0794d3cc9e51ac9"
+        }
+      },
+      {
+        "question": "7",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.145277,
+          "y": 0.179256,
+          "w": 0.361233,
+          "h": 0.245131
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 896,
+          "height": 861,
+          "sha256": "f9b52f63fc0fc8c933ce1e9ff64d4eb590e968c109089f0e19fc13515f025c3a"
+        }
+      },
+      {
+        "question": "7",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.532504,
+          "y": 0.179256,
+          "w": 0.361233,
+          "h": 0.249565
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 896,
+          "height": 877,
+          "sha256": "ae99f8088fb0f5b064abb4c08511b7c02593bd414a05c9d75c94db86ab72e7c1"
+        }
+      },
+      {
+        "question": "7",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.144382,
+          "y": 0.469358,
+          "w": 0.362128,
+          "h": 0.254632
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 899,
+          "height": 894,
+          "sha256": "fe3caa754b89206dcac48ce11f6ab3fc7b368d2a957b68fe08d8de8b4ff3635f"
+        }
+      },
+      {
+        "question": "7",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.53609,
+          "y": 0.470625,
+          "w": 0.353165,
+          "h": 0.250198
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 877,
+          "height": 879,
+          "sha256": "5e2067af1a02c1f039b35cc04a7f2a4eeb67796f170239ad65d94f71ce04a30f"
+        }
+      },
+      {
+        "question": "11(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.286006,
+          "y": 0.580839,
+          "w": 0.428459,
+          "h": 0.24323
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1063,
+          "height": 854,
+          "sha256": "30f255c75e7f825acfd51d88e893b6a3868374b67e41863f94b747d0437ab5bb"
+        }
+      },
+      {
+        "question": "13(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.304829,
+          "y": 0.312906,
+          "w": 0.383641,
+          "h": 0.215994
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 952,
+          "height": 759,
+          "sha256": "f0994de05f1765b51b4d08d326bca1f2d178fd05a44478c8f7a50263cf24a229"
+        }
+      },
+      {
+        "question": "13(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.257322,
+          "y": 0.192557,
+          "w": 0.484034,
+          "h": 0.302138
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1201,
+          "height": 1061,
+          "sha256": "b0ad899d379d64649e4f80e83b64d271c9a7cfbf9867ad68a954fa37efc5f467"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_2",
+    "year": 2020,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2020-hsc-mathematics-extension-2.pdf",
+    "sha256": "7afca2395daf4e81d282184f0c04999af82064786f719b2fffd3e78c9bfd5aae",
+    "samples": [
+      {
+        "question": "4",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.375641,
+          "y": 0.097546,
+          "w": 0.247395,
+          "h": 0.177989
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 614,
+          "height": 625,
+          "sha256": "58fef775346a6b210f6d8559aa288079894832a8f7a7eed0f6ec11ffce8db3cf"
+        }
+      },
+      {
+        "question": "4",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.157826,
+          "y": 0.328741,
+          "w": 0.259944,
+          "h": 0.166587
+        },
+        "masks": [
+          {
+            "x": 0.159619,
+            "y": 0.331908,
+            "w": 0.031373,
+            "h": 0.022169
+          }
+        ],
+        "category": "complex_plane",
+        "output": {
+          "width": 645,
+          "height": 585,
+          "sha256": "0fbe755e1515cce31f45809cecb4b6dda5eab1df6a9960a56bafba1a9dd8d842"
+        }
+      },
+      {
+        "question": "4",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.518162,
+          "y": 0.330008,
+          "w": 0.258151,
+          "h": 0.166587
+        },
+        "masks": [
+          {
+            "x": 0.52623,
+            "y": 0.330641,
+            "w": 0.027787,
+            "h": 0.02407
+          }
+        ],
+        "category": "complex_plane",
+        "output": {
+          "width": 641,
+          "height": 586,
+          "sha256": "c974f80254442835ea2f5f490aeb797399efff3ad5e1ab1e333dc0bcba8f32b6"
+        }
+      },
+      {
+        "question": "4",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.155137,
+          "y": 0.503563,
+          "w": 0.268908,
+          "h": 0.169755
+        },
+        "masks": [
+          {
+            "x": 0.162308,
+            "y": 0.499129,
+            "w": 0.026891,
+            "h": 0.02977
+          }
+        ],
+        "category": "complex_plane",
+        "output": {
+          "width": 668,
+          "height": 596,
+          "sha256": "011417dbf6cba4a8002a2187481e5be7641ec1cf9be21996351b2a6aa8fac625"
+        }
+      },
+      {
+        "question": "4",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.519955,
+          "y": 0.503563,
+          "w": 0.256359,
+          "h": 0.171655
+        },
+        "masks": [
+          {
+            "x": 0.522644,
+            "y": 0.500396,
+            "w": 0.035854,
+            "h": 0.032937
+          }
+        ],
+        "category": "complex_plane",
+        "output": {
+          "width": 637,
+          "height": 603,
+          "sha256": "1845be8f2cbe6e3440137988052e09deea94ffa2d98c143d3e74a5ff243d9817"
+        }
+      },
+      {
+        "question": "12(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.314689,
+          "y": 0.233096,
+          "w": 0.375574,
+          "h": 0.169755
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 932,
+          "height": 597,
+          "sha256": "9c39a23562cf65eb44226b8cb5b35c0591a3c33860a50eecbfdb1f90d12548b5"
+        }
+      },
+      {
+        "question": "12(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.237602,
+          "y": 0.247031,
+          "w": 0.522577,
+          "h": 0.146952
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1296,
+          "height": 517,
+          "sha256": "61b93c89b9f47ecc060c29a6dfe29c99aa8c73331d5bcf903455f5d791beab93"
+        }
+      },
+      {
+        "question": "13(c)(i)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.389087,
+          "y": 0.520032,
+          "w": 0.199888,
+          "h": 0.140618
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 497,
+          "height": 494,
+          "sha256": "e5de275a18a94e58cc7609e48072e2b1ffc56e4bd987f7c464e8cfb20f6eca7c"
+        }
+      },
+      {
+        "question": "14(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.28242,
+          "y": 0.215994,
+          "w": 0.42577,
+          "h": 0.217894
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1056,
+          "height": 766,
+          "sha256": "6bed0f67555b998f5dd649981d919c01b61cb52b0737d15aed6c315593153ec8"
+        }
+      },
+      {
+        "question": "15(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.286902,
+          "y": 0.184323,
+          "w": 0.432941,
+          "h": 0.152652
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 1074,
+          "height": 537,
+          "sha256": "a560358a21ec06f8c58cc3a620a2d29e8eb814f990c3cffe880f85252fa6f575"
+        }
+      },
+      {
+        "question": "15(b)",
+        "role": "question_figure",
+        "index": 2,
+        "page": 12,
+        "box": {
+          "x": 0.330824,
+          "y": 0.509264,
+          "w": 0.342409,
+          "h": 0.141251
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 849,
+          "height": 497,
+          "sha256": "d23a5eb0bc562878bbdd598cb77f46c6c7353120306d71f5cf8f171e67c5056f"
+        }
+      },
+      {
+        "question": "16(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.403429,
+          "y": 0.222961,
+          "w": 0.198095,
+          "h": 0.139984
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 492,
+          "height": 492,
+          "sha256": "37c6b38fae6e00612931cd6fe7bc477c6126e8fd63e3ab38db77c3e608fbf95f"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_advanced",
+    "year": 2021,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2021-hsc-mathematics-advanced.pdf",
+    "sha256": "d5109a30a872281db67242b380075ca68081bda43929544bacdb795584b63539",
+    "samples": [
+      {
+        "question": "4",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.187406,
+          "y": 0.113381,
+          "w": 0.559328,
+          "h": 0.145051
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1388,
+          "height": 510,
+          "sha256": "3aa5d261ed5c82fe09c035ee57eb17a73ebc7a3d7d1a0202b1046cec490b8273"
+        }
+      },
+      {
+        "question": "4",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.201748,
+          "y": 0.304038,
+          "w": 0.542297,
+          "h": 0.146952
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1345,
+          "height": 517,
+          "sha256": "c9457bb2092b9b6705b270d27db15a8280c451513d2b6a0a12039cbcf7a71d14"
+        }
+      },
+      {
+        "question": "4",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.201748,
+          "y": 0.459857,
+          "w": 0.54409,
+          "h": 0.143785
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1349,
+          "height": 505,
+          "sha256": "f330dfcd846f9a0a8b4ca71b7f552e60b409fd8465aafe483f50284783bb08f6"
+        }
+      },
+      {
+        "question": "4",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.201748,
+          "y": 0.609343,
+          "w": 0.544986,
+          "h": 0.146952
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1352,
+          "height": 517,
+          "sha256": "d29c7b83f974220a4d3e0618ba8b66793e0d34138d65d8b02dcf3b35dd40e810"
+        }
+      },
+      {
+        "question": "4",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.205333,
+          "y": 0.765162,
+          "w": 0.540504,
+          "h": 0.150752
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1340,
+          "height": 530,
+          "sha256": "1b933197fadb194761e272160695fccd23dde03b727014cc530e819a16ecc037"
+        }
+      },
+      {
+        "question": "5",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.605109,
+          "y": 0.10768,
+          "w": 0.268011,
+          "h": 0.162154
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 665,
+          "height": 570,
+          "sha256": "593409efeb1c5e2c4170ced34a9bfb84080c80cdc2f0e69cf41429ce678bcca9"
+        }
+      },
+      {
+        "question": "5",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.197266,
+          "y": 0.110847,
+          "w": 0.254566,
+          "h": 0.153919
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 632,
+          "height": 541,
+          "sha256": "3a1adf976a5ae234a94fefc6ca55e49690c9290d9b8a766613845d7686f82d87"
+        }
+      },
+      {
+        "question": "5",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.197266,
+          "y": 0.283135,
+          "w": 0.258151,
+          "h": 0.158353
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 640,
+          "height": 556,
+          "sha256": "e3db0686e1cc8acd1f85a03bca3604f9bebb9647b516e90cbd5241d22edc1cf6"
+        }
+      },
+      {
+        "question": "5",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.608695,
+          "y": 0.290103,
+          "w": 0.259048,
+          "h": 0.155186
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 644,
+          "height": 546,
+          "sha256": "6691a84760186c5b73b17807a26291d6aa8df4101c7e14bcb29c1e4e3a2378ed"
+        }
+      },
+      {
+        "question": "6",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.355025,
+          "y": 0.204592,
+          "w": 0.294006,
+          "h": 0.157086
+        },
+        "category": "probability_or_set_diagram",
+        "output": {
+          "width": 729,
+          "height": 552,
+          "sha256": "1f3f152bdd1c0a208ac90d4c0fbb0130c61d1bbc8d5e3250a496e7f75ac7977d"
+        }
+      },
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.2627,
+          "y": 0.116548,
+          "w": 0.467899,
+          "h": 0.228028
+        },
+        "category": "probability_or_set_diagram",
+        "output": {
+          "width": 1161,
+          "height": 801,
+          "sha256": "160be4f0ecb35eda1c2794801b601e742d4df7904522cf4b1f442b0a9e871a78"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.268078,
+          "y": 0.108947,
+          "w": 0.466106,
+          "h": 0.218527
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1157,
+          "height": 767,
+          "sha256": "354119079219771f14802f5ab9b0f4ca81face52b25df2860b7e21e4f1791612"
+        }
+      },
+      {
+        "question": "10",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.164997,
+          "y": 0.120348,
+          "w": 0.675854,
+          "h": 0.200792
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1676,
+          "height": 705,
+          "sha256": "1df78b562855b5a60cc8951b72e7004a5f2f3ef94a328b469743007d1f9d6b27"
+        }
+      },
+      {
+        "question": "12",
+        "role": "question_figure",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.22595,
+          "y": 0.150752,
+          "w": 0.554846,
+          "h": 0.206492
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1376,
+          "height": 726,
+          "sha256": "7aee300599049e5b23f1f854fd9e6350254346b5d941012c99240afc1fcffef2"
+        }
+      },
+      {
+        "question": "17",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.092392,
+          "y": 0.181789,
+          "w": 0.756527,
+          "h": 0.316706
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1876,
+          "height": 1112,
+          "sha256": "51ca430f5e147fd8c8f66c692c00be5289e35ab90cc8f8d655d20623b9d627ff"
+        }
+      },
+      {
+        "question": "17(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 15,
+        "box": {
+          "x": 0.139899,
+          "y": 0.169121,
+          "w": 0.743978,
+          "h": 0.314806
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1846,
+          "height": 1105,
+          "sha256": "39e127c21fa45ceabb166b8d5acc970d74a3353a79fbb9beb2c11774dafb7901"
+        }
+      },
+      {
+        "question": "18",
+        "role": "question_figure",
+        "index": 1,
+        "page": 16,
+        "box": {
+          "x": 0.260011,
+          "y": 0.150119,
+          "w": 0.516303,
+          "h": 0.177355
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1281,
+          "height": 623,
+          "sha256": "6a0df68028d53554972df6d6a00b908ce323daa45d9d836be787e6cbd85b847d"
+        }
+      },
+      {
+        "question": "21",
+        "role": "question_figure",
+        "index": 1,
+        "page": 18,
+        "box": {
+          "x": 0.190095,
+          "y": 0.139984,
+          "w": 0.642689,
+          "h": 0.225495
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1594,
+          "height": 792,
+          "sha256": "49f60a43c004a209c0a5d20b748129a4c59784ce21ed9cd7561217bb20ffd50e"
+        }
+      },
+      {
+        "question": "22",
+        "role": "question_figure",
+        "index": 1,
+        "page": 19,
+        "box": {
+          "x": 0.290487,
+          "y": 0.292637,
+          "w": 0.413221,
+          "h": 0.125416
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1025,
+          "height": 441,
+          "sha256": "97ac3487ee3951aabcaa226fcdc42f3fada365eae31951897a9b9ab04307783e"
+        }
+      },
+      {
+        "question": "24",
+        "role": "question_figure",
+        "index": 1,
+        "page": 21,
+        "box": {
+          "x": 0.240291,
+          "y": 0.222961,
+          "w": 0.519888,
+          "h": 0.23943
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1290,
+          "height": 841,
+          "sha256": "22e640b2616ea909137fb0a9f7e4c1a13a4d803fc3ff46793a4461ea28aef173"
+        }
+      },
+      {
+        "question": "28",
+        "role": "question_figure",
+        "index": 1,
+        "page": 26,
+        "box": {
+          "x": 0.201748,
+          "y": 0.15772,
+          "w": 0.615798,
+          "h": 0.18749
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1527,
+          "height": 658,
+          "sha256": "499fa92e0ef91c07b4e08d5198789c09c1d61d0889bcd33f2f29ae6ef7fb464f"
+        }
+      },
+      {
+        "question": "32",
+        "role": "response_template",
+        "index": 1,
+        "page": 34,
+        "box": {
+          "x": 0.2627,
+          "y": 0.478226,
+          "w": 0.475966,
+          "h": 0.110847
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1181,
+          "height": 390,
+          "sha256": "cb39a7d8913a63bd2a8a066110ca7ad9963ebeef6bd5e9bfbd9277e8546a82d9"
+        }
+      },
+      {
+        "question": "33",
+        "role": "question_figure",
+        "index": 1,
+        "page": 35,
+        "box": {
+          "x": 0.242084,
+          "y": 0.302771,
+          "w": 0.535126,
+          "h": 0.196358
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1327,
+          "height": 689,
+          "sha256": "b400221ab2454d1fa61da055ebf2b7621cb516c61116d1e9f1d01c3ba6be85b3"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_1",
+    "year": 2021,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2021-hsc-mathematics-extension-1.pdf",
+    "sha256": "6921786d55dba57029f6a7844c836d2a181046d11dee6078b6235ca59c0a7f4e",
+    "samples": [
+      {
+        "question": "7",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.52623,
+          "y": 0.362312,
+          "w": 0.371092,
+          "h": 0.165954
+        },
+        "masks": [
+          {
+            "x": 0.537882,
+            "y": 0.370546,
+            "w": 0.043922,
+            "h": 0.021536
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 921,
+          "height": 584,
+          "sha256": "14122dc25dbea399c97c9e66fdb3160b472d5995b3d9237f2b2de85b76479776"
+        }
+      },
+      {
+        "question": "7",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.149759,
+          "y": 0.362945,
+          "w": 0.360336,
+          "h": 0.165321
+        },
+        "masks": [
+          {
+            "x": 0.15693,
+            "y": 0.370546,
+            "w": 0.037647,
+            "h": 0.020269
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 894,
+          "height": 581,
+          "sha256": "bda70d16ceebc9feb2b6533dec2804e7678c43fe45b7654f58d8f56d465b65b8"
+        }
+      },
+      {
+        "question": "7",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.527126,
+          "y": 0.5365,
+          "w": 0.376471,
+          "h": 0.171021
+        },
+        "masks": [
+          {
+            "x": 0.538779,
+            "y": 0.546002,
+            "w": 0.038543,
+            "h": 0.023436
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 935,
+          "height": 600,
+          "sha256": "befbc09b15468c3ddd8770d0a829052ea81420c137e9bdd3538853b9d1914b52"
+        }
+      },
+      {
+        "question": "7",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.151552,
+          "y": 0.537767,
+          "w": 0.35944,
+          "h": 0.165954
+        },
+        "masks": [
+          {
+            "x": 0.155137,
+            "y": 0.544101,
+            "w": 0.043025,
+            "h": 0.026603
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 892,
+          "height": 583,
+          "sha256": "eef7980749311875e453ca2c61526be56c0ee97afd13781b5e0caaa704b3bcdc"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.228639,
+          "y": 0.104513,
+          "w": 0.519888,
+          "h": 0.219794
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1290,
+          "height": 772,
+          "sha256": "3148475675fab3f011c24266b11fcb44a505e72e768f22ad313a95997e7e5558"
+        }
+      },
+      {
+        "question": "9",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.510992,
+          "y": 0.106413,
+          "w": 0.394398,
+          "h": 0.270467
+        },
+        "masks": [
+          {
+            "x": 0.514577,
+            "y": 0.113381,
+            "w": 0.032269,
+            "h": 0.020902
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 979,
+          "height": 950,
+          "sha256": "ce6a3f1154b4461f4921b19803fd4136414191d91d353273aa6ec368bee98b68"
+        }
+      },
+      {
+        "question": "9",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.10763,
+          "y": 0.10768,
+          "w": 0.38902,
+          "h": 0.266667
+        },
+        "masks": [
+          {
+            "x": 0.113905,
+            "y": 0.112114,
+            "w": 0.032269,
+            "h": 0.019636
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 966,
+          "height": 937,
+          "sha256": "120dda5ff8d5aa742b5e00ca64a0d1742996a93fa8fb7ebf2ad224461e5207f9"
+        }
+      },
+      {
+        "question": "9",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.104941,
+          "y": 0.393983,
+          "w": 0.391709,
+          "h": 0.271101
+        },
+        "masks": [
+          {
+            "x": 0.108527,
+            "y": 0.393983,
+            "w": 0.033165,
+            "h": 0.025336
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 972,
+          "height": 952,
+          "sha256": "704fe3c432ae3b40fda8d9c7aada7f710c425e50e5daf9e2cdc9eef63ea812b9"
+        }
+      },
+      {
+        "question": "9",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.508303,
+          "y": 0.395249,
+          "w": 0.40605,
+          "h": 0.267933
+        },
+        "masks": [
+          {
+            "x": 0.511888,
+            "y": 0.393983,
+            "w": 0.030476,
+            "h": 0.028504
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1007,
+          "height": 941,
+          "sha256": "d6418d74107feec7622e0a5bea203965d380a0adfec705f78fbab51bf2af156a"
+        }
+      },
+      {
+        "question": "13(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.308415,
+          "y": 0.167221,
+          "w": 0.383642,
+          "h": 0.191291
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 952,
+          "height": 672,
+          "sha256": "a89b45661d8a6dbb468c163e4f6426a62542d5fd97c4fbe1feb5caba08364cea"
+        }
+      },
+      {
+        "question": "13(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.171272,
+          "y": 0.167221,
+          "w": 0.65972,
+          "h": 0.231196
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1637,
+          "height": 812,
+          "sha256": "2f3f9d7de9de6a7f4478ad61f238b6d137321298df708249dfe9fb28514f4d85"
+        }
+      },
+      {
+        "question": "14(c)(ii)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.224157,
+          "y": 0.595408,
+          "w": 0.572773,
+          "h": 0.095012
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1421,
+          "height": 334,
+          "sha256": "c2c8790c20fe691c2ab1a829affea0c4d562197e9938d1e39ff494b657e458dc"
+        }
+      },
+      {
+        "question": "12(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.199955,
+          "y": 0.170388,
+          "w": 0.598767,
+          "h": 0.407284
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1486,
+          "height": 1430,
+          "sha256": "e1f0150cd30d94131619e4a13f57f09a99ea59da73391f2379239a75dc16c4bd"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_2",
+    "year": 2021,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2021-hsc-mathematics-extension-2.pdf",
+    "sha256": "577249462bf77831d6742cd8c888fbc40a469568dd38d9e34a6461229d532d64",
+    "samples": [
+      {
+        "question": "1",
+        "role": "question_figure",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.250151,
+          "y": 0.247664,
+          "w": 0.486723,
+          "h": 0.131116
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1207,
+          "height": 461,
+          "sha256": "519a6919c23e4044474408ba49035a8308393d086eb9b2e8796a69caff66aa61"
+        }
+      },
+      {
+        "question": "7",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.512784,
+          "y": 0.290103,
+          "w": 0.345994,
+          "h": 0.243864
+        },
+        "masks": [
+          {
+            "x": 0.527126,
+            "y": 0.303405,
+            "w": 0.025098,
+            "h": 0.026603
+          }
+        ],
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 858,
+          "height": 857,
+          "sha256": "b1378bd4f3282bc906a1c8cc49c7000d11dbb2291b7e5a55d382dc4d102528c8"
+        }
+      },
+      {
+        "question": "7",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.149759,
+          "y": 0.294537,
+          "w": 0.337927,
+          "h": 0.23753
+        },
+        "masks": [
+          {
+            "x": 0.157826,
+            "y": 0.300871,
+            "w": 0.048403,
+            "h": 0.02977
+          }
+        ],
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 838,
+          "height": 834,
+          "sha256": "dd755455b6bc94bc1aa5872f87804e9467fcebd87defbca5122cb4ea2e6ebe71"
+        }
+      },
+      {
+        "question": "7",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.510095,
+          "y": 0.538401,
+          "w": 0.351373,
+          "h": 0.23753
+        },
+        "masks": [
+          {
+            "x": 0.519059,
+            "y": 0.546002,
+            "w": 0.051989,
+            "h": 0.031037
+          }
+        ],
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 872,
+          "height": 834,
+          "sha256": "9abad81f21a45d5d7cce818a1d4a9983db32023e4361ee74e8ce4084a2d1b7fe"
+        }
+      },
+      {
+        "question": "7",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.149759,
+          "y": 0.543468,
+          "w": 0.338824,
+          "h": 0.233729
+        },
+        "masks": [
+          {
+            "x": 0.158723,
+            "y": 0.549169,
+            "w": 0.041232,
+            "h": 0.022803
+          }
+        ],
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 841,
+          "height": 821,
+          "sha256": "616c287839fb01c805b095ae03a95702b60ec0e6581de38c1f3a2613ce5c358c"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.389087,
+          "y": 0.120348,
+          "w": 0.219608,
+          "h": 0.138084
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 545,
+          "height": 485,
+          "sha256": "17166e6aaae3530ba6e1ec0bfd8eb783210205fb2d0cc327624ef25aaf22aeca"
+        }
+      },
+      {
+        "question": "8",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.568358,
+          "y": 0.345843,
+          "w": 0.201681,
+          "h": 0.152652
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 501,
+          "height": 536,
+          "sha256": "529d7f69d2a71b898feedf5f911eb4c7baaeb9664c505ea8f8e429631fe5ef2e"
+        }
+      },
+      {
+        "question": "8",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.217882,
+          "y": 0.34711,
+          "w": 0.193613,
+          "h": 0.149485
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 481,
+          "height": 526,
+          "sha256": "b111f18cb3425332ff97696a8937705509fe1435ea6805120a92740c5f354a69"
+        }
+      },
+      {
+        "question": "8",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.21609,
+          "y": 0.512431,
+          "w": 0.201681,
+          "h": 0.145685
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 501,
+          "height": 512,
+          "sha256": "2df5c428e086d4b983a630a2dc17967642907c26ef68ea17d7ca646cd2e2cc68"
+        }
+      },
+      {
+        "question": "8",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.579115,
+          "y": 0.512431,
+          "w": 0.199888,
+          "h": 0.141251
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 497,
+          "height": 497,
+          "sha256": "6016dfa5f03df8e583587274ffe8e208fa4818797158f2ec318076da754a3f0f"
+        }
+      },
+      {
+        "question": "9",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.261804,
+          "y": 0.150119,
+          "w": 0.462521,
+          "h": 0.117181
+        },
+        "category": "probability_or_set_diagram",
+        "output": {
+          "width": 1147,
+          "height": 412,
+          "sha256": "e03ee371a0f7bdd19f2b8e5b04cabed31cd54075e7de6b822884e8a3703cbec8"
+        }
+      },
+      {
+        "question": "12(e)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.340683,
+          "y": 0.597941,
+          "w": 0.324482,
+          "h": 0.191291
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 805,
+          "height": 672,
+          "sha256": "4b2f2c8ab552803498919cb31fe8aa140ac4400f3bd0d9259461b99ae68696a6"
+        }
+      },
+      {
+        "question": "13(c)(ii)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.191888,
+          "y": 0.300871,
+          "w": 0.661513,
+          "h": 0.31924
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1641,
+          "height": 1121,
+          "sha256": "54030b1020bccb35a471a06fd9f071afe9ef772a09958691466adaf10df15b79"
+        }
+      },
+      {
+        "question": "16(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 16,
+        "box": {
+          "x": 0.235809,
+          "y": 0.18749,
+          "w": 0.512717,
+          "h": 0.172288
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1272,
+          "height": 606,
+          "sha256": "a4d4254df092d2885bf6e4f52e84feb584d9c5618b29576684938b6572fad02c"
+        }
+      },
+      {
+        "question": "13(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 18,
+        "box": {
+          "x": 0.268078,
+          "y": 0.16342,
+          "w": 0.459832,
+          "h": 0.293271
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1141,
+          "height": 1030,
+          "sha256": "b1f6080fe0b09b924e241a42e28831429859d3bda24085a77adac8b192bf1a02"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_advanced",
+    "year": 2022,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2022-hsc-mathematics-advanced.pdf",
+    "sha256": "e384e2306c655df357c9197b2809f6e76558413448f6a0d0efb39ea56a3edd06",
+    "samples": [
+      {
+        "question": "1",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.187406,
+          "y": 0.255899,
+          "w": 0.216022,
+          "h": 0.172288
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 537,
+          "height": 606,
+          "sha256": "576e669f9cc6dd47e98dc47b21d51d22fbfc1610fdd3352ea4a30e9003fd3589"
+        }
+      },
+      {
+        "question": "1",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.549535,
+          "y": 0.260333,
+          "w": 0.222297,
+          "h": 0.167854
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 552,
+          "height": 590,
+          "sha256": "9852de087fd0ed50de399a84070e52b92e70212a7a904c03ec8564868168ecd7"
+        }
+      },
+      {
+        "question": "1",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.552224,
+          "y": 0.446556,
+          "w": 0.213333,
+          "h": 0.169121
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 530,
+          "height": 594,
+          "sha256": "ed5f11d2d8de065c67af1051676f862a27fc41282092e74b0607142b2adb6c54"
+        }
+      },
+      {
+        "question": "1",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.190992,
+          "y": 0.447189,
+          "w": 0.216919,
+          "h": 0.166587
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 539,
+          "height": 586,
+          "sha256": "7597eaec4adaad60c292cdf2b0d7f923354d442fcdc6b207ca2ad54260fdc421"
+        }
+      },
+      {
+        "question": "3",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.265389,
+          "y": 0.42692,
+          "w": 0.44549,
+          "h": 0.226128
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1106,
+          "height": 794,
+          "sha256": "39c751cfcd39c1ea88ba2c55b92809b6d492fbb629dc035f508db06e53f369ef"
+        }
+      },
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.208022,
+          "y": 0.102613,
+          "w": 0.581737,
+          "h": 0.219161
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1443,
+          "height": 770,
+          "sha256": "eb8030e64364dad385d88e67cd17e609cc00d83d65611d217cef9fbbfb644620"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.168583,
+          "y": 0.150119,
+          "w": 0.654342,
+          "h": 0.178622
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1624,
+          "height": 628,
+          "sha256": "1d1cbbfe9f3227927708321b0d3a1562d12c40f2226eb92934efe7306314fae5"
+        }
+      },
+      {
+        "question": "10",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.146174,
+          "y": 0.102613,
+          "w": 0.725154,
+          "h": 0.255265
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1799,
+          "height": 897,
+          "sha256": "c89fea07b43319a51cfde75d96f307509d86d7aaa7fa0c69bfb74c46183d3ad0"
+        }
+      },
+      {
+        "question": "10",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.152448,
+          "y": 0.395883,
+          "w": 0.343305,
+          "h": 0.252732
+        },
+        "masks": [
+          {
+            "x": 0.164101,
+            "y": 0.39772,
+            "w": 0.034958,
+            "h": 0.025336
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 852,
+          "height": 888,
+          "sha256": "de87abbbe8cc8a245194943ddab53b7a3846dbe8d6258f2babf3db61d5d40fdb"
+        }
+      },
+      {
+        "question": "10",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.520851,
+          "y": 0.395883,
+          "w": 0.337031,
+          "h": 0.252732
+        },
+        "masks": [
+          {
+            "x": 0.529815,
+            "y": 0.397086,
+            "w": 0.027787,
+            "h": 0.02597
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 836,
+          "height": 888,
+          "sha256": "6bbb7ff2081fa888cb2150ac8d805a85df6cb59e52e84a70d18e99b15a41368f"
+        }
+      },
+      {
+        "question": "10",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.519059,
+          "y": 0.663183,
+          "w": 0.338823,
+          "h": 0.254632
+        },
+        "masks": [
+          {
+            "x": 0.528919,
+            "y": 0.665717,
+            "w": 0.030476,
+            "h": 0.027236
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 841,
+          "height": 894,
+          "sha256": "3f2cc1a1c537ef3a19de194d0f2a0d5ffb95aa0724c04fe69113a263cadf5d1a"
+        }
+      },
+      {
+        "question": "10",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.151552,
+          "y": 0.665717,
+          "w": 0.347787,
+          "h": 0.248298
+        },
+        "masks": [
+          {
+            "x": 0.163204,
+            "y": 0.667553,
+            "w": 0.035855,
+            "h": 0.024704
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 863,
+          "height": 872,
+          "sha256": "5d646a76085c9e878ca629d9391e47027a755538fb596e046a60e43be19ea9cc"
+        }
+      },
+      {
+        "question": "11(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.143485,
+          "y": 0.50673,
+          "w": 0.71888,
+          "h": 0.297704
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1783,
+          "height": 1045,
+          "sha256": "f9838e80aa12e288a1db297204d135345c737b3495aac9df1d12fadcbbc2fe04"
+        }
+      },
+      {
+        "question": "12(b)",
+        "role": "response_template",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.227742,
+          "y": 0.575772,
+          "w": 0.499272,
+          "h": 0.342043
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1239,
+          "height": 1201,
+          "sha256": "23d91d942049ddadab3880a37b87b5ed7cdd23e14ca3cff30ca3446760f391d2"
+        }
+      },
+      {
+        "question": "14",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.104941,
+          "y": 0.500665,
+          "w": 0.793277,
+          "h": 0.198892
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1967,
+          "height": 699,
+          "sha256": "d8af422f2f9d95ec882c2d2cdcc526822080ddcb8227c5b0b972401c2f37eafc"
+        }
+      },
+      {
+        "question": "16",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.286006,
+          "y": 0.162154,
+          "w": 0.417703,
+          "h": 0.304038
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1036,
+          "height": 1068,
+          "sha256": "791bf1a77929f5ce12445e4f5dc94ed8fcd3c916f06a172f32ae886ca17cb306"
+        }
+      },
+      {
+        "question": "24",
+        "role": "question_figure",
+        "index": 1,
+        "page": 21,
+        "box": {
+          "x": 0.171272,
+          "y": 0.233729,
+          "w": 0.612213,
+          "h": 0.279335
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1519,
+          "height": 981,
+          "sha256": "a199624e2a68e7380c48dfe1f80dcbfdba8828111ee90abe999e68aa1e8f680e"
+        }
+      },
+      {
+        "question": "28",
+        "role": "question_figure",
+        "index": 1,
+        "page": 26,
+        "box": {
+          "x": 0.212504,
+          "y": 0.18559,
+          "w": 0.552157,
+          "h": 0.269834
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1370,
+          "height": 947,
+          "sha256": "620c1cdfdaebe2031e349de0ea79f05000ab57984bdf36846e5571e794079c29"
+        }
+      },
+      {
+        "question": "28",
+        "role": "question_figure",
+        "index": 2,
+        "page": 27,
+        "box": {
+          "x": 0.232224,
+          "y": 0.179889,
+          "w": 0.530644,
+          "h": 0.259066
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1317,
+          "height": 909,
+          "sha256": "e02a378b4e567053e81dd7126bf3dbd38013f73f7622c70e33b5e76fdefe6e99"
+        }
+      },
+      {
+        "question": "29(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 28,
+        "box": {
+          "x": 0.256426,
+          "y": 0.217894,
+          "w": 0.49479,
+          "h": 0.234362
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1228,
+          "height": 823,
+          "sha256": "65c4537814147fce25334ca8b44a487818f83abce08661a42d7c098cf55e62b6"
+        }
+      },
+      {
+        "question": "31",
+        "role": "question_figure",
+        "index": 1,
+        "page": 30,
+        "box": {
+          "x": 0.245669,
+          "y": 0.155186,
+          "w": 0.51451,
+          "h": 0.240063
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1276,
+          "height": 843,
+          "sha256": "c6a54974b0c6780a25c58a027e165d268b86a49c2d9ce38ba299120475517e9e"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_1",
+    "year": 2022,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2022-hsc-mathematics-extension-1.pdf",
+    "sha256": "86bc677892f23575cf2a0a2e47255bfc981a2ecf38e072bafc37b6598b0cdee1",
+    "samples": [
+      {
+        "question": "2",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.285109,
+          "y": 0.117181,
+          "w": 0.431148,
+          "h": 0.271734
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1070,
+          "height": 954,
+          "sha256": "34d3faeb12ebf5c480a2538b720997dbd1ce937973e708be4fd39ee68622ef7c"
+        }
+      },
+      {
+        "question": "2",
+        "role": "question_figure",
+        "index": 2,
+        "page": 3,
+        "box": {
+          "x": 0.291384,
+          "y": 0.432621,
+          "w": 0.420392,
+          "h": 0.285669
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1043,
+          "height": 1003,
+          "sha256": "aecb591fa5da01072bcd19e398646343fed4390a7df8b69ec9803555e54d2bd1"
+        }
+      },
+      {
+        "question": "4",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.175753,
+          "y": 0.108947,
+          "w": 0.596975,
+          "h": 0.126682
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1481,
+          "height": 445,
+          "sha256": "ddfc5744b454046adedbad7d36ec8d94d011e940cbcb52f347d4d8f929aee216"
+        }
+      },
+      {
+        "question": "4",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.195473,
+          "y": 0.271734,
+          "w": 0.586218,
+          "h": 0.13175
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1454,
+          "height": 463,
+          "sha256": "a4b68d5518fe17a907ba7085e1203a4fa9face8bbfa1265c2b4526f5bda7d405"
+        }
+      },
+      {
+        "question": "4",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.190992,
+          "y": 0.412985,
+          "w": 0.588011,
+          "h": 0.167854
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1459,
+          "height": 590,
+          "sha256": "733dd31ba5af45d39d4f44ec22c966a2612348b3bd57532a676a83c73dbb3228"
+        }
+      },
+      {
+        "question": "4",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.192784,
+          "y": 0.585273,
+          "w": 0.586218,
+          "h": 0.136817
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1455,
+          "height": 481,
+          "sha256": "e77942ed78aec8015cf8465c9ff6b1ed096ea47a73d7aef8a60fd04f95077b95"
+        }
+      },
+      {
+        "question": "4",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.200851,
+          "y": 0.731686,
+          "w": 0.578151,
+          "h": 0.188124
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1435,
+          "height": 661,
+          "sha256": "cbac05c2d569157a6d28f0be15bff491eabb4c0d787a6138450fb4f7a1930240"
+        }
+      },
+      {
+        "question": "5",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.546846,
+          "y": 0.143151,
+          "w": 0.252773,
+          "h": 0.120348
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 628,
+          "height": 423,
+          "sha256": "9a1a40d97a91549f0dbd5a596261adb63c63ae787e3cf303ec901fef39a751db"
+        }
+      },
+      {
+        "question": "5",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.199059,
+          "y": 0.145051,
+          "w": 0.237535,
+          "h": 0.115914
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 590,
+          "height": 408,
+          "sha256": "9b7c10b6e100860a97cfb91e0720d1d963c3fee16c68eee8bc13451c243a98dc"
+        }
+      },
+      {
+        "question": "5",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.55312,
+          "y": 0.293903,
+          "w": 0.240224,
+          "h": 0.119715
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 596,
+          "height": 420,
+          "sha256": "e625495cd06ff1ba1b6b8b71027b47b33c898192a1a42fb79fc3f8a5f563b2bb"
+        }
+      },
+      {
+        "question": "5",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.195473,
+          "y": 0.29517,
+          "w": 0.243809,
+          "h": 0.122249
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 605,
+          "height": 430,
+          "sha256": "e1605546060be437e6b06030718f3f857dc8376aa2a972089a88eb4eade8b451"
+        }
+      },
+      {
+        "question": "6",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.303933,
+          "y": 0.486461,
+          "w": 0.474174,
+          "h": 0.214093
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 1176,
+          "height": 752,
+          "sha256": "4e1c4080e1b8d754db269736161ddddcb5e7c2ee07ddcb2536544e4a3848f47c"
+        }
+      },
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.251944,
+          "y": 0.119082,
+          "w": 0.491205,
+          "h": 0.149485
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1219,
+          "height": 526,
+          "sha256": "2607b712513cdc03dd50bb5a910a01cc3bf9bdafa80437035236c0b996115ef9"
+        }
+      },
+      {
+        "question": "10",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.202644,
+          "y": 0.176722,
+          "w": 0.472381,
+          "h": 0.150752
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1172,
+          "height": 530,
+          "sha256": "7483804d2aadfbc6413f20291c5d51348cf36392409df243db1a4fcd90d81ba9"
+        }
+      },
+      {
+        "question": "10",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.202644,
+          "y": 0.341409,
+          "w": 0.473277,
+          "h": 0.148218
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1174,
+          "height": 521,
+          "sha256": "0fe4270373a76d5df2f5ead5f08de7cb6456fdd8ed0915d021587a600d98e310"
+        }
+      },
+      {
+        "question": "10",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.200851,
+          "y": 0.50483,
+          "w": 0.478655,
+          "h": 0.139984
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1188,
+          "height": 493,
+          "sha256": "e2459167447f05a965c8d3289ce57a577cedc4640dc10aacee26ea0c30d56e10"
+        }
+      },
+      {
+        "question": "10",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.202644,
+          "y": 0.654949,
+          "w": 0.479552,
+          "h": 0.245131
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1190,
+          "height": 861,
+          "sha256": "e20c609baca9f4acc402014f7657acd0b4479e0a014754c4a1d8328dd77d84b0"
+        }
+      },
+      {
+        "question": "13(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.266286,
+          "y": 0.21726,
+          "w": 0.476863,
+          "h": 0.255265
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1183,
+          "height": 896,
+          "sha256": "73d307521453d98124e972e2ce54f01ccc27bce089adc788e6ea499efde0e470"
+        }
+      },
+      {
+        "question": "13(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.318274,
+          "y": 0.63658,
+          "w": 0.366611,
+          "h": 0.157086
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 909,
+          "height": 552,
+          "sha256": "390220f216a01a9bbde7e974145d2926468c88f247b0e0df28b06b1eecf36bc6"
+        }
+      },
+      {
+        "question": "14(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 16,
+        "box": {
+          "x": 0.301244,
+          "y": 0.321283,
+          "w": 0.400672,
+          "h": 0.158987
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 995,
+          "height": 558,
+          "sha256": "2d47d64d99ab81b2d5779c489f0856fd74d3b232a24143eb60ca4378669aeedd"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_2",
+    "year": 2022,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2022-hsc-mathematics-extension-2.pdf",
+    "sha256": "0061902940bb6f3b9997bc7c8e4d67dc5dd75d4969bd5f4414be828ee517baaa",
+    "samples": [
+      {
+        "question": "1",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.562084,
+          "y": 0.292003,
+          "w": 0.277871,
+          "h": 0.210926
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 690,
+          "height": 741,
+          "sha256": "3d32cd1755712fb6a53ca049debd48af480ed8cef2c892da17548539494a5204"
+        }
+      },
+      {
+        "question": "1",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.207126,
+          "y": 0.294537,
+          "w": 0.262633,
+          "h": 0.205859
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 652,
+          "height": 723,
+          "sha256": "9da74eb6aa498f4f1f808b27d3e96bdf01c4cd429f1fc23687c16261b1a3c124"
+        }
+      },
+      {
+        "question": "1",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.208919,
+          "y": 0.511164,
+          "w": 0.26084,
+          "h": 0.208393
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 648,
+          "height": 732,
+          "sha256": "2681696a820f4af327a988c56510a23ccc396c9d6a6d91434294b224fb3802fb"
+        }
+      },
+      {
+        "question": "1",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.563877,
+          "y": 0.516231,
+          "w": 0.2707,
+          "h": 0.204592
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 672,
+          "height": 719,
+          "sha256": "257d8f61a65b9adf202fb3ed075c875c295792779b4d25ad4d59a35a27629153"
+        }
+      },
+      {
+        "question": "14(a)(ii)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.300347,
+          "y": 0.439082,
+          "w": 0.410532,
+          "h": 0.226762
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1019,
+          "height": 796,
+          "sha256": "e20cdd344b8f4bd2759caba11654cbbf93b8d47ae25aae83531bd1b4b0de323a"
+        }
+      },
+      {
+        "question": "15(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.286006,
+          "y": 0.45308,
+          "w": 0.441905,
+          "h": 0.247664
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1096,
+          "height": 870,
+          "sha256": "14c8becea31279f3f266106ccf077080492b52cfab9d8a8682d759299c6112e3"
+        }
+      },
+      {
+        "question": "15(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.273457,
+          "y": 0.190024,
+          "w": 0.449076,
+          "h": 0.308472
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1115,
+          "height": 1083,
+          "sha256": "14de228cd677a447bae27b929e7ec9d6e4857466439bf409da054db3ccc96276"
+        }
+      },
+      {
+        "question": "16(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.306622,
+          "y": 0.243864,
+          "w": 0.50465,
+          "h": 0.168488
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1252,
+          "height": 592,
+          "sha256": "b33fca602f0129c717f5fe249612b8a336d0804fef022bb0746172c5498918af"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_advanced",
+    "year": 2023,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2023-hsc-maths-adv.pdf",
+    "sha256": "ef02e04806d8ca6ae21bb51956368bdd99a9ab735fb2f220dc6c6e1d313886d7",
+    "samples": [
+      {
+        "question": "1",
+        "role": "question_figure",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.234913,
+          "y": 0.266667,
+          "w": 0.529748,
+          "h": 0.257165
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1314,
+          "height": 903,
+          "sha256": "cfc5c0c5619055a8d8ba5b7073007c1c1876cae09d2928cca8b980d84f994dc4"
+        }
+      },
+      {
+        "question": "2",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.300347,
+          "y": 0.098812,
+          "w": 0.391709,
+          "h": 0.112747
+        },
+        "category": "probability_or_set_diagram",
+        "output": {
+          "width": 972,
+          "height": 397,
+          "sha256": "4e0521bf1fc1f0ebf8b6b3cf5bb48416d1a9eecd4634136f03a4603f3f4747f9"
+        }
+      },
+      {
+        "question": "4",
+        "role": "question_figure",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.294073,
+          "y": 0.270467,
+          "w": 0.367507,
+          "h": 0.247664
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 912,
+          "height": 870,
+          "sha256": "2efbd0108a46090439e7552a331c1f190b9c1e54e0928d05524e62befb64a174"
+        }
+      },
+      {
+        "question": "5",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.144381,
+          "y": 0.182423,
+          "w": 0.720672,
+          "h": 0.334442
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1788,
+          "height": 1175,
+          "sha256": "53562941cab44c17ec02f296f63d0f1c98db8cf17a095b890181dc4d605f60e7"
+        }
+      },
+      {
+        "question": "6",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.15693,
+          "y": 0.245131,
+          "w": 0.341513,
+          "h": 0.194458
+        },
+        "masks": [
+          {
+            "x": 0.15733,
+            "y": 0.248087,
+            "w": 0.040336,
+            "h": 0.029559
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 847,
+          "height": 684,
+          "sha256": "08d62843c504bcd90cec7d3f6fd853a0982650cc146fb3de533aa6645dd98616"
+        }
+      },
+      {
+        "question": "6",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.522644,
+          "y": 0.245764,
+          "w": 0.326275,
+          "h": 0.196358
+        },
+        "masks": [
+          {
+            "x": 0.525584,
+            "y": 0.251254,
+            "w": 0.027638,
+            "h": 0.023225
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 810,
+          "height": 689,
+          "sha256": "7447b88deeadf05e8dc5a395d2e0795161465570d9856c644439ef69d61653c6"
+        }
+      },
+      {
+        "question": "6",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.51637,
+          "y": 0.451623,
+          "w": 0.338823,
+          "h": 0.200158
+        },
+        "masks": [
+          {
+            "x": 0.525584,
+            "y": 0.458696,
+            "w": 0.032867,
+            "h": 0.024809
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 841,
+          "height": 703,
+          "sha256": "c51d267a57787351285f8dbb13cf0d1cbb29523e87ae443fba060e3bcec7a0a4"
+        }
+      },
+      {
+        "question": "6",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.154241,
+          "y": 0.452257,
+          "w": 0.354062,
+          "h": 0.199525
+        },
+        "masks": [
+          {
+            "x": 0.161811,
+            "y": 0.458696,
+            "w": 0.028385,
+            "h": 0.021114
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 879,
+          "height": 701,
+          "sha256": "e8bc87edd8463d7361bf8095bd715f791565d67561302b5f5ab8ad06eb8e7ed7"
+        }
+      },
+      {
+        "question": "10",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.283316,
+          "y": 0.120982,
+          "w": 0.440112,
+          "h": 0.233095
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1092,
+          "height": 819,
+          "sha256": "dc3ccf346fd29e3290dc6fce444c09adb2aef9f7ab2fb88461b84fc72a8f41ed"
+        }
+      },
+      {
+        "question": "16",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.22326,
+          "y": 0.181156,
+          "w": 0.549468,
+          "h": 0.165321
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1363,
+          "height": 581,
+          "sha256": "24c84c35af874badef3bf61093528177aadc7c8c4b1aee55f8ee04043a63113b"
+        }
+      },
+      {
+        "question": "18",
+        "role": "response_template",
+        "index": 1,
+        "page": 16,
+        "box": {
+          "x": 0.162308,
+          "y": 0.512431,
+          "w": 0.651653,
+          "h": 0.374347
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1616,
+          "height": 1314,
+          "sha256": "ef8f6e4a2c163bb7ae947d223a5708925ae376050423286641e9f8a245152e23"
+        }
+      },
+      {
+        "question": "19(a)",
+        "role": "response_template",
+        "index": 1,
+        "page": 18,
+        "box": {
+          "x": 0.244773,
+          "y": 0.152652,
+          "w": 0.508235,
+          "h": 0.392082
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1261,
+          "height": 1376,
+          "sha256": "736dd63718253ff31b58b6497cb50ef9c8b4c86ad0832f98c9ba50404435a8af"
+        }
+      },
+      {
+        "question": "22",
+        "role": "question_figure",
+        "index": 1,
+        "page": 21,
+        "box": {
+          "x": 0.288695,
+          "y": 0.152019,
+          "w": 0.423978,
+          "h": 0.227395
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1052,
+          "height": 798,
+          "sha256": "b5ee66af0c71f6e7631efea9caa574cfd80659c5da116ef44517eeba733f0582"
+        }
+      },
+      {
+        "question": "23",
+        "role": "question_figure",
+        "index": 1,
+        "page": 22,
+        "box": {
+          "x": 0.286902,
+          "y": 0.279968,
+          "w": 0.432941,
+          "h": 0.147585
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1074,
+          "height": 518,
+          "sha256": "8449aca0b4c8ccc2071f0efa29154e4c0e96dd6bf11b65de5232e8ebd9e6bd94"
+        }
+      },
+      {
+        "question": "24",
+        "role": "question_figure",
+        "index": 1,
+        "page": 24,
+        "box": {
+          "x": 0.183821,
+          "y": 0.173555,
+          "w": 0.609524,
+          "h": 0.181789
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1512,
+          "height": 639,
+          "sha256": "a007e53e39d08f2c176e41b6e1d5a41af423541ab1a01feed9bfeef7652f5312"
+        }
+      },
+      {
+        "question": "26",
+        "role": "question_figure",
+        "index": 1,
+        "page": 28,
+        "box": {
+          "x": 0.17665,
+          "y": 0.208393,
+          "w": 0.586218,
+          "h": 0.182423
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1455,
+          "height": 640,
+          "sha256": "f6b6494d744bb0f5df12fd4caf411c996825ee78950cfc1d83f204d7f4ec46f8"
+        }
+      },
+      {
+        "question": "27",
+        "role": "question_figure",
+        "index": 1,
+        "page": 29,
+        "box": {
+          "x": 0.257322,
+          "y": 0.154553,
+          "w": 0.488515,
+          "h": 0.297704
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1212,
+          "height": 1045,
+          "sha256": "4d11407bed205ed62e2f482ed435e441bd403730ab6207ad3f875b9bc04dbeb8"
+        }
+      },
+      {
+        "question": "28",
+        "role": "question_figure",
+        "index": 1,
+        "page": 30,
+        "box": {
+          "x": 0.168583,
+          "y": 0.174188,
+          "w": 0.652549,
+          "h": 0.293903
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1619,
+          "height": 1032,
+          "sha256": "7f6156a20742d3169323543af707a0972e892f4918483ac3bff7904630fcc85b"
+        }
+      },
+      {
+        "question": "30(b)",
+        "role": "response_template",
+        "index": 1,
+        "page": 33,
+        "box": {
+          "x": 0.14707,
+          "y": 0.155819,
+          "w": 0.685714,
+          "h": 0.333808
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1701,
+          "height": 1172,
+          "sha256": "60446b2604e7423a7e1bca27af6953d31ebb0efa2ac7d01955104eaff96dcb7c"
+        }
+      },
+      {
+        "question": "32",
+        "role": "question_figure",
+        "index": 1,
+        "page": 36,
+        "box": {
+          "x": 0.123765,
+          "y": 0.186223,
+          "w": 0.717983,
+          "h": 0.299604
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1781,
+          "height": 1052,
+          "sha256": "0849276f76e0997fc2233bfe59c2ab5ece785d1ae97c2fa4c121f210203b47ec"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_1",
+    "year": 2023,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2023-hsc-maths-ext-1.pdf",
+    "sha256": "7c11c93be785d8faf8ce779b3383b8e9e0d1d706ad0a020a104fcb86bb813c66",
+    "samples": [
+      {
+        "question": "3",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.145277,
+          "y": 0.126683,
+          "w": 0.739496,
+          "h": 0.387015
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1834,
+          "height": 1359,
+          "sha256": "c42c8f16a5378b341c8af5d43eccce84dd7e727e49ae7ab3330c36c901af7d08"
+        }
+      },
+      {
+        "question": "4",
+        "role": "question_figure",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.234913,
+          "y": 0.10768,
+          "w": 0.530644,
+          "h": 0.203325
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1316,
+          "height": 715,
+          "sha256": "1ff57d0bb92e3eb21e5725ea7c8f732ff890e22efced1325bde4a1a2e85c1e62"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.154241,
+          "y": 0.108947,
+          "w": 0.744874,
+          "h": 0.243864
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1847,
+          "height": 856,
+          "sha256": "cee20bb17bba93c6e4e006af102f3cc288aaab26c5e4b099d9079c0f86b7496e"
+        }
+      },
+      {
+        "question": "9",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.2134,
+          "y": 0.10578,
+          "w": 0.557535,
+          "h": 0.180523
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1383,
+          "height": 634,
+          "sha256": "70c6e79ced9d7d66943ba4306236be3fa1b6ae047277ede524f84e9092152243"
+        }
+      },
+      {
+        "question": "12(e)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.209815,
+          "y": 0.18749,
+          "w": 0.603249,
+          "h": 0.341409
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1496,
+          "height": 1199,
+          "sha256": "9af58ab2fce562c58d8ed77bf84993f8402e3965f3a75f2f273ce8cf773025da"
+        }
+      },
+      {
+        "question": "13(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.304829,
+          "y": 0.282502,
+          "w": 0.38902,
+          "h": 0.171655
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 966,
+          "height": 603,
+          "sha256": "69089e6533a32d9087271c6662dc242949948385460fcce3f2204b535c440bf4"
+        }
+      },
+      {
+        "question": "13(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.254633,
+          "y": 0.199525,
+          "w": 0.508235,
+          "h": 0.177989
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1261,
+          "height": 626,
+          "sha256": "d06d32b1b239cc2ff720aa30ab1c42ecf1f042750964ee4e2c2e59862e15b4b0"
+        }
+      },
+      {
+        "question": "14(b)(ii)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.204437,
+          "y": 0.440222,
+          "w": 0.601457,
+          "h": 0.283769
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1492,
+          "height": 996,
+          "sha256": "1624821ee31239147280b2be31a3c61c7b92449472d0f2f65117c96006b1194d"
+        }
+      },
+      {
+        "question": "14(c)(ii)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 15,
+        "box": {
+          "x": 0.199955,
+          "y": 0.473159,
+          "w": 0.661513,
+          "h": 0.298337
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1641,
+          "height": 1048,
+          "sha256": "1e7b38661a188d0f08691317f017b3d130801b8b235782198250a372c9437732"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_2",
+    "year": 2023,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2023-hsc-maths-ext-2.pdf",
+    "sha256": "5dea330e23614060c47eae59d4f8f05129f140162df8170e2f733014c466e184",
+    "samples": [
+      {
+        "question": "3",
+        "role": "question_figure",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.257423,
+          "y": 0.105569,
+          "w": 0.478058,
+          "h": 0.260755
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1186,
+          "height": 916,
+          "sha256": "531c64a43443a53380e0ecdbba090617d5e267df964f4b97a43fd6a2371410b6"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.220075,
+          "y": 0.102402,
+          "w": 0.560224,
+          "h": 0.288203
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1390,
+          "height": 1012,
+          "sha256": "50d2b7be7c1e100cdcb952b7a742cdbfde6314afb7d308d4caff7359e5d561bd"
+        }
+      },
+      {
+        "question": "9",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.337348,
+          "y": 0.103985,
+          "w": 0.31746,
+          "h": 0.141462
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 788,
+          "height": 498,
+          "sha256": "1277f4b5a5f4c548f90b2ab54d9fd8ca1aa4cfed4be676f8b429b807ec22bace"
+        }
+      },
+      {
+        "question": "12(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.242484,
+          "y": 0.438005,
+          "w": 0.529599,
+          "h": 0.166799
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1313,
+          "height": 586,
+          "sha256": "1a325c2203e43823b8daf469306aebc6d4242c8b050c8c69b689dfed732a8a9e"
+        }
+      },
+      {
+        "question": "13(iv)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.277591,
+          "y": 0.56057,
+          "w": 0.449673,
+          "h": 0.165743
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1115,
+          "height": 582,
+          "sha256": "1d30816f5de4a9f86e9f6c1d78a04aaa24d1dde12a0e7f4d25d2abf4c8494377"
+        }
+      },
+      {
+        "question": "15(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 15,
+        "box": {
+          "x": 0.196919,
+          "y": 0.189496,
+          "w": 0.613259,
+          "h": 0.307205
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1521,
+          "height": 1079,
+          "sha256": "b9a3a4ad48c28f2d5c577834e3c7c5a675fc0f413031d085e532c0a58ae40d94"
+        }
+      },
+      {
+        "question": "15(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 16,
+        "box": {
+          "x": 0.219328,
+          "y": 0.225389,
+          "w": 0.571429,
+          "h": 0.304566
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1418,
+          "height": 1070,
+          "sha256": "a89fd81daa5ffe764f044e9fe61b6577e8e37d9b4f7978f1a1edda96c34ba098"
+        }
+      },
+      {
+        "question": "15(c)",
+        "role": "question_figure",
+        "index": 2,
+        "page": 16,
+        "box": {
+          "x": 0.266387,
+          "y": 0.610187,
+          "w": 0.511671,
+          "h": 0.212721
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1269,
+          "height": 747,
+          "sha256": "54424f5de51db2d888c1a0feb08363d73008e49ca1bd7430d1b8f4d1424a39ff"
+        }
+      },
+      {
+        "question": "16(a)(i)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 17,
+        "box": {
+          "x": 0.209617,
+          "y": 0.269728,
+          "w": 0.578898,
+          "h": 0.175244
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1436,
+          "height": 615,
+          "sha256": "bb09fa53987a46d67aeabbaa319892184f2b93d49b65c18e63af2cbe9d3a1288"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_advanced",
+    "year": 2024,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2024-hsc-maths-adv.pdf",
+    "sha256": "aa44136bcba8b65a5cfc63b9f214536a0df149f1624db946ca84281936d36b47",
+    "samples": [
+      {
+        "question": "1",
+        "role": "question_figure",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.309711,
+          "y": 0.255476,
+          "w": 0.428011,
+          "h": 0.18844
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1062,
+          "height": 662,
+          "sha256": "e18328d9ca4867831ff7dc4cef6f4de6fb7b1c7fd19ab411430ccdd9713653fb"
+        }
+      },
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.258917,
+          "y": 0.105569,
+          "w": 0.477311,
+          "h": 0.250726
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1185,
+          "height": 880,
+          "sha256": "1b0702e65b8cdaa86b60f2155d50255fb189d99b694ec35c7dc24394255ac51b"
+        }
+      },
+      {
+        "question": "7",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.148366,
+          "y": 0.393771,
+          "w": 0.36676,
+          "h": 0.252837
+        },
+        "masks": [
+          {
+            "x": 0.156583,
+            "y": 0.395883,
+            "w": 0.04183,
+            "h": 0.025337
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 910,
+          "height": 888,
+          "sha256": "f50774087aae57b6d437b3c05dd85741b2502ddc01df82c12f3808f98fb02431"
+        }
+      },
+      {
+        "question": "7",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.536041,
+          "y": 0.394299,
+          "w": 0.356302,
+          "h": 0.254949
+        },
+        "masks": [
+          {
+            "x": 0.540523,
+            "y": 0.397466,
+            "w": 0.028385,
+            "h": 0.022697
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 885,
+          "height": 895,
+          "sha256": "a6b102c2933f6143af3eae5329e52dabb2ade958a5cb26b05d44fe6241820a5b"
+        }
+      },
+      {
+        "question": "7",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.151354,
+          "y": 0.654526,
+          "w": 0.36676,
+          "h": 0.254421
+        },
+        "masks": [
+          {
+            "x": 0.160317,
+            "y": 0.660333,
+            "w": 0.035855,
+            "h": 0.023225
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 910,
+          "height": 893,
+          "sha256": "511d44192a324444899e6b2e2bbae7543b42aed0555eb86f1176b43957b1be1c"
+        }
+      },
+      {
+        "question": "7",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.528571,
+          "y": 0.658749,
+          "w": 0.374977,
+          "h": 0.251781
+        },
+        "masks": [
+          {
+            "x": 0.536788,
+            "y": 0.660333,
+            "w": 0.044818,
+            "h": 0.025337
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 930,
+          "height": 885,
+          "sha256": "f11f6ae1dcfb16f02e461cb93d2ebe4c63a3279ad223b8f3a094168c9748355c"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.316433,
+          "y": 0.101346,
+          "w": 0.360784,
+          "h": 0.059118
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 895,
+          "height": 208,
+          "sha256": "9b398551b24de43f0396e894cfff44ab446eb9044a996f006edc4f2344b96a8f"
+        }
+      },
+      {
+        "question": "8",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.564426,
+          "y": 0.232251,
+          "w": 0.299533,
+          "h": 0.147268
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 743,
+          "height": 518,
+          "sha256": "534e11f04dcce7ebd9acb75f66eb557d64e1a2d01660e6d4a684c5fa657e6327"
+        }
+      },
+      {
+        "question": "8",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.194678,
+          "y": 0.232779,
+          "w": 0.305509,
+          "h": 0.145157
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 758,
+          "height": 510,
+          "sha256": "b0cd9f11612695d69e7d35992f0a8a04fb2aab53da6f7089a41b322909e500e5"
+        }
+      },
+      {
+        "question": "8",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.196919,
+          "y": 0.389021,
+          "w": 0.298039,
+          "h": 0.144101
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 740,
+          "height": 507,
+          "sha256": "3ad52e327d14e668a7b712bc8d45e52417bbb5cbc102df5ae69b9cc8fa926d48"
+        }
+      },
+      {
+        "question": "8",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.561438,
+          "y": 0.390604,
+          "w": 0.305509,
+          "h": 0.145685
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 759,
+          "height": 512,
+          "sha256": "016315c92807e33850129eea909cb86e4e5d1480a5255a63bd687e1bc6001da3"
+        }
+      },
+      {
+        "question": "9",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.294024,
+          "y": 0.134072,
+          "w": 0.430252,
+          "h": 0.237002
+        },
+        "category": "probability_or_set_diagram",
+        "output": {
+          "width": 1068,
+          "height": 832,
+          "sha256": "613120e40badd3425562fb4eb11a2c54002a8a0c33c73366ea8ed2ff41a1ee1e"
+        }
+      },
+      {
+        "question": "10",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.16704,
+          "y": 0.108208,
+          "w": 0.647619,
+          "h": 0.272895
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1606,
+          "height": 958,
+          "sha256": "2d43ddaa04c6303e4fb4cc69a2a330ea70d95a366fa2a4b31575ac40c405148a"
+        }
+      },
+      {
+        "question": "11",
+        "role": "question_figure",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.263399,
+          "y": 0.138823,
+          "w": 0.477311,
+          "h": 0.282396
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1185,
+          "height": 992,
+          "sha256": "10e87aa309f150e1a7f5548448d0e3babca5b0b32731605400d4e5b4fb33d7f5"
+        }
+      },
+      {
+        "question": "13",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.128198,
+          "y": 0.240169,
+          "w": 0.696172,
+          "h": 0.366324
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1727,
+          "height": 1286,
+          "sha256": "d9edd6a5b10a8236314c3aac8485f4dd78ed033704015e2660bdd2522c39861a"
+        }
+      },
+      {
+        "question": "14",
+        "role": "question_figure",
+        "index": 1,
+        "page": 14,
+        "box": {
+          "x": 0.20887,
+          "y": 0.142518,
+          "w": 0.581139,
+          "h": 0.238585
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1442,
+          "height": 838,
+          "sha256": "02777b6170c4682d97692f740cf76f1fac047168fe1deeb4f9a98040b7b3dcdd"
+        }
+      },
+      {
+        "question": "16",
+        "role": "question_figure",
+        "index": 1,
+        "page": 16,
+        "box": {
+          "x": 0.16704,
+          "y": 0.217472,
+          "w": 0.602801,
+          "h": 0.140934
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1495,
+          "height": 496,
+          "sha256": "785cdf00569a8392e1fe3f09bf63a87085d141dcb3db97c960bf6fc37bd91d74"
+        }
+      },
+      {
+        "question": "20",
+        "role": "question_figure",
+        "index": 1,
+        "page": 20,
+        "box": {
+          "x": 0.240243,
+          "y": 0.185801,
+          "w": 0.52437,
+          "h": 0.223278
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1301,
+          "height": 785,
+          "sha256": "24be3f3dccd183d991a09d710044e764ffbc2ab7062d1525c14168584d81baa6"
+        }
+      },
+      {
+        "question": "21",
+        "role": "question_figure",
+        "index": 1,
+        "page": 21,
+        "box": {
+          "x": 0.138655,
+          "y": 0.226445,
+          "w": 0.730532,
+          "h": 0.401161
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1812,
+          "height": 1408,
+          "sha256": "b58eef6221dbe63186de2923267de5319a91a7ecaddbd68d218719055a5b2eab"
+        }
+      },
+      {
+        "question": "22",
+        "role": "question_figure",
+        "index": 1,
+        "page": 22,
+        "box": {
+          "x": 0.099813,
+          "y": 0.134072,
+          "w": 0.746219,
+          "h": 0.264978
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1851,
+          "height": 930,
+          "sha256": "286052b1bdc0b0ad43a051b5c4e00419dfbd9b0ac76319e3253b743c75b44fc9"
+        }
+      },
+      {
+        "question": "23",
+        "role": "question_figure",
+        "index": 1,
+        "page": 24,
+        "box": {
+          "x": 0.284314,
+          "y": 0.277646,
+          "w": 0.420542,
+          "h": 0.138823
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1044,
+          "height": 488,
+          "sha256": "af2cdf27ccdaf3862f0d745f4012e443f602adb9d4e10183f6b759cca3f1f181"
+        }
+      },
+      {
+        "question": "28",
+        "role": "question_figure",
+        "index": 1,
+        "page": 30,
+        "box": {
+          "x": 0.317927,
+          "y": 0.247031,
+          "w": 0.481046,
+          "h": 0.233307
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 1193,
+          "height": 820,
+          "sha256": "b53616b7c037294ff9f576d1ab9823c1e591ae1c85ad745b14953cca3d01dc26"
+        }
+      },
+      {
+        "question": "31",
+        "role": "question_figure",
+        "index": 1,
+        "page": 34,
+        "box": {
+          "x": 0.331373,
+          "y": 0.200581,
+          "w": 0.338375,
+          "h": 0.209026
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 840,
+          "height": 734,
+          "sha256": "538ebee14dd8283ffdb9c230c5f617b23a543f08cea1b9a3163d57e099fcdc84"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_1",
+    "year": 2024,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2024-hsc-maths-ext-1.pdf",
+    "sha256": "958391196c7747d3a22d981c64519b1f3eb6a1d1122cc3b4758695ba5e084755",
+    "samples": [
+      {
+        "question": "2",
+        "role": "question_figure",
+        "index": 1,
+        "page": 2,
+        "box": {
+          "x": 0.243231,
+          "y": 0.44075,
+          "w": 0.501961,
+          "h": 0.240697
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1246,
+          "height": 845,
+          "sha256": "aa710d4a541268f7006a1e393c9bd76147d8ca1fbc12d43451f64e925d35fcf5"
+        }
+      },
+      {
+        "question": "11(g)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.277591,
+          "y": 0.330958,
+          "w": 0.428758,
+          "h": 0.253365
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1064,
+          "height": 889,
+          "sha256": "2e18ea9020f7b46f9700b3bb725ccef1881e67a73615ee22c7c105506c8037ed"
+        }
+      },
+      {
+        "question": "12(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 9,
+        "box": {
+          "x": 0.147619,
+          "y": 0.174716,
+          "w": 0.708123,
+          "h": 0.277118
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1757,
+          "height": 974,
+          "sha256": "c14a1023fbc92f9457d6de37aac5c7e2f6ddd3d706b695fbd81faf034ed4b3e0"
+        }
+      },
+      {
+        "question": "13(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.110271,
+          "y": 0.30351,
+          "w": 0.769374,
+          "h": 0.249142
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1908,
+          "height": 875,
+          "sha256": "b54938b2b9cb3bb865aa0efba1758efd4bce21a8e1ed736e5194e8f8c1076db5"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_2",
+    "year": 2024,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-05/2024-hsc-maths-ext-2.pdf",
+    "sha256": "a6362520e3ea42948d55789f10014b9e43db0f7122ee42827942546bc305f508",
+    "samples": [
+      {
+        "question": "6",
+        "role": "question_figure",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.362745,
+          "y": 0.112959,
+          "w": 0.25845,
+          "h": 0.216944
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 641,
+          "height": 762,
+          "sha256": "47ed91bf75dd994b25168ca52ca1f7cbb07410481ccc51e5a537858538853c69"
+        }
+      },
+      {
+        "question": "14(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.252941,
+          "y": 0.292953,
+          "w": 0.510177,
+          "h": 0.16152
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1265,
+          "height": 568,
+          "sha256": "880413057dcb5b0ef6228b8bc7e38d9c2bca2ab72a7487e5b4834d4219965a84"
+        }
+      },
+      {
+        "question": "15(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.40084,
+          "y": 0.185801,
+          "w": 0.213632,
+          "h": 0.254949
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 531,
+          "height": 896,
+          "sha256": "c1cdd3929bbc7fb0033f40912a1934279fb41cac3771bbcdb5b92744b5b90ae9"
+        }
+      },
+      {
+        "question": "16(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.190196,
+          "y": 0.226445,
+          "w": 0.609524,
+          "h": 0.240169
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1512,
+          "height": 843,
+          "sha256": "ea30caa166c37ed6ed3fe5b93cfa7eaceb613439a5bf637a6f90566f4a743db2"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_advanced",
+    "year": 2025,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-10/2025-hsc-maths-advanced.pdf",
+    "sha256": "b23eb942dd92ff0f79a426c741abc90e99a8fbd55952b106d817e6d09ea5deba",
+    "samples": [
+      {
+        "question": "2",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.559197,
+          "y": 0.110847,
+          "w": 0.24127,
+          "h": 0.156242
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 599,
+          "height": 549,
+          "sha256": "d6a68ea759c9dc010627d222ea6ef4f80aff60817c4cff78baa90f7a1caf26e9"
+        }
+      },
+      {
+        "question": "2",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.198413,
+          "y": 0.112431,
+          "w": 0.256209,
+          "h": 0.155186
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 637,
+          "height": 545,
+          "sha256": "62f8673114ea038a129834742fe7494fe0888841fa58a35789b25b00078d975c"
+        }
+      },
+      {
+        "question": "2",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.559197,
+          "y": 0.272367,
+          "w": 0.243511,
+          "h": 0.160992
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 604,
+          "height": 566,
+          "sha256": "792bf025a0e8173f93fbeca04a58e837046c6fa3374dda8df9d7868aa939a676"
+        }
+      },
+      {
+        "question": "2",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 3,
+        "box": {
+          "x": 0.197666,
+          "y": 0.273423,
+          "w": 0.256209,
+          "h": 0.156242
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 636,
+          "height": 549,
+          "sha256": "e9ca3565f05325512b57dbdd1ddaf8b5efe82b64fecf08887e27701f67fa8ed7"
+        }
+      },
+      {
+        "question": "4",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.519608,
+          "y": 0.110319,
+          "w": 0.34211,
+          "h": 0.23489
+        },
+        "masks": [
+          {
+            "x": 0.522596,
+            "y": 0.116653,
+            "w": 0.033613,
+            "h": 0.024809
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 849,
+          "height": 825,
+          "sha256": "8ad355aeb4f68a3832ea10cb1564029cd8c19bcb04b99cada05aa24f6bda7f88"
+        }
+      },
+      {
+        "question": "4",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.138655,
+          "y": 0.111903,
+          "w": 0.362278,
+          "h": 0.234363
+        },
+        "masks": [
+          {
+            "x": 0.152101,
+            "y": 0.117709,
+            "w": 0.044071,
+            "h": 0.027976
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 899,
+          "height": 823,
+          "sha256": "fbc56a0d8dea7ffea9711596bf164ad5d0874e152964253f20f27c980ec11bd0"
+        }
+      },
+      {
+        "question": "4",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.515873,
+          "y": 0.365796,
+          "w": 0.339122,
+          "h": 0.230668
+        },
+        "masks": [
+          {
+            "x": 0.518114,
+            "y": 0.372658,
+            "w": 0.035854,
+            "h": 0.021114
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 842,
+          "height": 810,
+          "sha256": "09fc58ae8903196d83d82d1acc6b22e60ebe1d0a84e6d2be69f1612ee6b8abe8"
+        }
+      },
+      {
+        "question": "4",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.140149,
+          "y": 0.367907,
+          "w": 0.357796,
+          "h": 0.224861
+        },
+        "masks": [
+          {
+            "x": 0.155089,
+            "y": 0.371074,
+            "w": 0.043324,
+            "h": 0.024281
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 888,
+          "height": 790,
+          "sha256": "784923d58a867d9dc9023b05787946f4077876a06c2bdd8de7c6c29808a635bd"
+        }
+      },
+      {
+        "question": "6",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.321662,
+          "y": 0.107152,
+          "w": 0.351074,
+          "h": 0.246503
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 871,
+          "height": 866,
+          "sha256": "8c54e888a12f09316c766d5f709c0c697b6823aea451b47c7b6a9db79db7cede"
+        }
+      },
+      {
+        "question": "6",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.152101,
+          "y": 0.389549,
+          "w": 0.357796,
+          "h": 0.248614
+        },
+        "masks": [
+          {
+            "x": 0.155836,
+            "y": 0.396318,
+            "w": 0.043324,
+            "h": 0.023753
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 888,
+          "height": 873,
+          "sha256": "8385ece077cc85fb84c9e5d1ee042918651b2156dfd1cc917edf90097de010de"
+        }
+      },
+      {
+        "question": "6",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.518861,
+          "y": 0.391132,
+          "w": 0.354809,
+          "h": 0.247031
+        },
+        "masks": [
+          {
+            "x": 0.527824,
+            "y": 0.396846,
+            "w": 0.026144,
+            "h": 0.020058
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 880,
+          "height": 867,
+          "sha256": "813a4fc79a43c081d3ead40ba66c3bdb8c1454bef199fb1963f00df55de00781"
+        }
+      },
+      {
+        "question": "6",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.518114,
+          "y": 0.643969,
+          "w": 0.347339,
+          "h": 0.248614
+        },
+        "masks": [
+          {
+            "x": 0.521102,
+            "y": 0.649155,
+            "w": 0.035107,
+            "h": 0.024809
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 862,
+          "height": 873,
+          "sha256": "029e9e6486e45793dd349d059db0b849fec53e7cb55729e33483f53b2b874c09"
+        }
+      },
+      {
+        "question": "6",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.154342,
+          "y": 0.645553,
+          "w": 0.354062,
+          "h": 0.244392
+        },
+        "masks": [
+          {
+            "x": 0.158824,
+            "y": 0.6481,
+            "w": 0.03436,
+            "h": 0.026392
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 879,
+          "height": 858,
+          "sha256": "a801f96125c8cbb1ffa03e1427166e7e84a8568b61526b23d9cbf1f64cb4001e"
+        }
+      },
+      {
+        "question": "9",
+        "role": "question_figure",
+        "index": 1,
+        "page": 7,
+        "box": {
+          "x": 0.190943,
+          "y": 0.104513,
+          "w": 0.577404,
+          "h": 0.28398
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1432,
+          "height": 997,
+          "sha256": "57f3fed16fa2f152527ea29a1715723083dfc642fe7521393726ceb911c71058"
+        }
+      },
+      {
+        "question": "10",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.289543,
+          "y": 0.11507,
+          "w": 0.407096,
+          "h": 0.280813
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1010,
+          "height": 986,
+          "sha256": "a5e2cecb79c7ac616aa069461cca5e8f4457f35d50e56a463d7323d90b15246c"
+        }
+      },
+      {
+        "question": "11",
+        "role": "question_figure",
+        "index": 1,
+        "page": 10,
+        "box": {
+          "x": 0.326891,
+          "y": 0.166799,
+          "w": 0.345845,
+          "h": 0.204803
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 858,
+          "height": 719,
+          "sha256": "343220552759ecbd1657026b5f6ec56a29f7498917879ff0a4845b37edcfd67d"
+        }
+      },
+      {
+        "question": "14",
+        "role": "question_figure",
+        "index": 1,
+        "page": 12,
+        "box": {
+          "x": 0.140896,
+          "y": 0.166799,
+          "w": 0.704388,
+          "h": 0.311956
+        },
+        "category": "statistical_chart",
+        "output": {
+          "width": 1747,
+          "height": 1095,
+          "sha256": "7312742cdccff7925218441885b76cf9978a5674308a8dfd2180b92ca9a1ecc1"
+        }
+      },
+      {
+        "question": "15(b)",
+        "role": "response_template",
+        "index": 1,
+        "page": 15,
+        "box": {
+          "x": 0.152848,
+          "y": 0.172077,
+          "w": 0.655089,
+          "h": 0.229084
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1625,
+          "height": 805,
+          "sha256": "0a67c8a35cde1908604e0a4e2bdc9519513bc81de8ade2df84815cb3cc97e7d3"
+        }
+      },
+      {
+        "question": "16(b)",
+        "role": "response_template",
+        "index": 1,
+        "page": 17,
+        "box": {
+          "x": 0.137908,
+          "y": 0.187912,
+          "w": 0.679739,
+          "h": 0.31829
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1686,
+          "height": 1117,
+          "sha256": "894644ee58c1c8eeffeb8ffcb7c6f87e9dec9afeccb6edc675c0f7d2918aec67"
+        }
+      },
+      {
+        "question": "24",
+        "role": "question_figure",
+        "index": 1,
+        "page": 25,
+        "box": {
+          "x": 0.253688,
+          "y": 0.151491,
+          "w": 0.503455,
+          "h": 0.229084
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1249,
+          "height": 805,
+          "sha256": "e26b2af89740de4e4aeb16f1d7e4dfbbdf8769862eb15decd7ae955cfadbbf40"
+        }
+      },
+      {
+        "question": "25(c)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 27,
+        "box": {
+          "x": 0.262652,
+          "y": 0.151491,
+          "w": 0.460131,
+          "h": 0.182106
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1141,
+          "height": 640,
+          "sha256": "281b1ef281ea2d364319d5a3f450f304079af9fbd1fbee07cd9d3c07f61a99db"
+        }
+      },
+      {
+        "question": "27",
+        "role": "question_figure",
+        "index": 1,
+        "page": 30,
+        "box": {
+          "x": 0.249206,
+          "y": 0.152019,
+          "w": 0.473576,
+          "h": 0.195302
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1175,
+          "height": 686,
+          "sha256": "7586c4f4a7d625f7bcd88d03fc37aab5e3a3ea398ae61825893f06cfe36f3136"
+        }
+      },
+      {
+        "question": "28",
+        "role": "question_figure",
+        "index": 1,
+        "page": 32,
+        "box": {
+          "x": 0.329132,
+          "y": 0.205859,
+          "w": 0.43324,
+          "h": 0.193719
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1075,
+          "height": 680,
+          "sha256": "407ce246d8caa6520ca5bc073b4ca8c71438b6fc101979cf6cb776dd616394d2"
+        }
+      },
+      {
+        "question": "28(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 33,
+        "box": {
+          "x": 0.099066,
+          "y": 0.152547,
+          "w": 0.804482,
+          "h": 0.28398
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1995,
+          "height": 997,
+          "sha256": "e147c0ab2c0c426c2279407e03974634002e12c75bacfb3926f4f1ad46c4d786"
+        }
+      },
+      {
+        "question": "29",
+        "role": "question_figure",
+        "index": 1,
+        "page": 34,
+        "box": {
+          "x": 0.221569,
+          "y": 0.191079,
+          "w": 0.554248,
+          "h": 0.277646
+        },
+        "category": "spatial_geometry_or_solid",
+        "output": {
+          "width": 1375,
+          "height": 975,
+          "sha256": "ebed88181085d94ead4918d85c135e0c7d85ce3ad9dcb24d0148899c2a80f7aa"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_1",
+    "year": 2025,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-10/2025-hsc-maths-extension-1.pdf",
+    "sha256": "499decf8f5e0c287821650474348dcb1a1ba2ad73a6f37de6ef78f9bf267e8b1",
+    "samples": [
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.226797,
+          "y": 0.105041,
+          "w": 0.54902,
+          "h": 0.293481
+        },
+        "category": "calculus_region_or_field",
+        "output": {
+          "width": 1362,
+          "height": 1031,
+          "sha256": "aadbb5e2e2415a297a66b241463641eb8af41004dc6cc9c95828627c520f670c"
+        }
+      },
+      {
+        "question": "9",
+        "role": "question_figure",
+        "index": 1,
+        "page": 6,
+        "box": {
+          "x": 0.309711,
+          "y": 0.10029,
+          "w": 0.380205,
+          "h": 0.171549
+        },
+        "category": "vector_diagram",
+        "output": {
+          "width": 944,
+          "height": 603,
+          "sha256": "e0fb8cfc956a773269a32a3f98a4776d022d4b320b7fac6b65c370789a505368"
+        }
+      },
+      {
+        "question": "12(a)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 8,
+        "box": {
+          "x": 0.301494,
+          "y": 0.168382,
+          "w": 0.403361,
+          "h": 0.137767
+        },
+        "category": "plane_geometry",
+        "output": {
+          "width": 1001,
+          "height": 484,
+          "sha256": "6536c7fd57b799598f4546c48fd6129d5d559976012a4cc383ed2d7631ee8079"
+        }
+      },
+      {
+        "question": "14(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 11,
+        "box": {
+          "x": 0.287302,
+          "y": 0.330166,
+          "w": 0.386928,
+          "h": 0.190024
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 960,
+          "height": 667,
+          "sha256": "4e5dce88c93d8fde46fe6bf6a1dc2987150f1b97b41c30f846d7340d343c2d26"
+        }
+      }
+    ]
+  },
+  {
+    "course": "mathematics_extension_2",
+    "year": 2025,
+    "url": "https://www.nsw.gov.au/sites/default/files/noindex/2025-10/2025-hsc-maths-extension-2.pdf",
+    "sha256": "d0699cc54110c59d1c95b657003f495ae3d334fd2f641d5e0f183a036d1f724b",
+    "samples": [
+      {
+        "question": "7",
+        "role": "question_figure",
+        "index": 1,
+        "page": 4,
+        "box": {
+          "x": 0.178245,
+          "y": 0.099235,
+          "w": 0.643137,
+          "h": 0.405912
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1596,
+          "height": 1425,
+          "sha256": "3902864686112ec5b09556c383622a6d6b112c742ba03a0d6b5a928b5c0d13d0"
+        }
+      },
+      {
+        "question": "8",
+        "role": "question_figure",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.271615,
+          "y": 0.102402,
+          "w": 0.45042,
+          "h": 0.216944
+        },
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 1117,
+          "height": 762,
+          "sha256": "234201a8ef091708935ab497527270338b1d1e2c875d776588aef90047b4267d"
+        }
+      },
+      {
+        "question": "8",
+        "option": "A",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.147619,
+          "y": 0.377936,
+          "w": 0.355556,
+          "h": 0.178939
+        },
+        "masks": [
+          {
+            "x": 0.159571,
+            "y": 0.380048,
+            "w": 0.036601,
+            "h": 0.019002
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 883,
+          "height": 629,
+          "sha256": "ddbd53f269febd2f98638bd230ef569d448f9c07b76a0eb2571543da276ba5b1"
+        }
+      },
+      {
+        "question": "8",
+        "option": "B",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.526331,
+          "y": 0.377936,
+          "w": 0.357796,
+          "h": 0.18105
+        },
+        "masks": [
+          {
+            "x": 0.5338,
+            "y": 0.380575,
+            "w": 0.035107,
+            "h": 0.020058
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 888,
+          "height": 636,
+          "sha256": "db6307e969dfe10d2be410f9ef25b9826753855f26e9aa23bba5bdfc7d109ca0"
+        }
+      },
+      {
+        "question": "8",
+        "option": "C",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.143137,
+          "y": 0.573766,
+          "w": 0.368254,
+          "h": 0.187912
+        },
+        "masks": [
+          {
+            "x": 0.158824,
+            "y": 0.581156,
+            "w": 0.039589,
+            "h": 0.022697
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 914,
+          "height": 660,
+          "sha256": "05ad4607fd9ef5ed5d99937c02ff9015dd580bdf3a2ced101bba2ec9863de352"
+        }
+      },
+      {
+        "question": "8",
+        "option": "D",
+        "role": "answer_option",
+        "index": 1,
+        "page": 5,
+        "box": {
+          "x": 0.525584,
+          "y": 0.573766,
+          "w": 0.355556,
+          "h": 0.183162
+        },
+        "masks": [
+          {
+            "x": 0.530812,
+            "y": 0.5801,
+            "w": 0.038095,
+            "h": 0.023753
+          }
+        ],
+        "category": "cartesian_function_plot",
+        "output": {
+          "width": 883,
+          "height": 644,
+          "sha256": "e7dbcafa57682e6d368cf8a1a9b382bb80c74585592a5aca9d7273ade960cf25"
+        }
+      },
+      {
+        "question": "16(b)",
+        "role": "question_figure",
+        "index": 1,
+        "page": 13,
+        "box": {
+          "x": 0.302988,
+          "y": 0.395408,
+          "w": 0.380952,
+          "h": 0.184745
+        },
+        "category": "mechanics_or_motion_schematic",
+        "output": {
+          "width": 945,
+          "height": 649,
+          "sha256": "a7112d0c7c10a69d72628a951e19bca05f2be64c64c8586faa7c5e5fe101c592"
+        }
+      },
+      {
+        "question": "11(a)",
+        "role": "response_template",
+        "index": 1,
+        "page": 18,
+        "box": {
+          "x": 0.291783,
+          "y": 0.158353,
+          "w": 0.428011,
+          "h": 0.279229
+        },
+        "category": "complex_plane",
+        "output": {
+          "width": 1062,
+          "height": 981,
+          "sha256": "ef57ac14ff055014202478410b22edff65877d6c4a50cb261a40777ea5e0a536"
+        }
+      }
+    ]
+  }
+]
