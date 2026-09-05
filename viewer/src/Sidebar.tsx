@@ -1,4 +1,6 @@
 import { Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
+import { isJudgeable, judgingState } from "./judging.ts";
+import { JudgingBadge } from "./JudgingBadge.tsx";
 import { StatusBadge } from "./StatusBadge.tsx";
 import type { RunSummary } from "./types.ts";
 
@@ -19,6 +21,11 @@ export function Sidebar({ runs, selected, loading, onSelect, onRefresh }: Props)
           Refresh
         </Button>
       </Flex>
+      <Box px="3" pb="2">
+        <Text size="1" color="gray">
+          {summary(runs)}
+        </Text>
+      </Box>
       <Box flexGrow="1" minHeight="0">
         <ScrollArea type="auto" scrollbars="vertical">
           <Box px="3" pb="3">
@@ -42,11 +49,7 @@ export function Sidebar({ runs, selected, loading, onSelect, onRefresh }: Props)
                     </Text>
                     <Flex align="center" gap="2">
                       <StatusBadge run={run} />
-                      {run.result && (
-                        <Text size="1" color="gray" truncate>
-                          {run.result.model}@{run.result.reasoning}
-                        </Text>
-                      )}
+                      <JudgingBadge state={judgingState(run)} />
                     </Flex>
                   </Flex>
                 </RadioCards.Item>
@@ -57,4 +60,11 @@ export function Sidebar({ runs, selected, loading, onSelect, onRefresh }: Props)
       </Box>
     </Flex>
   );
+}
+
+function summary(runs: RunSummary[]): string {
+  const states = runs.filter(isJudgeable).map(judgingState);
+  const judged = states.filter((s) => s === "pass" || s === "fail").length;
+  const passed = states.filter((s) => s === "pass").length;
+  return `judged ${judged}/${states.length} · ${passed} pass`;
 }

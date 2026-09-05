@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./manifest": "./src/manifest.ts",
     "./output": "./src/output.ts"
   },
   "scripts": {

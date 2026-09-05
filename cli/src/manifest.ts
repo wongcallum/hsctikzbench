@@ -45,6 +45,8 @@ export interface Sample {
   readonly box: Box;
   readonly masks?: readonly Box[];
   readonly category: Category;
+  // human judging criteria for reproductions of this figure, one per item
+  readonly checklist?: readonly string[];
   output?: SampleOutput;
 }
 
@@ -119,6 +121,7 @@ function sample(value: unknown, where: string): Sample {
         "box",
         "masks",
         "category",
+        "checklist",
         "output"
       ].includes(key)
     ) {
@@ -182,8 +185,25 @@ function sample(value: unknown, where: string): Sample {
     box: box(r.box, `${where}.box`),
     masks: masks?.map((m, i) => box(m, `${where}.masks[${i}]`)),
     category: r.category as Category,
+    checklist: r.checklist === undefined ? undefined : checklist(r.checklist, `${where}.checklist`),
     output: r.output === undefined ? undefined : output(r.output, `${where}.output`)
   };
+}
+
+function checklist(value: unknown, where: string): readonly string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new ManifestError(`manifest: ${where}: expected a non-empty array`);
+  }
+  const items = value.map((item, i) => {
+    if (typeof item !== "string" || item.trim().length === 0) {
+      throw new ManifestError(`manifest: ${where}[${i}]: expected a non-empty string`);
+    }
+    return item;
+  });
+  if (new Set(items).size !== items.length) {
+    throw new ManifestError(`manifest: ${where}: items must be unique`);
+  }
+  return items;
 }
 
 function output(value: unknown, where: string): SampleOutput {
