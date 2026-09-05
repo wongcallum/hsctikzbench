@@ -1,0 +1,227 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildCommand, numberParser } from "@stricli/core";
+import type { LocalContext } from "../context.ts";
+import { runAgent } from "../loop.ts";
+import { examId, parseManifest, sampleStem, type Exam, type Sample } from "../manifest.ts";
+import { resolveModel } from "../model.ts";
+import { OutputDir, type RunResult, type RunStatus } from "../output.ts";
+import { checkTexCapabilities } from "../prompt.ts";
+import { checkContainer } from "../render.ts";
+import { agentFlags, loadSystemPrompt, type AgentFlags } from "./run.ts";
+
+const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+const DATASET_DIR = join(REPO_ROOT, "dataset");
+const DATA_DIR = join(REPO_ROOT, "data");
+
+interface BenchFlags extends AgentFlags {
+  readonly manifest: string;
+  readonly crops: string;
+  readonly out: string;
+  readonly exam: readonly string[];
+  readonly sample: readonly string[];
+  readonly jobs: number;
+  readonly resume: boolean;
+}
+
+interface Job {
+  readonly exam: Exam;
+  readonly sample: Sample;
+  readonly stem: string;
+}
+
+type Outcome =
+  | { kind: "skipped" }
+  | { kind: "failed"; message: string }
+  | { kind: "ran"; result: RunResult };
+
+export const benchCommand = buildCommand({
+  async func(this: LocalContext, flags: BenchFlags): Promise<void> {
+    const log = (line: string) => this.process.stderr.write(`${line}\n`);
+    const out = (line: string) => this.process.stdout.write(`${line}\n`);
+    if (flags.jobs < 1) throw new Error("--jobs must be at least 1");
+
+    const manifest = parseManifest(JSON.parse(await readFile(flags.manifest, "utf8")));
+    const jobs = selectJobs(manifest, flags);
+    if (jobs.length === 0) throw new Error("no samples selected");
+
+    const { models, model, authSource } = await resolveModel(flags);
+    await checkContainer(flags.container);
+    await checkTexCapabilities(flags.container);
+    const systemPrompt = await loadSystemPrompt(flags.prompt);
+    log(`auth: ${authSource}`);
+    log(`${jobs.length} samples, ${flags.jobs} jobs, output in ${flags.out}`);
+
+    const outcomes = new Map<string, Outcome>();
+    let next = 0;
+    let done = 0;
+    const runOne = async (job: Job): Promise<Outcome> => {
+      const dir = new OutputDir(join(flags.out, job.stem));
+      if (flags.resume && (await dir.isComplete())) return { kind: "skipped" };
+      const referencePng = await loadCrop(flags.crops, job);
+      // Under --resume a directory without a result is a run that was interrupted; start it over.
+      await dir.prepare(referencePng, { replace: flags.resume });
+      const result = await runAgent({
+        models,
+        model,
+        reasoning: flags.reasoning,
+        container: flags.container,
+        maxTurns: flags.maxTurns,
+        systemPrompt,
+        referencePng,
+        out: dir,
+        log: (line) => log(`[${job.stem}] ${line}`)
+      });
+      return { kind: "ran", result };
+    };
+    const worker = async () => {
+      while (next < jobs.length) {
+        const job = jobs[next++]!;
+        let outcome: Outcome;
+        try {
+          outcome = await runOne(job);
+        } catch (e) {
+          outcome = { kind: "failed", message: e instanceof Error ? e.message : String(e) };
+        }
+        outcomes.set(job.stem, outcome);
+        done++;
+        log(`[${job.stem}] ${describe(outcome)}  (${done}/${jobs.length})`);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(flags.jobs, jobs.length) }, worker));
+
+    const counts: Record<RunStatus | "skipped" | "failed", number> = {
+      submitted: 0,
+      max_turns: 0,
+      error: 0,
+      skipped: 0,
+      failed: 0
+    };
+    let cost = 0;
+    for (const stem of [...outcomes.keys()].sort()) {
+      const outcome = outcomes.get(stem)!;
+      if (outcome.kind === "ran") {
+        counts[outcome.result.status]++;
+        cost += outcome.result.usage.cost;
+      } else {
+        counts[outcome.kind]++;
+      }
+      out(`${stem}: ${describe(outcome)}`);
+    }
+    out(
+      `${counts.submitted} submitted, ${counts.max_turns} hit max turns, ${counts.error} errored, ` +
+        `${counts.failed} failed to start, ${counts.skipped} skipped; cost $${cost.toFixed(4)}`
+    );
+    if (counts.error > 0 || counts.failed > 0) this.process.exitCode = 1;
+  },
+  parameters: {
+    flags: {
+      ...agentFlags,
+      manifest: {
+        kind: "parsed",
+        parse: String,
+        brief: "Path to the dataset manifest",
+        default: join(DATASET_DIR, "manifest.json")
+      },
+      crops: {
+        kind: "parsed",
+        parse: String,
+        brief: "Directory holding <stem>.png for each sample, as written by dataset build",
+        default: join(DATA_DIR, "crops")
+      },
+      out: {
+        kind: "parsed",
+        parse: String,
+        brief: "Directory to write one run directory per sample into, named by sample stem"
+      },
+      exam: {
+        kind: "parsed",
+        parse: String,
+        brief: "Only run samples from this exam, given as <year>-<course>; repeatable",
+        variadic: true,
+        default: []
+      },
+      sample: {
+        kind: "parsed",
+        parse: String,
+        brief: "Only run the sample with this stem; repeatable",
+        variadic: true,
+        default: []
+      },
+      jobs: {
+        kind: "parsed",
+        parse: numberParser,
+        brief: "Number of samples run concurrently",
+        default: "4"
+      },
+      resume: {
+        kind: "boolean",
+        brief:
+          "Skip samples that already have a result in the output directory and restart interrupted ones",
+        default: false
+      }
+    }
+  },
+  docs: {
+    brief: "Run the benchmark on every dataset sample, several at a time."
+  }
+});
+
+function selectJobs(manifest: readonly Exam[], flags: BenchFlags): Job[] {
+  const exams = new Set(flags.exam);
+  for (const id of exams) {
+    if (!manifest.some((e) => examId(e) === id)) {
+      throw new Error(`no exam ${id} in manifest. Known exams: ${manifest.map(examId).join(", ")}`);
+    }
+  }
+  const jobs: Job[] = [];
+  for (const exam of manifest) {
+    if (exams.size > 0 && !exams.has(examId(exam))) continue;
+    for (const sample of exam.samples) jobs.push({ exam, sample, stem: sampleStem(exam, sample) });
+  }
+  if (flags.sample.length === 0) return jobs;
+
+  const stems = new Set(flags.sample);
+  for (const stem of stems) {
+    if (!jobs.some((j) => j.stem === stem)) throw new Error(`no sample ${stem} in selection`);
+  }
+  return jobs.filter((j) => stems.has(j.stem));
+}
+
+/** Reads the sample's crop and checks it against the digest recorded in the manifest. */
+async function loadCrop(cropsDir: string, { sample, stem }: Job): Promise<Buffer> {
+  const file = join(cropsDir, `${stem}.png`);
+  let png: Buffer;
+  try {
+    png = await readFile(file);
+  } catch (e) {
+    throw new Error(
+      `missing crop ${file} (${e instanceof Error ? e.message : String(e)}); run dataset build first`
+    );
+  }
+  if (sample.output) {
+    const digest = createHash("sha256").update(png).digest("hex");
+    if (digest !== sample.output.sha256) {
+      throw new Error(
+        `crop ${file} has sha256 ${digest}, manifest expects ${sample.output.sha256}; rerun dataset build`
+      );
+    }
+  }
+  return png;
+}
+
+function describe(outcome: Outcome): string {
+  switch (outcome.kind) {
+    case "skipped":
+      return "skipped";
+    case "failed":
+      return `failed: ${outcome.message}`;
+    case "ran": {
+      const { result } = outcome;
+      const detail = result.status === "error" ? `: ${result.error}` : "";
+      return `${result.status}${detail}  turns=${result.turns} cost=$${result.usage.cost.toFixed(4)}`;
+    }
+  }
+}

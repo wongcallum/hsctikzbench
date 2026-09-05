@@ -1,10 +1,11 @@
 import { buildApplication, buildRouteMap, run, text_en } from "@stricli/core";
+import { benchCommand } from "./commands/bench.ts";
 import { datasetRoutes } from "./commands/dataset.ts";
 import { loginCommand } from "./commands/login.ts";
 import { runCommand } from "./commands/run.ts";
 
 const routes = buildRouteMap({
-  routes: { run: runCommand, login: loginCommand, dataset: datasetRoutes },
+  routes: { run: runCommand, bench: benchCommand, login: loginCommand, dataset: datasetRoutes },
   docs: { brief: "HSCTikZBench benchmark CLI" }
 });
 

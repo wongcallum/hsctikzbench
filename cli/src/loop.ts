@@ -111,105 +111,121 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
   };
   const nudge = (text: string) => push({ role: "user", content: text, timestamp: Date.now() });
 
-  while (turns < maxTurns) {
-    turns++;
+  const loop = async (): Promise<void> => {
+    while (turns < maxTurns) {
+      turns++;
 
-    const complete = () =>
-      models.completeSimple(
-        model,
-        context,
-        opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
-      );
-    let reply = await complete();
-    for (let attempt = 1; reply.stopReason === "error" && attempt <= PROVIDER_RETRIES; attempt++) {
-      const delay = PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1);
+      const complete = () =>
+        models.completeSimple(
+          model,
+          context,
+          opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
+        );
+      let reply = await complete();
+      for (
+        let attempt = 1;
+        reply.stopReason === "error" && attempt <= PROVIDER_RETRIES;
+        attempt++
+      ) {
+        const delay = PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1);
+        log(
+          `turn ${turns}/${maxTurns}  provider error: ${reply.errorMessage ?? "unknown"}; retry ${attempt}/${PROVIDER_RETRIES} in ${delay / 1000}s`
+        );
+        await sleep(delay);
+        reply = await complete();
+      }
+      push(reply);
+
+      usage.input += reply.usage.input;
+      usage.output += reply.usage.output;
+      usage.cacheRead += reply.usage.cacheRead;
+      usage.cacheWrite += reply.usage.cacheWrite;
+      usage.cost += reply.usage.cost.total;
+
+      if (reply.stopReason === "error") {
+        status = "error";
+        error = reply.errorMessage ?? "provider returned an error";
+        log(`turn ${turns}/${maxTurns}  error: ${error}`);
+        break;
+      }
+
+      const calls = reply.content.filter((b): b is ToolCall => b.type === "toolCall");
+      const summary = calls.length === 0 ? "(no tool call)" : calls.map((c) => c.name).join("+");
       log(
-        `turn ${turns}/${maxTurns}  provider error: ${reply.errorMessage ?? "unknown"}; retry ${attempt}/${PROVIDER_RETRIES} in ${delay / 1000}s`
+        `turn ${turns}/${maxTurns}  ${summary}  stop=${reply.stopReason}  in=${usage.input} out=${usage.output} cost=$${usage.cost.toFixed(4)}`
       );
-      await sleep(delay);
-      reply = await complete();
-    }
-    push(reply);
 
-    usage.input += reply.usage.input;
-    usage.output += reply.usage.output;
-    usage.cacheRead += reply.usage.cacheRead;
-    usage.cacheWrite += reply.usage.cacheWrite;
-    usage.cost += reply.usage.cost.total;
+      if (reply.stopReason === "length") {
+        nudge(
+          `Your reply was cut off by the output limit. Reply with a single tool call: render or submit. ${remaining()}`
+        );
+        continue;
+      }
+      if (calls.length === 0) {
+        nudge(`Reply with a single tool call: render or submit. ${remaining()}`);
+        continue;
+      }
+      if (calls.length > 1) {
+        for (const call of calls)
+          push(
+            toolResult(call, "Only one tool call per reply is allowed. None were executed.", true)
+          );
+        continue;
+      }
 
-    if (reply.stopReason === "error") {
-      status = "error";
-      error = reply.errorMessage ?? "provider returned an error";
-      log(`turn ${turns}/${maxTurns}  error: ${error}`);
+      const call = calls[0]!;
+      try {
+        validateToolCall(tools, call);
+      } catch (e) {
+        push(
+          toolResult(call, `Invalid tool call: ${e instanceof Error ? e.message : String(e)}`, true)
+        );
+        continue;
+      }
+
+      if (call.name === "render") {
+        const source = String(call.arguments["source"]);
+        renders++;
+        const result: RenderResult = await render(opts.container, source);
+        if (result.ok) {
+          successfulRenders++;
+          const name = await out.saveRender(renders, result.png);
+          imageNames.set(result.png.toString("base64"), name);
+          lastGoodRender = { source, png: result.png };
+          push(toolResult(call, "Rendered successfully.", false, result.png));
+        } else {
+          lastGoodRender = undefined;
+          push(toolResult(call, `Render failed:\n${result.message}`, true));
+        }
+        continue;
+      }
+
+      // submit
+      if (!lastGoodRender) {
+        push(
+          toolResult(
+            call,
+            "Nothing to submit: your most recent render did not succeed. Fix it and render again first.",
+            true
+          )
+        );
+        continue;
+      }
+      submission = lastGoodRender;
+      push(toolResult(call, "Submitted.", false));
+      status = "submitted";
       break;
     }
+  };
 
-    const calls = reply.content.filter((b): b is ToolCall => b.type === "toolCall");
-    const summary = calls.length === 0 ? "(no tool call)" : calls.map((c) => c.name).join("+");
-    log(
-      `turn ${turns}/${maxTurns}  ${summary}  stop=${reply.stopReason}  in=${usage.input} out=${usage.output} cost=$${usage.cost.toFixed(4)}`
-    );
-
-    if (reply.stopReason === "length") {
-      nudge(
-        `Your reply was cut off by the output limit. Reply with a single tool call: render or submit. ${remaining()}`
-      );
-      continue;
-    }
-    if (calls.length === 0) {
-      nudge(`Reply with a single tool call: render or submit. ${remaining()}`);
-      continue;
-    }
-    if (calls.length > 1) {
-      for (const call of calls)
-        push(
-          toolResult(call, "Only one tool call per reply is allowed. None were executed.", true)
-        );
-      continue;
-    }
-
-    const call = calls[0]!;
-    try {
-      validateToolCall(tools, call);
-    } catch (e) {
-      push(
-        toolResult(call, `Invalid tool call: ${e instanceof Error ? e.message : String(e)}`, true)
-      );
-      continue;
-    }
-
-    if (call.name === "render") {
-      const source = String(call.arguments["source"]);
-      renders++;
-      const result: RenderResult = await render(opts.container, source);
-      if (result.ok) {
-        successfulRenders++;
-        const name = await out.saveRender(renders, result.png);
-        imageNames.set(result.png.toString("base64"), name);
-        lastGoodRender = { source, png: result.png };
-        push(toolResult(call, "Rendered successfully.", false, result.png));
-      } else {
-        lastGoodRender = undefined;
-        push(toolResult(call, `Render failed:\n${result.message}`, true));
-      }
-      continue;
-    }
-
-    // submit
-    if (!lastGoodRender) {
-      push(
-        toolResult(
-          call,
-          "Nothing to submit: your most recent render did not succeed. Fix it and render again first.",
-          true
-        )
-      );
-      continue;
-    }
-    submission = lastGoodRender;
-    push(toolResult(call, "Submitted.", false));
-    status = "submitted";
-    break;
+  try {
+    await loop();
+  } catch (e) {
+    // e.g. the renderer container died, or docker itself failed. Keep whatever transcript we
+    // have rather than losing the run.
+    status = "error";
+    error = e instanceof Error ? e.message : String(e);
+    log(`turn ${turns}/${maxTurns}  crashed: ${error}`);
   }
 
   const result: RunResult = {

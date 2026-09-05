@@ -1,4 +1,4 @@
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { access, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Context, Message } from "@earendil-works/pi-ai";
 
@@ -31,10 +31,22 @@ export interface Submission {
   png: Buffer;
 }
 
-export class OutputDir {
-  constructor(private readonly dir: string) {}
+export const RESULT_FILE = "result.json";
 
-  async prepare(referencePng: Buffer): Promise<void> {
+export class OutputDir {
+  constructor(readonly dir: string) {}
+
+  async isComplete(): Promise<boolean> {
+    try {
+      await access(join(this.dir, RESULT_FILE));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async prepare(referencePng: Buffer, { replace = false } = {}): Promise<void> {
+    if (replace) await rm(this.dir, { recursive: true, force: true });
     await mkdir(this.dir, { recursive: true });
     const existing = await readdir(this.dir);
     if (existing.length > 0) throw new Error(`output directory ${this.dir} is not empty`);
@@ -63,7 +75,7 @@ export class OutputDir {
       messages: context.messages.map((m) => stripImages(m, imageNames))
     };
     await writeFile(join(this.dir, "transcript.json"), JSON.stringify(transcript, null, 2));
-    await writeFile(join(this.dir, "result.json"), JSON.stringify(result, null, 2));
+    await writeFile(join(this.dir, RESULT_FILE), JSON.stringify(result, null, 2));
   }
 }
 
