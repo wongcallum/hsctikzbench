@@ -1,0 +1,25 @@
+{
+  "name": "hsctikzbench-rubric",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@radix-ui/themes": "^3",
+    "next-themes": "^0.4.6",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/node": "^26",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6",
+    "hsctikzbench-cli": "workspace:*",
+    "typescript": "^7",
+    "vite": "^8"
+  }
+}

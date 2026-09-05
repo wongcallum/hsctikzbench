@@ -12,9 +12,12 @@ import type {
 type AuthFile = Record<string, Credential>;
 
 export class FileCredentialStore implements CredentialStore {
+  readonly path: string;
   private chain: Promise<unknown> = Promise.resolve();
 
-  constructor(readonly path: string) {}
+  constructor(path: string) {
+    this.path = path;
+  }
 
   async read(providerId: string, options?: AuthOperationOptions): Promise<Credential | undefined> {
     options?.signal?.throwIfAborted();
