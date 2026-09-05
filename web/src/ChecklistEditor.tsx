@@ -29,7 +29,7 @@ export function ChecklistEditor({
 }: Props) {
   const count = fromText(text)?.length ?? 0;
   return (
-    <Flex direction="column" gap="2">
+    <Flex direction="column" gap="2" flexGrow="1" minHeight="0">
       <Flex align="baseline" gap="2">
         <Text size="2" weight="bold">
           Checklist
@@ -39,10 +39,11 @@ export function ChecklistEditor({
         </Text>
       </Flex>
       <TextArea
+        aria-label="Checklist"
         value={text}
         onChange={(e) => onChange(e.target.value)}
         disabled={busy !== null}
-        rows={10}
+        style={{ flex: 1, minHeight: 120 }}
         placeholder="No checklist. Draft one or write items here."
       />
       <Flex gap="2" align="center">

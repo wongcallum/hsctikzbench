@@ -25,6 +25,7 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hash, setHash] = useHash();
+  const [editingChecklist, setEditingChecklist] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -80,6 +81,8 @@ export function App() {
           sample={selected}
           samples={samples}
           canDraft={canDraft}
+          editingChecklist={editingChecklist}
+          onEditingChecklistChange={setEditingChecklist}
           loading={loading}
           onSelect={setHash}
           onRefresh={refresh}
@@ -106,6 +109,8 @@ interface WorkspaceProps {
   sample: SampleSummary;
   samples: SampleSummary[];
   canDraft: boolean;
+  editingChecklist: boolean;
+  onEditingChecklistChange: (editing: boolean) => void;
   loading: boolean;
   onSelect: (stem: string) => void;
   onRefresh: () => Promise<void>;
@@ -116,6 +121,8 @@ function Workspace({
   sample,
   samples,
   canDraft,
+  editingChecklist,
+  onEditingChecklistChange,
   loading,
   onSelect,
   onRefresh,
@@ -223,14 +230,14 @@ function Workspace({
         return;
       }
       const digit = /^Digit([1-9])$/.exec(event.code);
-      if (digit) {
+      if (digit && !editingChecklist) {
         event.preventDefault();
         toggleItem(Number(digit[1]) - 1, !event.shiftKey);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [samples, sample.stem, select, toggleItem, nextPending]);
+  }, [samples, sample.stem, select, toggleItem, nextPending, editingChecklist]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -258,23 +265,29 @@ function Workspace({
         selectedRender={selectedRender}
         onSelectRender={setSelectedRender}
         error={actionError}
+        editingChecklist={editingChecklist}
+        onEditingChecklistChange={onEditingChecklistChange}
+        busy={busy !== null}
       >
-        <ChecklistEditor
-          sample={sample}
-          text={text}
-          dirty={dirty}
-          busy={busy}
-          canDraft={canDraft}
-          onChange={setEdited}
-          onDraft={draft}
-          onSave={save}
-          onCancel={cancel}
-        />
-        <JudgingPanel
-          sample={sample}
-          onToggleItem={toggleItem}
-          onNoSubmission={recordNoSubmission}
-        />
+        {editingChecklist ? (
+          <ChecklistEditor
+            sample={sample}
+            text={text}
+            dirty={dirty}
+            busy={busy}
+            canDraft={canDraft}
+            onChange={setEdited}
+            onDraft={draft}
+            onSave={save}
+            onCancel={cancel}
+          />
+        ) : (
+          <JudgingPanel
+            sample={sample}
+            onToggleItem={toggleItem}
+            onNoSubmission={recordNoSubmission}
+          />
+        )}
       </SampleView>
     </Frame>
   );

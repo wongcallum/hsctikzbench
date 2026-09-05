@@ -47,7 +47,7 @@ function Body({ sample, onToggleItem, onNoSubmission }: Props) {
   if (sample.checklist === null) {
     return (
       <Text size="2" color="gray">
-        No checklist to judge against. Save one above.
+        No checklist to judge against. Turn on Edit checklist to create one.
       </Text>
     );
   }
