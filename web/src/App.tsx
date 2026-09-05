@@ -1,5 +1,5 @@
 import { Callout, Flex, Grid, Separator, Text, Theme } from "@radix-ui/themes";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { draftChecklist, fetchListing, saveChecklist, saveJudgement } from "./api.ts";
 import { ChecklistEditor, type Busy } from "./ChecklistEditor.tsx";
 import { JudgingPanel } from "./JudgingPanel.tsx";
@@ -25,10 +25,6 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hash, setHash] = useHash();
-  const [selectedRender, setSelectedRender] = useState<string | null>(null);
-  const [edited, setEdited] = useState<string | null>(null);
-  const [busy, setBusy] = useState<Busy>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -48,14 +44,91 @@ export function App() {
     void refresh();
   }, [refresh]);
 
-  const selected = samples.find((s) => s.stem === hash) ?? samples[0] ?? null;
-  const savedText = toText(selected?.checklist ?? null);
-  const text = edited ?? savedText;
-  const dirty = text !== savedText;
+  const selected = samples.find((sample) => sample.stem === hash) ?? samples[0] ?? null;
 
   useEffect(() => {
     if (selected && selected.stem !== hash) setHash(selected.stem);
   }, [selected, hash, setHash]);
+
+  const patch = useCallback(
+    (stem: string, changes: Partial<SampleSummary>) =>
+      setSamples((current) =>
+        current.map((sample) => (sample.stem === stem ? { ...sample, ...changes } : sample))
+      ),
+    []
+  );
+
+  return (
+    <Theme accentColor="gray" grayColor="slate">
+      {error ? (
+        <Frame
+          samples={samples}
+          selected={selected?.stem ?? null}
+          loading={loading}
+          onSelect={setHash}
+          onRefresh={() => void refresh()}
+        >
+          <Flex p="4">
+            <Callout.Root color="red">
+              <Callout.Text>{error}</Callout.Text>
+            </Callout.Root>
+          </Flex>
+        </Frame>
+      ) : selected ? (
+        <Workspace
+          key={selected.stem}
+          sample={selected}
+          samples={samples}
+          canDraft={canDraft}
+          loading={loading}
+          onSelect={setHash}
+          onRefresh={refresh}
+          onPatch={patch}
+        />
+      ) : (
+        <Frame
+          samples={samples}
+          selected={null}
+          loading={loading}
+          onSelect={setHash}
+          onRefresh={() => void refresh()}
+        >
+          <Flex p="4">
+            <Text color="gray">{loading ? "Loading…" : "The manifest has no samples."}</Text>
+          </Flex>
+        </Frame>
+      )}
+    </Theme>
+  );
+}
+
+interface WorkspaceProps {
+  sample: SampleSummary;
+  samples: SampleSummary[];
+  canDraft: boolean;
+  loading: boolean;
+  onSelect: (stem: string) => void;
+  onRefresh: () => Promise<void>;
+  onPatch: (stem: string, changes: Partial<SampleSummary>) => void;
+}
+
+function Workspace({
+  sample,
+  samples,
+  canDraft,
+  loading,
+  onSelect,
+  onRefresh,
+  onPatch
+}: WorkspaceProps) {
+  const [selectedRender, setSelectedRender] = useState<string | null>(null);
+  const [edited, setEdited] = useState<string | null>(null);
+  const [busy, setBusy] = useState<Busy>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const savedText = toText(sample.checklist);
+  const text = edited ?? savedText;
+  const dirty = text !== savedText;
 
   const confirmDiscard = useCallback(
     () => !dirty || window.confirm("Discard unsaved changes to this checklist?"),
@@ -64,22 +137,11 @@ export function App() {
 
   const select = useCallback(
     (stem: string) => {
-      if (stem === selected?.stem || busy !== null || !confirmDiscard()) return;
-      setEdited(null);
-      setSelectedRender(null);
-      setActionError(null);
-      setHash(stem);
+      if (stem !== sample.stem && busy === null && confirmDiscard()) onSelect(stem);
     },
-    [selected, busy, confirmDiscard, setHash]
+    [sample.stem, busy, confirmDiscard, onSelect]
   );
 
-  const patch = useCallback(
-    (stem: string, changes: Partial<SampleSummary>) =>
-      setSamples((ss) => ss.map((s) => (s.stem === stem ? { ...s, ...changes } : s))),
-    []
-  );
-
-  /** Runs a checklist action, disabling the editor until it settles. */
   const perform = useCallback(<T,>(kind: Busy, task: Promise<T>, then: (value: T) => void) => {
     setBusy(kind);
     setActionError(null);
@@ -87,153 +149,158 @@ export function App() {
   }, []);
 
   const draft = useCallback(() => {
-    if (!selected || busy !== null || !confirmDiscard()) return;
-    perform("drafting", draftChecklist(selected.stem), (items) => setEdited(toText(items)));
-  }, [selected, busy, confirmDiscard, perform]);
+    if (busy !== null || !confirmDiscard()) return;
+    perform("drafting", draftChecklist(sample.stem), (items) => setEdited(toText(items)));
+  }, [sample.stem, busy, confirmDiscard, perform]);
 
   const save = useCallback(() => {
-    if (!selected || busy !== null || !dirty) return;
-    const { stem } = selected;
+    if (busy !== null || !dirty) return;
     const items = fromText(text);
-    perform("saving", saveChecklist(stem, items), () => {
-      patch(stem, { checklist: items });
+    perform("saving", saveChecklist(sample.stem, items), () => {
+      onPatch(sample.stem, { checklist: items });
       setEdited(null);
     });
-  }, [selected, busy, dirty, text, perform, patch]);
+  }, [sample.stem, busy, dirty, text, perform, onPatch]);
 
   const cancel = useCallback(() => {
     setEdited(null);
     setActionError(null);
   }, []);
 
-  /** Records a judgement optimistically and reports any save failure. */
   const judge = useCallback(
-    (sample: SampleSummary, judgement: Judgement) => {
+    (judgement: Judgement) => {
       if (!sample.run) return;
-      patch(sample.stem, { run: { ...sample.run, judgement } });
+      onPatch(sample.stem, { run: { ...sample.run, judgement } });
       saveJudgement(sample.stem, judgement).then(
         () => setActionError(null),
         (e: unknown) => setActionError(errorMessage(e))
       );
     },
-    [patch]
+    [sample, onPatch]
   );
 
-  // Sets item `index` to `wanted`, or clears it when it is already `wanted`
   const toggleItem = useCallback(
     (index: number, wanted: boolean) => {
-      const run = selected?.run;
-      if (!selected || !run || !hasSubmission(run) || selected.checklist === null) return;
-      const items = mergeItems(selected.checklist, run.judgement);
+      const run = sample.run;
+      if (!run || !hasSubmission(run) || sample.checklist === null) return;
+      const items = mergeItems(sample.checklist, run.judgement);
       const item = items[index];
-      if (item) judge(selected, withItem(items, index, item.pass === wanted ? null : wanted));
+      if (item) judge(withItem(items, index, item.pass === wanted ? null : wanted));
     },
-    [selected, judge]
+    [sample, judge]
   );
 
   const recordNoSubmission = useCallback(() => {
-    if (selected?.run && !hasSubmission(selected.run)) judge(selected, noSubmission());
-  }, [selected, judge]);
+    if (sample.run && !hasSubmission(sample.run)) judge(noSubmission());
+  }, [sample.run, judge]);
 
   const nextPending = useCallback(() => {
-    const i = samples.findIndex((s) => s.stem === selected?.stem);
-    const next = [...samples.slice(i + 1), ...samples.slice(0, i + 1)].find(isPending);
+    const index = samples.findIndex(({ stem }) => stem === sample.stem);
+    const next = [...samples.slice(index + 1), ...samples.slice(0, index + 1)].find(isPending);
     if (next) select(next.stem);
-  }, [samples, selected, select]);
+  }, [samples, sample.stem, select]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (
-        e.target instanceof HTMLElement &&
-        e.target.closest("input, textarea, [role=dialog], [role=radiogroup]")
+        event.target instanceof HTMLElement &&
+        event.target.closest("input, textarea, [role=dialog], [role=radiogroup]")
       )
         return;
-      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        const i = samples.findIndex((s) => s.stem === selected?.stem);
-        const next = samples[e.key === "ArrowDown" ? i + 1 : i - 1];
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        const index = samples.findIndex(({ stem }) => stem === sample.stem);
+        const next = samples[event.key === "ArrowDown" ? index + 1 : index - 1];
         if (next) {
-          e.preventDefault();
+          event.preventDefault();
           select(next.stem);
         }
         return;
       }
-      if (e.key === "n" || e.key === "N") {
-        e.preventDefault();
+      if (event.key === "n" || event.key === "N") {
+        event.preventDefault();
         nextPending();
         return;
       }
-      const digit = /^Digit([1-9])$/.exec(e.code);
+      const digit = /^Digit([1-9])$/.exec(event.code);
       if (digit) {
-        e.preventDefault();
-        toggleItem(Number(digit[1]) - 1, !e.shiftKey);
+        event.preventDefault();
+        toggleItem(Number(digit[1]) - 1, !event.shiftKey);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [samples, selected, select, toggleItem, nextPending]);
+  }, [samples, sample.stem, select, toggleItem, nextPending]);
 
   useEffect(() => {
     if (!dirty) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
 
   return (
-    <Theme accentColor="gray" grayColor="slate">
-      <Grid columns="280px auto 1fr" height="100vh">
-        <Sidebar
-          samples={samples}
-          selected={selected?.stem ?? null}
-          loading={loading}
-          onSelect={select}
-          onRefresh={() => {
-            if (confirmDiscard()) {
-              setEdited(null);
-              void refresh();
-            }
-          }}
+    <Frame
+      samples={samples}
+      selected={sample.stem}
+      loading={loading}
+      onSelect={select}
+      onRefresh={() => {
+        if (confirmDiscard()) {
+          setEdited(null);
+          void onRefresh();
+        }
+      }}
+    >
+      <SampleView
+        sample={sample}
+        dirty={dirty}
+        selectedRender={selectedRender}
+        onSelectRender={setSelectedRender}
+        error={actionError}
+      >
+        <ChecklistEditor
+          sample={sample}
+          text={text}
+          dirty={dirty}
+          busy={busy}
+          canDraft={canDraft}
+          onChange={setEdited}
+          onDraft={draft}
+          onSave={save}
+          onCancel={cancel}
         />
-        <Separator orientation="vertical" size="4" />
-        {error ? (
-          <Flex p="4">
-            <Callout.Root color="red">
-              <Callout.Text>{error}</Callout.Text>
-            </Callout.Root>
-          </Flex>
-        ) : selected ? (
-          <SampleView
-            key={selected.stem}
-            sample={selected}
-            dirty={dirty}
-            selectedRender={selectedRender}
-            onSelectRender={setSelectedRender}
-            error={actionError}
-          >
-            <ChecklistEditor
-              sample={selected}
-              text={text}
-              dirty={dirty}
-              busy={busy}
-              canDraft={canDraft}
-              onChange={setEdited}
-              onDraft={draft}
-              onSave={save}
-              onCancel={cancel}
-            />
-            <JudgingPanel
-              sample={selected}
-              onToggleItem={toggleItem}
-              onNoSubmission={recordNoSubmission}
-            />
-          </SampleView>
-        ) : (
-          <Flex p="4">
-            <Text color="gray">{loading ? "Loading…" : "The manifest has no samples."}</Text>
-          </Flex>
-        )}
-      </Grid>
-    </Theme>
+        <JudgingPanel
+          sample={sample}
+          onToggleItem={toggleItem}
+          onNoSubmission={recordNoSubmission}
+        />
+      </SampleView>
+    </Frame>
+  );
+}
+
+interface FrameProps {
+  samples: SampleSummary[];
+  selected: string | null;
+  loading: boolean;
+  onSelect: (stem: string) => void;
+  onRefresh: () => void;
+  children: ReactNode;
+}
+
+function Frame({ samples, selected, loading, onSelect, onRefresh, children }: FrameProps) {
+  return (
+    <Grid columns="280px auto 1fr" height="100vh">
+      <Sidebar
+        samples={samples}
+        selected={selected}
+        loading={loading}
+        onSelect={onSelect}
+        onRefresh={onRefresh}
+      />
+      <Separator orientation="vertical" size="4" />
+      {children}
+    </Grid>
   );
 }
