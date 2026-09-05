@@ -113,14 +113,11 @@ export function apiPlugin(options: ApiOptions): Plugin {
             : {
                 ...e,
                 samples: e.samples.map((s) =>
-                  s !== sample ? s : withChecklist(s, checklist ?? undefined)
+                  s !== sample ? s : { ...s, checklist: checklist ?? undefined }
                 )
               }
         );
-        // Validate the same way the CLI does; the file is untouched on failure.
-        const serialized = serializeManifest(updated);
-        parseManifest(JSON.parse(serialized));
-        await writeFile(manifestPath, serialized);
+        await writeFile(manifestPath, serializeManifest(parseManifest(updated)));
         return checklist;
       };
 
@@ -273,21 +270,6 @@ function parseJudgement(value: unknown): Judgement {
   const parsed = JudgementSchema.safeParse(value);
   if (!parsed.success) throw new HttpError(400, `judgement: ${parsed.error.issues[0]!.message}`);
   return parsed.data;
-}
-
-function withChecklist(s: Sample, checklist: string[] | undefined): Sample {
-  return {
-    question: s.question,
-    option: s.option,
-    role: s.role,
-    index: s.index,
-    page: s.page,
-    box: s.box,
-    masks: s.masks,
-    category: s.category,
-    checklist,
-    output: s.output
-  };
 }
 
 async function readRun(dir: string): Promise<Run | null> {
