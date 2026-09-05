@@ -11,11 +11,10 @@ import {
   type Sample
 } from "hsctikzbench-cli/manifest";
 import { REASONING_LEVELS, resolveModel, type ReasoningLevel } from "hsctikzbench-cli/model";
-import type { RunResult } from "hsctikzbench-cli/output";
+import { RESULT_FILE, type RunResult } from "hsctikzbench-cli/output";
 import type { Plugin } from "vite";
 import type { Judgement, JudgementItem, Listing, Run, SampleSummary } from "../src/types.ts";
 
-const RESULT_FILE = "result.json";
 const JUDGEMENT_FILE = "judgement.json";
 const MAX_BODY = 1 << 20;
 
@@ -181,7 +180,6 @@ async function createDrafter(model: NonNullable<ApiOptions["model"]>, promptPath
   const reasoning = model.reasoning as ReasoningLevel;
   const resolved = await resolveModel({ ...model, reasoning });
   const systemPrompt = await readFile(promptPath, "utf8");
-  // eslint-disable-next-line no-console
   console.log(`web: drafting with ${model.provider}/${model.model} (auth: ${resolved.authSource})`);
 
   const drafter: Drafter = async (sample, png) => {
@@ -224,7 +222,6 @@ function describe(sample: Sample): string {
   return `Category: ${sample.category.replaceAll("_", " ")}. This is ${role}.`;
 }
 
-/** Extracts a JSON array of strings from a model reply, tolerating a code fence around it. */
 function parseReply(text: string): string[] {
   const start = text.indexOf("[");
   const end = text.lastIndexOf("]");
@@ -255,45 +252,42 @@ function parseChecklist(value: unknown): string[] {
 }
 
 function parseJudgement(value: unknown): Judgement {
-  const r = asRecord(value, "judgement", ["items", "judgedAt"]);
-  if (typeof r.judgedAt !== "string" || Number.isNaN(Date.parse(r.judgedAt))) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new HttpError(400, "judgement: expected an object");
+  }
+  const { items, judgedAt, ...extra } = value as Record<string, unknown>;
+  const [unexpected] = Object.keys(extra);
+  if (unexpected) throw new HttpError(400, `judgement.${unexpected}: unexpected field`);
+  if (typeof judgedAt !== "string" || Number.isNaN(Date.parse(judgedAt))) {
     throw new HttpError(400, "judgement.judgedAt: expected an ISO timestamp");
   }
-  let items: JudgementItem[] | null = null;
-  if (r.items !== null) {
-    if (!Array.isArray(r.items)) {
-      throw new HttpError(400, "judgement.items: expected an array or null");
-    }
-    items = r.items.map((item, i) => parseItem(item, `judgement.items[${i}]`));
-    if (new Set(items.map((i) => i.item)).size !== items.length) {
-      throw new HttpError(400, "judgement.items: items must be unique");
-    }
+  if (items === null) return { items: null, judgedAt };
+  if (!Array.isArray(items)) {
+    throw new HttpError(400, "judgement.items: expected an array or null");
   }
-  return { items, judgedAt: r.judgedAt };
+  const parsed = items.map((item, i) => parseItem(item, `judgement.items[${i}]`));
+  if (new Set(parsed.map((i) => i.item)).size !== parsed.length) {
+    throw new HttpError(400, "judgement.items: items must be unique");
+  }
+  return { items: parsed, judgedAt };
 }
 
 function parseItem(value: unknown, where: string): JudgementItem {
-  const r = asRecord(value, where, ["item", "pass"]);
-  if (typeof r.item !== "string" || r.item.trim().length === 0) {
-    throw new HttpError(400, `${where}.item: expected a non-empty string`);
-  }
-  if (r.pass !== null && typeof r.pass !== "boolean") {
-    throw new HttpError(400, `${where}.pass: expected a boolean or null`);
-  }
-  return { item: r.item, pass: r.pass };
-}
-
-function asRecord(value: unknown, where: string, keys: string[]): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new HttpError(400, `${where}: expected an object`);
   }
-  for (const key of Object.keys(value)) {
-    if (!keys.includes(key)) throw new HttpError(400, `${where}.${key}: unexpected field`);
+  const { item, pass, ...extra } = value as Record<string, unknown>;
+  const [unexpected] = Object.keys(extra);
+  if (unexpected) throw new HttpError(400, `${where}.${unexpected}: unexpected field`);
+  if (typeof item !== "string" || item.trim().length === 0) {
+    throw new HttpError(400, `${where}.item: expected a non-empty string`);
   }
-  return value as Record<string, unknown>;
+  if (pass !== null && typeof pass !== "boolean") {
+    throw new HttpError(400, `${where}.pass: expected a boolean or null`);
+  }
+  return { item, pass };
 }
 
-/** Rebuilds the sample with keys in the manifest's canonical order. */
 function withChecklist(s: Sample, checklist: readonly string[] | undefined): Sample {
   return {
     question: s.question,
@@ -342,7 +336,6 @@ const isDir = (file: string) =>
     () => false
   );
 
-/** Splits and decodes a URL path into segments, or throws 400 on bad encoding. */
 function decodePath(url: string): string[] {
   const { pathname } = new URL(url, "http://localhost");
   try {
@@ -352,7 +345,6 @@ function decodePath(url: string): string[] {
   }
 }
 
-/** Joins segments under a root, rejecting empty, dot, and escaping segments. */
 function safePath(root: string, parts: string[]): string {
   const bad = (p: string) => p === "" || p === "." || p === ".." || /[/\\]/.test(p);
   if (parts.length === 0 || parts.some(bad)) throw new HttpError(400, "bad path");

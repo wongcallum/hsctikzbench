@@ -78,72 +78,83 @@ export function sampleStem(exam: Exam, sample: Sample): string {
 
 class ManifestError extends Error {}
 
-function box(value: unknown, where: string): Box {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ManifestError(`manifest: ${where}: expected an object`);
+function parseText(value: unknown, where: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ManifestError(`manifest: ${where}: expected a non-empty string`);
   }
-  const r = value as Record<string, unknown>;
-  for (const key of Object.keys(r)) {
-    if (!["x", "y", "w", "h"].includes(key)) {
-      throw new ManifestError(`manifest: ${where}.${key}: unexpected field`);
-    }
-  }
-  const num = (key: string) => {
-    const v = r[key];
-    if (typeof v !== "number" || !Number.isFinite(v)) {
-      throw new ManifestError(`manifest: ${where}.${key}: expected a number`);
-    }
-    return v;
-  };
-  const b = { x: num("x"), y: num("y"), w: num("w"), h: num("h") };
-  if (b.x < 0 || b.y < 0 || b.w <= 0 || b.h <= 0) {
-    throw new ManifestError(`manifest: ${where}: box must have positive size`);
-  }
-  if (b.x + b.w > 1.000001 || b.y + b.h > 1.000001) {
-    throw new ManifestError(`manifest: ${where}: box must lie within the page`);
-  }
-  return b;
+  return value;
 }
 
-function sample(value: unknown, where: string): Sample {
+function parseNumber(value: unknown, where: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new ManifestError(`manifest: ${where}: expected a number`);
+  }
+  return value;
+}
+
+function parseInteger(value: unknown, where: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+    throw new ManifestError(`manifest: ${where}: expected an integer >= 1`);
+  }
+  return value;
+}
+
+function parseDigest(value: unknown, where: string): string {
+  const digest = parseText(value, where);
+  if (!/^[0-9a-f]{64}$/.test(digest)) {
+    throw new ManifestError(`manifest: ${where}: expected a lowercase hex sha256`);
+  }
+  return digest;
+}
+
+function parseBox(value: unknown, where: string): Box {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new ManifestError(`manifest: ${where}: expected an object`);
   }
-  const r = value as Record<string, unknown>;
-  for (const key of Object.keys(r)) {
-    if (
-      ![
-        "question",
-        "option",
-        "role",
-        "index",
-        "page",
-        "box",
-        "masks",
-        "category",
-        "checklist",
-        "output"
-      ].includes(key)
-    ) {
-      throw new ManifestError(`manifest: ${where}.${key}: unexpected field`);
-    }
+  const { x, y, w, h, ...extra } = value as Record<string, unknown>;
+  const [unexpected] = Object.keys(extra);
+  if (unexpected) throw new ManifestError(`manifest: ${where}.${unexpected}: unexpected field`);
+  const box = {
+    x: parseNumber(x, `${where}.x`),
+    y: parseNumber(y, `${where}.y`),
+    w: parseNumber(w, `${where}.w`),
+    h: parseNumber(h, `${where}.h`)
+  };
+  if (box.x < 0 || box.y < 0 || box.w <= 0 || box.h <= 0) {
+    throw new ManifestError(`manifest: ${where}: box must have positive size`);
   }
+  if (box.x + box.w > 1.000001 || box.y + box.h > 1.000001) {
+    throw new ManifestError(`manifest: ${where}: box must lie within the page`);
+  }
+  return box;
+}
 
-  if (typeof r.role !== "string" || r.role.trim().length === 0) {
-    throw new ManifestError(`manifest: ${where}.role: expected a non-empty string`);
+function parseSample(value: unknown, where: string): Sample {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ManifestError(`manifest: ${where}: expected an object`);
   }
-  if (!(ROLES as readonly string[]).includes(r.role)) {
+  const {
+    question,
+    option: optionValue,
+    role: roleValue,
+    index,
+    page,
+    box,
+    masks: maskValues,
+    category: categoryValue,
+    checklist,
+    output,
+    ...extra
+  } = value as Record<string, unknown>;
+  const [unexpected] = Object.keys(extra);
+  if (unexpected) throw new ManifestError(`manifest: ${where}.${unexpected}: unexpected field`);
+
+  const role = ROLES.find((r) => r === parseText(roleValue, `${where}.role`));
+  if (!role) {
     throw new ManifestError(`manifest: ${where}.role: expected one of ${ROLES.join(", ")}`);
   }
-  const role = r.role as Role;
 
-  let option: string | undefined;
-  if (r.option !== undefined) {
-    if (typeof r.option !== "string" || r.option.trim().length === 0) {
-      throw new ManifestError(`manifest: ${where}.option: expected a non-empty string`);
-    }
-    option = r.option;
-  }
+  const option = optionValue === undefined ? undefined : parseText(optionValue, `${where}.option`);
   if ((role === "answer_option") !== (option !== undefined)) {
     throw new ManifestError(
       `manifest: ${where}: answer_option samples, and only those, carry an option`
@@ -151,134 +162,97 @@ function sample(value: unknown, where: string): Sample {
   }
 
   let masks: readonly unknown[] | undefined;
-  if (r.masks !== undefined) {
-    if (!Array.isArray(r.masks)) {
+  if (maskValues !== undefined) {
+    if (!Array.isArray(maskValues)) {
       throw new ManifestError(`manifest: ${where}.masks: expected an array`);
     }
-    masks = r.masks;
+    masks = maskValues;
   }
 
-  if (typeof r.question !== "string" || r.question.trim().length === 0) {
-    throw new ManifestError(`manifest: ${where}.question: expected a non-empty string`);
-  }
-  if (!Number.isInteger(r.index) || (r.index as number) < 1) {
-    throw new ManifestError(`manifest: ${where}.index: expected an integer >= 1`);
-  }
-  if (!Number.isInteger(r.page) || (r.page as number) < 1) {
-    throw new ManifestError(`manifest: ${where}.page: expected an integer >= 1`);
-  }
-  if (typeof r.category !== "string" || r.category.trim().length === 0) {
-    throw new ManifestError(`manifest: ${where}.category: expected a non-empty string`);
-  }
-  if (!(CATEGORIES as readonly string[]).includes(r.category)) {
+  const category = CATEGORIES.find((c) => c === parseText(categoryValue, `${where}.category`));
+  if (!category) {
     throw new ManifestError(
       `manifest: ${where}.category: expected one of ${CATEGORIES.join(", ")}`
     );
   }
 
   return {
-    question: r.question,
+    question: parseText(question, `${where}.question`),
     option,
     role,
-    index: r.index as number,
-    page: r.page as number,
-    box: box(r.box, `${where}.box`),
-    masks: masks?.map((m, i) => box(m, `${where}.masks[${i}]`)),
-    category: r.category as Category,
-    checklist: r.checklist === undefined ? undefined : checklist(r.checklist, `${where}.checklist`),
-    output: r.output === undefined ? undefined : output(r.output, `${where}.output`)
+    index: parseInteger(index, `${where}.index`),
+    page: parseInteger(page, `${where}.page`),
+    box: parseBox(box, `${where}.box`),
+    masks: masks?.map((m, i) => parseBox(m, `${where}.masks[${i}]`)),
+    category,
+    checklist:
+      checklist === undefined ? undefined : parseChecklist(checklist, `${where}.checklist`),
+    output: output === undefined ? undefined : parseOutput(output, `${where}.output`)
   };
 }
 
-function checklist(value: unknown, where: string): readonly string[] {
+function parseChecklist(value: unknown, where: string): readonly string[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new ManifestError(`manifest: ${where}: expected a non-empty array`);
   }
-  const items = value.map((item, i) => {
-    if (typeof item !== "string" || item.trim().length === 0) {
-      throw new ManifestError(`manifest: ${where}[${i}]: expected a non-empty string`);
-    }
-    return item;
-  });
+  const items = value.map((item, i) => parseText(item, `${where}[${i}]`));
   if (new Set(items).size !== items.length) {
     throw new ManifestError(`manifest: ${where}: items must be unique`);
   }
   return items;
 }
 
-function output(value: unknown, where: string): SampleOutput {
+function parseOutput(value: unknown, where: string): SampleOutput {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new ManifestError(`manifest: ${where}: expected an object`);
   }
-  const r = value as Record<string, unknown>;
-  for (const key of Object.keys(r)) {
-    if (!["width", "height", "sha256"].includes(key)) {
-      throw new ManifestError(`manifest: ${where}.${key}: unexpected field`);
-    }
-  }
-  if (!Number.isInteger(r.width) || (r.width as number) < 1) {
-    throw new ManifestError(`manifest: ${where}.width: expected an integer >= 1`);
-  }
-  if (!Number.isInteger(r.height) || (r.height as number) < 1) {
-    throw new ManifestError(`manifest: ${where}.height: expected an integer >= 1`);
-  }
+  const { width, height, sha256, ...extra } = value as Record<string, unknown>;
+  const [unexpected] = Object.keys(extra);
+  if (unexpected) throw new ManifestError(`manifest: ${where}.${unexpected}: unexpected field`);
   return {
-    width: r.width as number,
-    height: r.height as number,
-    sha256: digest(r.sha256, `${where}.sha256`)
+    width: parseInteger(width, `${where}.width`),
+    height: parseInteger(height, `${where}.height`),
+    sha256: parseDigest(sha256, `${where}.sha256`)
   };
 }
 
-function digest(value: unknown, where: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new ManifestError(`manifest: ${where}: expected a non-empty string`);
+function parseExam(value: unknown, where: string): Exam {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ManifestError(`manifest: ${where}: expected an object`);
   }
-  if (!/^[0-9a-f]{64}$/.test(value)) {
-    throw new ManifestError(`manifest: ${where}: expected a lowercase hex sha256`);
+  const {
+    course: courseValue,
+    year,
+    url,
+    sha256,
+    samples,
+    ...extra
+  } = value as Record<string, unknown>;
+  const [unexpected] = Object.keys(extra);
+  if (unexpected) throw new ManifestError(`manifest: ${where}.${unexpected}: unexpected field`);
+  if (!Array.isArray(samples)) {
+    throw new ManifestError(`manifest: ${where}.samples: expected an array`);
   }
-  return value;
+  const sampleValues: readonly unknown[] = samples;
+  const course = COURSES.find((c) => c === parseText(courseValue, `${where}.course`));
+  if (!course) {
+    throw new ManifestError(`manifest: ${where}.course: expected one of ${COURSES.join(", ")}`);
+  }
+  return {
+    course,
+    year: parseInteger(year, `${where}.year`),
+    url: parseText(url, `${where}.url`),
+    sha256: parseDigest(sha256, `${where}.sha256`),
+    samples: sampleValues.map((s, j) => parseSample(s, `${where}.samples[${j}]`))
+  };
 }
 
 export function parseManifest(json: unknown): Exam[] {
   if (!Array.isArray(json)) {
     throw new ManifestError("manifest: root: expected an array of exams");
   }
-  const exams = json.map((value, i): Exam => {
-    const where = `exams[${i}]`;
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      throw new ManifestError(`manifest: ${where}: expected an object`);
-    }
-    const r = value as Record<string, unknown>;
-    for (const key of Object.keys(r)) {
-      if (!["course", "year", "url", "sha256", "samples"].includes(key)) {
-        throw new ManifestError(`manifest: ${where}.${key}: unexpected field`);
-      }
-    }
-    if (!Array.isArray(r.samples)) {
-      throw new ManifestError(`manifest: ${where}.samples: expected an array`);
-    }
-    const samples: readonly unknown[] = r.samples;
-
-    if (typeof r.course !== "string" || r.course.trim().length === 0) {
-      throw new ManifestError(`manifest: ${where}.course: expected a non-empty string`);
-    }
-    if (!(COURSES as readonly string[]).includes(r.course)) {
-      throw new ManifestError(`manifest: ${where}.course: expected one of ${COURSES.join(", ")}`);
-    }
-    if (!Number.isInteger(r.year) || (r.year as number) < 1) {
-      throw new ManifestError(`manifest: ${where}.year: expected an integer >= 1`);
-    }
-    if (typeof r.url !== "string" || r.url.trim().length === 0) {
-      throw new ManifestError(`manifest: ${where}.url: expected a non-empty string`);
-    }
-    return {
-      course: r.course as Course,
-      year: r.year as number,
-      url: r.url,
-      sha256: digest(r.sha256, `${where}.sha256`),
-      samples: samples.map((s, j) => sample(s, `${where}.samples[${j}]`))
-    };
-  });
+  const values: readonly unknown[] = json;
+  const exams = values.map((value, i) => parseExam(value, `exams[${i}]`));
 
   const seen = new Map<string, string>();
   for (const [i, exam] of exams.entries()) {
