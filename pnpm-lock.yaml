@@ -32,6 +32,9 @@ importers:
       execa:
         specifier: ^10.0.1
         version: 10.0.1
+      p-map:
+        specifier: ^7.0.7
+        version: 7.0.7
       zod:
         specifier: ^4.5.4
         version: 4.5.4
@@ -1970,6 +1973,10 @@ packages:
         optional: true
       vite-plus:
         optional: true
+
+  p-map@7.0.7:
+    resolution: {integrity: sha512-VaWRu2i4FJNRtiRWCuuQRgfQ1B7a6+gMSrO+3j0EQi/k0ULfS9kosRxGoiqwzIjZTDI02tGfk5mXXltLg6QtfQ==}
+    engines: {node: '>=18'}
 
   p-retry@4.6.2:
     resolution: {integrity: sha512-312Id396EbJdvRONlngUx0NydfrIQ5lsYu0znKVUzVvArzEIt08V1qhtyESbGVd1FGX7UKtiFp5uwKZdM8wIuQ==}
@@ -3948,6 +3955,8 @@ snapshots:
       '@oxlint/binding-win32-arm64-msvc': 1.81.0
       '@oxlint/binding-win32-ia32-msvc': 1.81.0
       '@oxlint/binding-win32-x64-msvc': 1.81.0
+
+  p-map@7.0.7: {}
 
   p-retry@4.6.2:
     dependencies:

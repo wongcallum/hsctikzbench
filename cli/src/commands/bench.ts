@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommand, numberParser } from "@stricli/core";
+import pMap from "p-map";
 import type { LocalContext } from "../context.ts";
 import { runAgent } from "../loop.ts";
 import { examId, parseManifest, sampleStem, type Exam, type Sample } from "../manifest.ts";
@@ -41,7 +42,9 @@ export const benchCommand = buildCommand({
   async func(this: LocalContext, flags: BenchFlags): Promise<void> {
     const log = (line: string) => this.process.stderr.write(`${line}\n`);
     const out = (line: string) => this.process.stdout.write(`${line}\n`);
-    if (flags.jobs < 1) throw new Error("--jobs must be at least 1");
+    if (!Number.isInteger(flags.jobs) || flags.jobs < 1) {
+      throw new Error("--jobs must be a positive integer");
+    }
 
     const manifest = parseManifest(JSON.parse(await readFile(flags.manifest, "utf8")));
     const jobs = selectJobs(manifest, flags);
@@ -55,7 +58,6 @@ export const benchCommand = buildCommand({
     log(`${jobs.length} samples, ${flags.jobs} jobs, output in ${flags.out}`);
 
     const outcomes = new Map<string, Outcome>();
-    let next = 0;
     let done = 0;
     const runOne = async (job: Job): Promise<Outcome> => {
       const dir = new OutputDir(join(flags.out, job.stem));
@@ -76,9 +78,9 @@ export const benchCommand = buildCommand({
       });
       return { kind: "ran", result };
     };
-    const worker = async () => {
-      while (next < jobs.length) {
-        const job = jobs[next++]!;
+    await pMap(
+      jobs,
+      async (job) => {
         let outcome: Outcome;
         try {
           outcome = await runOne(job);
@@ -88,9 +90,9 @@ export const benchCommand = buildCommand({
         outcomes.set(job.stem, outcome);
         done++;
         log(`[${job.stem}] ${describe(outcome)}  (${done}/${jobs.length})`);
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(flags.jobs, jobs.length) }, worker));
+      },
+      { concurrency: flags.jobs }
+    );
 
     const counts: Record<RunStatus | "skipped" | "failed", number> = {
       submitted: 0,

@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommand, buildRouteMap, numberParser } from "@stricli/core";
+import pMap from "p-map";
 import type { LocalContext } from "../context.ts";
 import {
   examId,
@@ -52,7 +53,9 @@ const buildCommandDef = buildCommand({
         `no exam ${flags.only} in manifest. Known exams: ${manifest.map(examId).join(", ")}`
       );
     }
-    if (flags.jobs < 1) throw new Error("--jobs must be at least 1");
+    if (!Number.isInteger(flags.jobs) || flags.jobs < 1) {
+      throw new Error("--jobs must be a positive integer");
+    }
 
     await checkContainer(flags.container);
     await mkdir(flags.out, { recursive: true });
@@ -85,19 +88,18 @@ const buildCommandDef = buildCommand({
     }
     log(`${jobs.length} samples across ${pdfs.size} exams, ${flags.jobs} jobs`);
 
-    let next = 0;
     let done = 0;
-    const worker = async () => {
-      while (next < jobs.length) {
-        const job = jobs[next++]!;
+    await pMap(
+      jobs,
+      async (job) => {
         const outcome = await buildOne(flags, pdfs.get(job.exam)!, job);
         outcomes.set(job.stem, outcome);
         done++;
         if (outcome.kind !== "ok") log(`${outcome.kind}: ${job.stem}: ${outcome.message}`);
         if (done % 25 === 0 || done === jobs.length) log(`${done}/${jobs.length}`);
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(flags.jobs, jobs.length) }, worker));
+      },
+      { concurrency: flags.jobs }
+    );
 
     if (flags.writeDigests) {
       await writeFile(flags.manifest, serializeManifest(manifest));
