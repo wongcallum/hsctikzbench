@@ -1,17 +1,29 @@
 import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult } from "hsctikzbench-cli/output";
+import * as z from "zod";
 
 export type { RunResult, RunStatus } from "hsctikzbench-cli/output";
 
-export interface JudgementItem {
-  item: string;
-  pass: boolean | null;
-}
+export const JudgementItemSchema = z.strictObject({
+  item: z.string().trim().min(1),
+  pass: z.boolean().nullable()
+});
 
-export interface Judgement {
-  items: JudgementItem[] | null;
-  judgedAt: string;
-}
+export const JudgementSchema = z.strictObject({
+  items: z
+    .array(JudgementItemSchema)
+    .refine(
+      (items) => new Set(items.map(({ item }) => item)).size === items.length,
+      "items must be unique"
+    )
+    .nullable(),
+  judgedAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), "expected an ISO timestamp")
+});
+
+export type JudgementItem = z.infer<typeof JudgementItemSchema>;
+export type Judgement = z.infer<typeof JudgementSchema>;
 
 export interface Run {
   result: RunResult | null;

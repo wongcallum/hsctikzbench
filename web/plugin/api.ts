@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import {
   examId,
+  ChecklistSchema,
   parseManifest,
   sampleStem,
   serializeManifest,
@@ -13,7 +14,13 @@ import {
 import { REASONING_LEVELS, resolveModel, type ReasoningLevel } from "hsctikzbench-cli/model";
 import { RESULT_FILE, type RunResult } from "hsctikzbench-cli/output";
 import type { Plugin } from "vite";
-import type { Judgement, JudgementItem, Listing, Run, SampleSummary } from "../src/types.ts";
+import {
+  JudgementSchema,
+  type Judgement,
+  type Listing,
+  type Run,
+  type SampleSummary
+} from "../src/types.ts";
 
 const JUDGEMENT_FILE = "judgement.json";
 const MAX_BODY = 1 << 20;
@@ -238,57 +245,18 @@ function parseReply(text: string): string[] {
 }
 
 function parseChecklist(value: unknown): string[] {
-  if (!Array.isArray(value)) throw new HttpError(400, "checklist: expected an array");
-  const items = value.map((item, i) => {
-    if (typeof item !== "string" || item.trim().length === 0) {
-      throw new HttpError(400, `checklist[${i}]: expected a non-empty string`);
-    }
-    return item.trim();
-  });
-  if (new Set(items).size !== items.length) {
-    throw new HttpError(400, "checklist: items must be unique");
-  }
-  return items;
+  const parsed = ChecklistSchema.safeParse(value);
+  if (!parsed.success) throw new HttpError(400, `checklist: ${parsed.error.issues[0]!.message}`);
+  return parsed.data;
 }
 
 function parseJudgement(value: unknown): Judgement {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new HttpError(400, "judgement: expected an object");
-  }
-  const { items, judgedAt, ...extra } = value as Record<string, unknown>;
-  const [unexpected] = Object.keys(extra);
-  if (unexpected) throw new HttpError(400, `judgement.${unexpected}: unexpected field`);
-  if (typeof judgedAt !== "string" || Number.isNaN(Date.parse(judgedAt))) {
-    throw new HttpError(400, "judgement.judgedAt: expected an ISO timestamp");
-  }
-  if (items === null) return { items: null, judgedAt };
-  if (!Array.isArray(items)) {
-    throw new HttpError(400, "judgement.items: expected an array or null");
-  }
-  const parsed = items.map((item, i) => parseItem(item, `judgement.items[${i}]`));
-  if (new Set(parsed.map((i) => i.item)).size !== parsed.length) {
-    throw new HttpError(400, "judgement.items: items must be unique");
-  }
-  return { items: parsed, judgedAt };
+  const parsed = JudgementSchema.safeParse(value);
+  if (!parsed.success) throw new HttpError(400, `judgement: ${parsed.error.issues[0]!.message}`);
+  return parsed.data;
 }
 
-function parseItem(value: unknown, where: string): JudgementItem {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new HttpError(400, `${where}: expected an object`);
-  }
-  const { item, pass, ...extra } = value as Record<string, unknown>;
-  const [unexpected] = Object.keys(extra);
-  if (unexpected) throw new HttpError(400, `${where}.${unexpected}: unexpected field`);
-  if (typeof item !== "string" || item.trim().length === 0) {
-    throw new HttpError(400, `${where}.item: expected a non-empty string`);
-  }
-  if (pass !== null && typeof pass !== "boolean") {
-    throw new HttpError(400, `${where}.pass: expected a boolean or null`);
-  }
-  return { item, pass };
-}
-
-function withChecklist(s: Sample, checklist: readonly string[] | undefined): Sample {
+function withChecklist(s: Sample, checklist: string[] | undefined): Sample {
   return {
     question: s.question,
     option: s.option,
