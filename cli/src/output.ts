@@ -34,7 +34,11 @@ export interface Submission {
 export const RESULT_FILE = "result.json";
 
 export class OutputDir {
-  constructor(readonly dir: string) {}
+  readonly dir: string;
+
+  constructor(dir: string) {
+    this.dir = dir;
+  }
 
   async isComplete(): Promise<boolean> {
     try {

@@ -1,7 +1,10 @@
-import { createReadStream } from "node:fs";
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
+import { getRequestListener } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { Hono, type Context, type MiddlewareHandler } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
   examId,
   ChecklistSchema,
@@ -25,12 +28,6 @@ import {
 const JUDGEMENT_FILE = "judgement.json";
 const MAX_BODY = 1 << 20;
 
-const CONTENT_TYPES: Record<string, string> = {
-  ".png": "image/png",
-  ".json": "application/json",
-  ".tex": "text/plain; charset=utf-8"
-};
-
 export interface ApiOptions {
   /** Dataset manifest that checklists are read from and written to. */
   manifest: string;
@@ -47,8 +44,8 @@ export interface ApiOptions {
 type Drafter = (sample: Sample, png: Buffer) => Promise<string[]>;
 
 class HttpError extends Error {
-  readonly status: number;
-  constructor(status: number, message: string) {
+  readonly status: ContentfulStatusCode;
+  constructor(status: ContentfulStatusCode, message: string) {
     super(message);
     this.status = status;
   }
@@ -138,43 +135,65 @@ export function apiPlugin(options: ApiOptions): Plugin {
 
       const saveJudgement = async (stem: string, body: unknown): Promise<Judgement> => {
         const judgement = parseJudgement(body);
-        const dir = safePath(runsRoot, [stem]);
+        await findSample(stem);
+        const dir = path.join(runsRoot, stem);
         if (!(await isDir(dir))) throw new HttpError(404, `no run for ${stem}`);
         await writeFile(path.join(dir, JUDGEMENT_FILE), `${JSON.stringify(judgement, null, 2)}\n`);
         return judgement;
       };
 
-      const route = (req: IncomingMessage, res: ServerResponse): Promise<void> | null => {
-        const method = req.method ?? "GET";
-        const [head, ...rest] = decodePath(req.url ?? "/");
-        if (head === "crops") return serveFile(cropsRoot, rest, req, res);
-        if (head === "runs") return serveFile(runsRoot, rest, req, res);
-        if (head !== "api" || rest[0] !== "samples") return null;
-        if (rest.length === 1 && method === "GET") return list().then((v) => sendJson(res, v));
-        const [, stem, action] = rest;
-        if (rest.length !== 3 || !stem) return null;
-        if (action === "checklist" && method === "PUT") {
-          return readJsonBody(req)
-            .then((b) => saveChecklist(stem, b))
-            .then((v) => sendJson(res, v));
-        }
-        if (action === "draft" && method === "POST") {
-          return draftChecklist(stem).then((v) => sendJson(res, v));
-        }
-        if (action === "judgement" && method === "PUT") {
-          return readJsonBody(req)
-            .then((b) => saveJudgement(stem, b))
-            .then((v) => sendJson(res, v));
-        }
-        return null;
-      };
+      const app = new Hono();
+      app.use("/api/*", async (c, next) => {
+        c.header("Cache-Control", "no-store");
+        await next();
+      });
+      app.use(
+        "/api/*",
+        bodyLimit({ maxSize: MAX_BODY, onError: (c) => c.text("body too large", 413) })
+      );
 
+      app.get("/api/samples", async (c) => c.json(await list()));
+      app.put("/api/samples/:stem/checklist", async (c) =>
+        c.json(await saveChecklist(c.req.param("stem"), await jsonBody(c)))
+      );
+      app.post("/api/samples/:stem/draft", async (c) =>
+        c.json(await draftChecklist(c.req.param("stem")))
+      );
+      app.put("/api/samples/:stem/judgement", async (c) =>
+        c.json(await saveJudgement(c.req.param("stem"), await jsonBody(c)))
+      );
+
+      const noCache = async (_file: string, c: Context) => c.header("Cache-Control", "no-store");
+      app.on(
+        ["GET", "HEAD"],
+        "/crops/*",
+        onlyExtensions([".png"]),
+        serveStatic({
+          root: cropsRoot,
+          rewriteRequestPath: (requestPath) => requestPath.slice("/crops".length),
+          onFound: noCache
+        })
+      );
+      app.on(
+        ["GET", "HEAD"],
+        "/runs/*",
+        onlyExtensions([".json", ".png", ".tex"]),
+        serveStatic({
+          root: runsRoot,
+          rewriteRequestPath: (requestPath) => requestPath.slice("/runs".length),
+          onFound: noCache
+        })
+      );
+
+      app.onError((error, c) =>
+        c.text(errorMessage(error), error instanceof HttpError ? error.status : 500)
+      );
+
+      const listen = getRequestListener(app.fetch);
       server.middlewares.use((req, res, next) => {
-        const handled = route(req, res);
-        if (!handled) return next();
-        handled.catch((e: unknown) => {
-          sendError(res, e instanceof HttpError ? e.status : 500, errorMessage(e));
-        });
+        const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+        if (!/^\/(?:api|crops|runs)(?:\/|$)/.test(pathname)) return next();
+        void listen(req, res).catch(next);
       });
     }
   };
@@ -304,82 +323,19 @@ const isDir = (file: string) =>
     () => false
   );
 
-function decodePath(url: string): string[] {
-  const { pathname } = new URL(url, "http://localhost");
+const onlyExtensions =
+  (extensions: readonly string[]): MiddlewareHandler =>
+  async (c, next) => {
+    if (!extensions.includes(path.extname(c.req.path))) return c.notFound();
+    await next();
+  };
+
+async function jsonBody(c: Context): Promise<unknown> {
   try {
-    return pathname.split("/").slice(1).map(decodeURIComponent);
-  } catch {
-    throw new HttpError(400, "bad path");
-  }
-}
-
-function safePath(root: string, parts: string[]): string {
-  const bad = (p: string) => p === "" || p === "." || p === ".." || /[/\\]/.test(p);
-  if (parts.length === 0 || parts.some(bad)) throw new HttpError(400, "bad path");
-  const file = path.join(root, ...parts);
-  if (!file.startsWith(root + path.sep)) throw new HttpError(400, "bad path");
-  return file;
-}
-
-async function serveFile(
-  root: string,
-  parts: string[],
-  req: IncomingMessage,
-  res: ServerResponse
-): Promise<void> {
-  const file = safePath(root, parts);
-  const type = CONTENT_TYPES[path.extname(file)];
-  const info = await stat(file).catch(() => null);
-  if (!type || !info?.isFile()) throw new HttpError(404, "not found");
-  res.setHeader("Content-Type", type);
-  res.setHeader("Content-Length", info.size);
-  res.setHeader("Cache-Control", "no-store");
-  if (req.method === "HEAD") {
-    res.end();
-    return;
-  }
-  createReadStream(file)
-    .on("error", () => sendError(res, 500, "read failed"))
-    .pipe(res);
-}
-
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
-  const text = await new Promise<string>((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let size = 0;
-    req.on("data", (chunk: Buffer) => {
-      size += chunk.length;
-      if (size > MAX_BODY) {
-        reject(new HttpError(413, "body too large"));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
-  try {
-    return JSON.parse(text) as unknown;
+    return await c.req.json<unknown>();
   } catch (e) {
     throw new HttpError(400, `invalid JSON: ${errorMessage(e)}`);
   }
-}
-
-function sendJson(res: ServerResponse, value: unknown): void {
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(value));
-}
-
-function sendError(res: ServerResponse, status: number, message: string): void {
-  if (res.headersSent) {
-    res.destroy();
-    return;
-  }
-  res.statusCode = status;
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
-  res.end(message);
 }
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
