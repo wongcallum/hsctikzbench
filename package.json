@@ -1,0 +1,19 @@
+{
+  "name": "hsctikzbench",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "check": "pnpm typecheck && pnpm lint && pnpm fmt:check"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
+    "typescript": "^7.0.2"
+  }
+}

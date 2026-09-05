@@ -5,11 +5,11 @@ import { runCommand } from "./commands/run.ts";
 
 const routes = buildRouteMap({
   routes: { run: runCommand, login: loginCommand, dataset: datasetRoutes },
-  docs: { brief: "HSCTikZBench agent" }
+  docs: { brief: "HSCTikZBench benchmark CLI" }
 });
 
 export const app = buildApplication(routes, {
-  name: "agent",
+  name: "hsctikzbench",
   scanner: { caseStyle: "allow-kebab-for-camel" },
   localization: {
     loadText: () => ({

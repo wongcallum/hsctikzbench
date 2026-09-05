@@ -5,11 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json"
   },
   "dependencies": {
     "@radix-ui/themes": "^3",
@@ -22,8 +18,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
-    "oxfmt": "^0.66.0",
-    "oxlint": "^1.81.0",
+    "hsctikzbench-cli": "workspace:*",
     "typescript": "^7",
     "vite": "^8"
   }

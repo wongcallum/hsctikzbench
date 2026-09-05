@@ -1,15 +1,14 @@
 {
-  "name": "hsctikzbench-agent",
+  "name": "hsctikzbench-cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./output": "./src/output.ts"
+  },
   "scripts": {
     "start": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "^0.84.4",
@@ -18,8 +17,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
-    "oxfmt": "^0.66.0",
-    "oxlint": "^1.81.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
