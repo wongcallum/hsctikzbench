@@ -1,28 +1,44 @@
 import { Callout, Flex, Grid, Separator, Text, Theme } from "@radix-ui/themes";
 import { useCallback, useEffect, useState } from "react";
-import { draftChecklist, fetchSamples, saveChecklist } from "./api.ts";
-import { fromText, isApproved, toText } from "./checklist.ts";
+import { draftChecklist, fetchListing, saveChecklist, saveJudgement } from "./api.ts";
+import { ChecklistEditor, type Busy } from "./ChecklistEditor.tsx";
+import { JudgingPanel } from "./JudgingPanel.tsx";
+import {
+  fromText,
+  hasSubmission,
+  isPending,
+  mergeItems,
+  noSubmission,
+  toText,
+  withItem
+} from "./sample.ts";
 import { SampleView } from "./SampleView.tsx";
 import { Sidebar } from "./Sidebar.tsx";
-import type { SampleSummary } from "./types.ts";
+import type { Judgement, SampleSummary } from "./types.ts";
 import { useHash } from "./useHash.ts";
+
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function App() {
   const [samples, setSamples] = useState<SampleSummary[]>([]);
+  const [canDraft, setCanDraft] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hash, setHash] = useHash();
+  const [selectedRender, setSelectedRender] = useState<string | null>(null);
   const [edited, setEdited] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"drafting" | "saving" | null>(null);
+  const [busy, setBusy] = useState<Busy>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setSamples(await fetchSamples());
+      const listing = await fetchListing();
+      setSamples(listing.samples);
+      setCanDraft(listing.canDraft);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -50,56 +66,78 @@ export function App() {
     (stem: string) => {
       if (stem === selected?.stem || busy !== null || !confirmDiscard()) return;
       setEdited(null);
+      setSelectedRender(null);
       setActionError(null);
       setHash(stem);
     },
     [selected, busy, confirmDiscard, setHash]
   );
 
+  const patch = useCallback(
+    (stem: string, changes: Partial<SampleSummary>) =>
+      setSamples((ss) => ss.map((s) => (s.stem === stem ? { ...s, ...changes } : s))),
+    []
+  );
+
+  /** Runs a checklist action, disabling the editor until it settles. */
+  const perform = useCallback(<T,>(kind: Busy, task: Promise<T>, then: (value: T) => void) => {
+    setBusy(kind);
+    setActionError(null);
+    task.then(then, (e: unknown) => setActionError(errorMessage(e))).finally(() => setBusy(null));
+  }, []);
+
   const draft = useCallback(() => {
     if (!selected || busy !== null || !confirmDiscard()) return;
-    const stem = selected.stem;
-    setBusy("drafting");
-    setActionError(null);
-    draftChecklist(stem).then(
-      (items) => {
-        setEdited(toText(items));
-        setBusy(null);
-      },
-      (e: unknown) => {
-        setActionError(e instanceof Error ? e.message : String(e));
-        setBusy(null);
-      }
-    );
-  }, [selected, busy, confirmDiscard]);
+    perform("drafting", draftChecklist(selected.stem), (items) => setEdited(toText(items)));
+  }, [selected, busy, confirmDiscard, perform]);
 
   const save = useCallback(() => {
     if (!selected || busy !== null || !dirty) return;
-    const stem = selected.stem;
+    const { stem } = selected;
     const items = fromText(text);
-    setBusy("saving");
-    setActionError(null);
-    saveChecklist(stem, items).then(
-      () => {
-        setSamples((ss) => ss.map((s) => (s.stem === stem ? { ...s, checklist: items } : s)));
-        setEdited(null);
-        setBusy(null);
-      },
-      (e: unknown) => {
-        setActionError(e instanceof Error ? e.message : String(e));
-        setBusy(null);
-      }
-    );
-  }, [selected, busy, dirty, text]);
+    perform("saving", saveChecklist(stem, items), () => {
+      patch(stem, { checklist: items });
+      setEdited(null);
+    });
+  }, [selected, busy, dirty, text, perform, patch]);
 
   const cancel = useCallback(() => {
     setEdited(null);
     setActionError(null);
   }, []);
 
-  const nextUnapproved = useCallback(() => {
+  /** Records a judgement optimistically and reports any save failure. */
+  const judge = useCallback(
+    (sample: SampleSummary, judgement: Judgement) => {
+      if (!sample.run) return;
+      patch(sample.stem, { run: { ...sample.run, judgement } });
+      saveJudgement(sample.stem, judgement).then(
+        () => setActionError(null),
+        (e: unknown) => setActionError(errorMessage(e))
+      );
+    },
+    [patch]
+  );
+
+  // Sets item `index` to `wanted`, or clears it when it is already `wanted`
+  const toggleItem = useCallback(
+    (index: number, wanted: boolean) => {
+      const run = selected?.run;
+      if (!selected || !run || !hasSubmission(run) || selected.checklist === null) return;
+      const items = mergeItems(selected.checklist, run.judgement);
+      const item = items[index];
+      if (item) judge(selected, withItem(items, index, item.pass === wanted ? null : wanted));
+    },
+    [selected, judge]
+  );
+
+  const recordNoSubmission = useCallback(() => {
+    if (selected?.run && !hasSubmission(selected.run)) judge(selected, noSubmission());
+  }, [selected, judge]);
+
+  const nextPending = useCallback(() => {
     const i = samples.findIndex((s) => s.stem === selected?.stem);
-    const next = [...samples.slice(i + 1), ...samples.slice(0, i + 1)].find((s) => !isApproved(s));
+    const next = [...samples.slice(i + 1), ...samples.slice(0, i + 1)].find(isPending);
     if (next) select(next.stem);
   }, [samples, selected, select]);
 
@@ -122,12 +160,18 @@ export function App() {
       }
       if (e.key === "n" || e.key === "N") {
         e.preventDefault();
-        nextUnapproved();
+        nextPending();
+        return;
+      }
+      const digit = /^Digit([1-9])$/.exec(e.code);
+      if (digit) {
+        e.preventDefault();
+        toggleItem(Number(digit[1]) - 1, !e.shiftKey);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [samples, selected, select, nextUnapproved]);
+  }, [samples, selected, select, toggleItem, nextPending]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -162,15 +206,28 @@ export function App() {
           <SampleView
             key={selected.stem}
             sample={selected}
-            text={text}
             dirty={dirty}
-            busy={busy}
+            selectedRender={selectedRender}
+            onSelectRender={setSelectedRender}
             error={actionError}
-            onChange={setEdited}
-            onDraft={draft}
-            onSave={save}
-            onCancel={cancel}
-          />
+          >
+            <ChecklistEditor
+              sample={selected}
+              text={text}
+              dirty={dirty}
+              busy={busy}
+              canDraft={canDraft}
+              onChange={setEdited}
+              onDraft={draft}
+              onSave={save}
+              onCancel={cancel}
+            />
+            <JudgingPanel
+              sample={selected}
+              onToggleItem={toggleItem}
+              onNoSubmission={recordNoSubmission}
+            />
+          </SampleView>
         ) : (
           <Flex p="4">
             <Text color="gray">{loading ? "Loading…" : "The manifest has no samples."}</Text>

@@ -1,5 +1,6 @@
 import { Badge, Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
-import { isApproved, label } from "./checklist.ts";
+import { ChecklistBadge, RunBadges } from "./badges.tsx";
+import { isApproved, judgingState, label } from "./sample.ts";
 import type { SampleSummary } from "./types.ts";
 
 interface Props {
@@ -11,7 +12,6 @@ interface Props {
 }
 
 export function Sidebar({ samples, selected, loading, onSelect, onRefresh }: Props) {
-  const approved = samples.filter(isApproved).length;
   const exams = [...new Set(samples.map((s) => s.exam))];
   return (
     <Flex direction="column" minHeight="0">
@@ -23,7 +23,7 @@ export function Sidebar({ samples, selected, loading, onSelect, onRefresh }: Pro
       </Flex>
       <Box px="3" pb="2">
         <Text size="1" color="gray">
-          approved {approved}/{samples.length}
+          {summary(samples)}
         </Text>
       </Box>
       <Box flexGrow="1" minHeight="0">
@@ -54,19 +54,12 @@ export function Sidebar({ samples, selected, loading, onSelect, onRefresh }: Pro
                           <Text size="2" weight="medium" truncate>
                             {label(sample)}
                           </Text>
-                          <Flex align="center" gap="2">
+                          <Flex align="center" gap="2" wrap="wrap">
                             <Badge color="gray" variant="outline" size="1">
                               {sample.category.replaceAll("_", " ")}
                             </Badge>
-                            {isApproved(sample) ? (
-                              <Badge color="green" variant="soft" size="1">
-                                approved
-                              </Badge>
-                            ) : (
-                              <Badge color="gray" variant="outline" size="1">
-                                none
-                              </Badge>
-                            )}
+                            <ChecklistBadge sample={sample} />
+                            <RunBadges sample={sample} />
                           </Flex>
                         </Flex>
                       </RadioCards.Item>
@@ -79,4 +72,12 @@ export function Sidebar({ samples, selected, loading, onSelect, onRefresh }: Pro
       </Box>
     </Flex>
   );
+}
+
+function summary(samples: SampleSummary[]): string {
+  const approved = samples.filter(isApproved).length;
+  const states = samples.map(judgingState).filter((s) => s !== null && s !== "unjudgeable");
+  const judged = states.filter((s) => s === "pass" || s === "fail").length;
+  const passed = states.filter((s) => s === "pass").length;
+  return `approved ${approved}/${samples.length} · judged ${judged}/${states.length} · ${passed} pass`;
 }

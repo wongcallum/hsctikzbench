@@ -1,3 +1,4 @@
+import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult } from "hsctikzbench-cli/output";
 
 export type { RunResult, RunStatus } from "hsctikzbench-cli/output";
@@ -12,13 +13,26 @@ export interface Judgement {
   judgedAt: string;
 }
 
-export interface RunSummary {
-  name: string;
+export interface Run {
   result: RunResult | null;
-  hasReference: boolean;
   hasSubmission: boolean;
   renders: string[];
-  knownSample: boolean;
-  checklist: string[] | null;
   judgement: Judgement | null;
+}
+
+export interface SampleSummary {
+  stem: string;
+  exam: string;
+  question: string;
+  option: string | null;
+  role: Role;
+  category: Category;
+  checklist: string[] | null;
+  hasCrop: boolean;
+  run: Run | null;
+}
+
+export interface Listing {
+  canDraft: boolean;
+  samples: SampleSummary[];
 }

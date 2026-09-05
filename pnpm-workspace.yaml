@@ -1,7 +1,6 @@
 packages:
   - cli
-  - viewer
-  - rubric
+  - web
 
 allowBuilds:
   esbuild: true
