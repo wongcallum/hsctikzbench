@@ -6,12 +6,11 @@ import {
   RadioCards,
   ScrollArea,
   Separator,
-  Switch,
   Text
 } from "@radix-ui/themes";
 import type { ReactNode } from "react";
 import { cropUrl, runFileUrl } from "./api.ts";
-import { ChecklistBadge, RunBadges } from "./badges.tsx";
+import { RunBadges } from "./badges.tsx";
 import { ImagePane } from "./ImagePane.tsx";
 import { hasSubmission, label } from "./sample.ts";
 import type { Run, SampleSummary } from "./types.ts";
@@ -22,10 +21,7 @@ interface Props {
   selectedRender: string | null;
   onSelectRender: (name: string | null) => void;
   error: string | null;
-  editingChecklist: boolean;
-  onEditingChecklistChange: (editing: boolean) => void;
-  busy: boolean;
-  /** The active panel shown in the right column. */
+  /** The judging panel shown in the right column. */
   children: ReactNode;
 }
 
@@ -35,9 +31,6 @@ export function SampleView({
   selectedRender,
   onSelectRender,
   error,
-  editingChecklist,
-  onEditingChecklistChange,
-  busy,
   children
 }: Props) {
   const run = sample.run;
@@ -58,7 +51,6 @@ export function SampleView({
           <Badge color="gray" variant="outline" size="1">
             {sample.role.replaceAll("_", " ")}
           </Badge>
-          <ChecklistBadge sample={sample} />
           <RunBadges sample={sample} />
           {run?.result && (
             <Badge color="gray" variant="soft" size="1">
@@ -76,22 +68,20 @@ export function SampleView({
             </Text>
           )}
         </Flex>
-        <Grid columns={editingChecklist ? "1" : "2"} gap="3" px="4" flexGrow="1" minHeight="0">
+        <Grid columns="2" gap="3" px="4" flexGrow="1" minHeight="0">
           <ImagePane
             label="Reference"
             src={sample.hasCrop ? cropUrl(sample.stem) : null}
             emptyText="No crop; run dataset build."
           />
-          {!editingChecklist && (
-            <ImagePane
-              label="Result"
-              detail={result?.detail}
-              src={result?.src ?? null}
-              emptyText={run ? "no renders" : "no run"}
-            />
-          )}
+          <ImagePane
+            label="Result"
+            detail={result?.detail}
+            src={result?.src ?? null}
+            emptyText={run ? "no renders" : "no run"}
+          />
         </Grid>
-        {!editingChecklist && run && run.renders.length > 0 && (
+        {run && run.renders.length > 0 && (
           <Flex overflowX="auto" px="4" py="3" flexShrink="0">
             <RadioCards.Root
               columns={`repeat(${run.renders.length}, max-content)`}
@@ -120,33 +110,15 @@ export function SampleView({
         )}
       </Flex>
       <Separator orientation="vertical" size="4" />
-      <Flex direction="column" minHeight="0">
-        <Flex p="4" flexShrink="0">
-          <Text as="label" size="2">
-            <Flex align="center" gap="2">
-              <Switch
-                checked={editingChecklist}
-                onCheckedChange={onEditingChecklistChange}
-                disabled={busy}
-              />
-              Edit checklist
-            </Flex>
+      <Flex direction="column" gap="3" p="4" minHeight="0">
+        {error && (
+          <Text size="1" color="red" style={{ whiteSpace: "pre-wrap" }}>
+            {error}
           </Text>
-        </Flex>
-        <Flex direction="column" gap="3" px="4" pb="4" flexGrow="1" minHeight="0">
-          {error && (
-            <Text size="1" color="red" style={{ whiteSpace: "pre-wrap" }}>
-              {error}
-            </Text>
-          )}
-          {editingChecklist ? (
-            children
-          ) : (
-            <ScrollArea type="auto" scrollbars="vertical">
-              {children}
-            </ScrollArea>
-          )}
-        </Flex>
+        )}
+        <ScrollArea type="auto" scrollbars="vertical">
+          {children}
+        </ScrollArea>
       </Flex>
     </Grid>
   );

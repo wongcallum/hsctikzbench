@@ -7,41 +7,27 @@ import { bodyLimit } from "hono/body-limit";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
   examId,
-  ChecklistSchema,
   parseManifest,
   sampleStem,
-  serializeManifest,
   type Exam,
   type Sample
 } from "hsctikzbench-cli/manifest";
-import { REASONING_LEVELS, resolveModel, type ReasoningLevel } from "hsctikzbench-cli/model";
 import { RESULT_FILE, type RunResult } from "hsctikzbench-cli/output";
 import type { Plugin } from "vite";
-import {
-  JudgementSchema,
-  type Judgement,
-  type Listing,
-  type Run,
-  type SampleSummary
-} from "../src/types.ts";
+import { hasSubmission } from "../src/sample.ts";
+import { JudgementSchema, type Judgement, type Run, type SampleSummary } from "../src/types.ts";
 
 const JUDGEMENT_FILE = "judgement.json";
 const MAX_BODY = 1 << 20;
 
 export interface ApiOptions {
-  /** Dataset manifest that checklists are read from and written to. */
+  /** Dataset manifest the samples are read from. */
   manifest: string;
   /** Directory holding <stem>.png for each sample. */
   cropsDir: string;
   /** Directory holding one run directory per sample, named by sample stem. */
   runsDir: string;
-  /** Drafting prompt. */
-  prompt: string;
-  /** Model used to draft checklists, or null to disable drafting. */
-  model: { provider: string; model: string; reasoning: string; auth: string } | null;
 }
-
-type Drafter = (sample: Sample, png: Buffer) => Promise<string[]>;
 
 class HttpError extends Error {
   readonly status: ContentfulStatusCode;
@@ -52,8 +38,7 @@ class HttpError extends Error {
 }
 
 /**
- * Serves the sample listing at GET /api/samples, accepts writes at
- * PUT /api/samples/<stem>/checklist, POST /api/samples/<stem>/draft and
+ * Serves the sample listing at GET /api/samples, accepts judgements at
  * PUT /api/samples/<stem>/judgement, and serves files under /crops/ and /runs/.
  */
 export function apiPlugin(options: ApiOptions): Plugin {
@@ -64,14 +49,10 @@ export function apiPlugin(options: ApiOptions): Plugin {
   const readManifest = async (): Promise<Exam[]> =>
     parseManifest(JSON.parse(await readFile(manifestPath, "utf8")));
 
-  const findSample = async (stem: string) => {
+  const requireSample = async (stem: string): Promise<void> => {
     const exams = await readManifest();
-    for (const exam of exams) {
-      for (const sample of exam.samples) {
-        if (sampleStem(exam, sample) === stem) return { exams, exam, sample };
-      }
-    }
-    throw new HttpError(404, `no sample ${stem} in manifest`);
+    const known = exams.some((exam) => exam.samples.some((s) => sampleStem(exam, s) === stem));
+    if (!known) throw new HttpError(404, `no sample ${stem} in manifest`);
   };
 
   const summarize = async (exam: Exam, sample: Sample): Promise<SampleSummary> => {
@@ -87,7 +68,6 @@ export function apiPlugin(options: ApiOptions): Plugin {
       option: sample.option ?? null,
       role: sample.role,
       category: sample.category,
-      checklist: sample.checklist ? [...sample.checklist] : null,
       hasCrop,
       run
     };
@@ -95,46 +75,24 @@ export function apiPlugin(options: ApiOptions): Plugin {
 
   return {
     name: "hsctikzbench-api",
-    async configureServer(server) {
-      const draft = options.model && (await createDrafter(options.model, options.prompt));
-
-      const list = async (): Promise<Listing> => {
+    configureServer(server) {
+      const list = async (): Promise<SampleSummary[]> => {
         const exams = await readManifest();
-        const samples = exams.flatMap((exam) => exam.samples.map((s) => summarize(exam, s)));
-        return { canDraft: draft !== null, samples: await Promise.all(samples) };
-      };
-
-      const saveChecklist = async (stem: string, body: unknown): Promise<string[] | null> => {
-        const checklist = body === null ? null : parseChecklist(body);
-        const { exams, exam, sample } = await findSample(stem);
-        const updated = exams.map((e) =>
-          e !== exam
-            ? e
-            : {
-                ...e,
-                samples: e.samples.map((s) =>
-                  s !== sample ? s : { ...s, checklist: checklist ?? undefined }
-                )
-              }
-        );
-        await writeFile(manifestPath, serializeManifest(parseManifest(updated)));
-        return checklist;
-      };
-
-      const draftChecklist = async (stem: string): Promise<string[]> => {
-        if (!draft) throw new HttpError(501, "drafting is disabled; set PROVIDER and MODEL");
-        const { sample } = await findSample(stem);
-        const png = await readFile(path.join(cropsRoot, `${stem}.png`)).catch(() => {
-          throw new HttpError(404, `no crop for ${stem}; run dataset build`);
-        });
-        return draft(sample, png);
+        return Promise.all(exams.flatMap((exam) => exam.samples.map((s) => summarize(exam, s))));
       };
 
       const saveJudgement = async (stem: string, body: unknown): Promise<Judgement> => {
         const judgement = parseJudgement(body);
-        await findSample(stem);
+        await requireSample(stem);
         const dir = path.join(runsRoot, stem);
-        if (!(await isDir(dir))) throw new HttpError(404, `no run for ${stem}`);
+        const run = await readRun(dir);
+        if (!run) throw new HttpError(404, `no run for ${stem}`);
+        if (!run.result) throw new HttpError(409, "run has not finished");
+        if (!hasSubmission(run))
+          throw new HttpError(409, "no submission; already counted as a failure");
+        if (!(await isFile(path.join(cropsRoot, `${stem}.png`)))) {
+          throw new HttpError(409, "a reference crop is required to judge this submission");
+        }
         await writeFile(path.join(dir, JUDGEMENT_FILE), `${JSON.stringify(judgement, null, 2)}\n`);
         return judgement;
       };
@@ -150,12 +108,6 @@ export function apiPlugin(options: ApiOptions): Plugin {
       );
 
       app.get("/api/samples", async (c) => c.json(await list()));
-      app.put("/api/samples/:stem/checklist", async (c) =>
-        c.json(await saveChecklist(c.req.param("stem"), await jsonBody(c)))
-      );
-      app.post("/api/samples/:stem/draft", async (c) =>
-        c.json(await draftChecklist(c.req.param("stem")))
-      );
       app.put("/api/samples/:stem/judgement", async (c) =>
         c.json(await saveJudgement(c.req.param("stem"), await jsonBody(c)))
       );
@@ -196,76 +148,6 @@ export function apiPlugin(options: ApiOptions): Plugin {
   };
 }
 
-async function createDrafter(model: NonNullable<ApiOptions["model"]>, promptPath: string) {
-  if (!(REASONING_LEVELS as readonly string[]).includes(model.reasoning)) {
-    throw new Error(`web: REASONING must be one of ${REASONING_LEVELS.join(", ")}`);
-  }
-  const reasoning = model.reasoning as ReasoningLevel;
-  const resolved = await resolveModel({ ...model, reasoning });
-  const systemPrompt = await readFile(promptPath, "utf8");
-  console.log(`web: drafting with ${model.provider}/${model.model} (auth: ${resolved.authSource})`);
-
-  const drafter: Drafter = async (sample, png) => {
-    const reply = await resolved.models.completeSimple(
-      resolved.model,
-      {
-        systemPrompt,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: describe(sample) },
-              { type: "image", data: png.toString("base64"), mimeType: "image/png" }
-            ],
-            timestamp: Date.now()
-          }
-        ]
-      },
-      reasoning === "off" ? {} : { reasoning }
-    );
-    if (reply.stopReason === "error") {
-      throw new Error(reply.errorMessage ?? "provider returned an error");
-    }
-    const text = reply.content
-      .filter((b): b is { type: "text"; text: string } => b.type === "text")
-      .map((b) => b.text)
-      .join("\n");
-    return parseReply(text);
-  };
-  return drafter;
-}
-
-function describe(sample: Sample): string {
-  const role =
-    sample.role === "answer_option"
-      ? `one of the answer options (option ${sample.option}) of a multiple-choice question`
-      : sample.role === "response_template"
-        ? "a template the student is expected to draw on"
-        : "a figure accompanying a question";
-  return `Category: ${sample.category.replaceAll("_", " ")}. This is ${role}.`;
-}
-
-function parseReply(text: string): string[] {
-  const start = text.indexOf("[");
-  const end = text.lastIndexOf("]");
-  if (start === -1 || end < start) {
-    throw new Error(`model reply contained no JSON array:\n${text}`);
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(text.slice(start, end + 1));
-  } catch (e) {
-    throw new Error(`model reply was not valid JSON (${errorMessage(e)}):\n${text}`);
-  }
-  return parseChecklist(value);
-}
-
-function parseChecklist(value: unknown): string[] {
-  const parsed = ChecklistSchema.safeParse(value);
-  if (!parsed.success) throw new HttpError(400, `checklist: ${parsed.error.issues[0]!.message}`);
-  return parsed.data;
-}
-
 function parseJudgement(value: unknown): Judgement {
   const parsed = JudgementSchema.safeParse(value);
   if (!parsed.success) throw new HttpError(400, `judgement: ${parsed.error.issues[0]!.message}`);
@@ -281,9 +163,10 @@ async function readRun(dir: string): Promise<Run | null> {
       (names) => names.filter((n) => n.endsWith(".png")).sort(),
       () => []
     ),
-    readJson<Judgement>(path.join(dir, JUDGEMENT_FILE))
+    readJson<unknown>(path.join(dir, JUDGEMENT_FILE))
   ]);
-  return { result, hasSubmission, renders, judgement };
+  const parsed = JudgementSchema.safeParse(judgement);
+  return { result, hasSubmission, renders, judgement: parsed.success ? parsed.data : null };
 }
 
 async function readJson<T>(file: string): Promise<T | null> {

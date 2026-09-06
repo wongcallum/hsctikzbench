@@ -4,26 +4,21 @@ import * as z from "zod";
 
 export type { RunResult, RunStatus } from "hsctikzbench-cli/output";
 
-export const JudgementItemSchema = z.strictObject({
-  item: z.string().trim().min(1),
-  pass: z.boolean().nullable()
-});
+export const RUBRIC_VERSION = 1;
+export const JudgementSchema = z
+  .strictObject({
+    rubricVersion: z.literal(RUBRIC_VERSION),
+    verdict: z.enum(["pass", "fail", "needs_review"]),
+    reason: z.string().trim(),
+    judgedAt: z.iso.datetime()
+  })
+  .refine((value) => value.verdict !== "fail" || value.reason.length > 0, {
+    path: ["reason"],
+    message: "a failure needs a concrete reason"
+  });
 
-export const JudgementSchema = z.strictObject({
-  items: z
-    .array(JudgementItemSchema)
-    .refine(
-      (items) => new Set(items.map(({ item }) => item)).size === items.length,
-      "items must be unique"
-    )
-    .nullable(),
-  judgedAt: z
-    .string()
-    .refine((value) => !Number.isNaN(Date.parse(value)), "expected an ISO timestamp")
-});
-
-export type JudgementItem = z.infer<typeof JudgementItemSchema>;
 export type Judgement = z.infer<typeof JudgementSchema>;
+export type Verdict = Judgement["verdict"];
 
 export interface Run {
   result: RunResult | null;
@@ -39,12 +34,6 @@ export interface SampleSummary {
   option: string | null;
   role: Role;
   category: Category;
-  checklist: string[] | null;
   hasCrop: boolean;
   run: Run | null;
-}
-
-export interface Listing {
-  canDraft: boolean;
-  samples: SampleSummary[];
 }

@@ -1,5 +1,5 @@
 import { Badge } from "@radix-ui/themes";
-import { isApproved, judgingState } from "./sample.ts";
+import { judgingState } from "./sample.ts";
 import type { SampleSummary } from "./types.ts";
 
 const STATUS = {
@@ -10,24 +10,13 @@ const STATUS = {
 } as const;
 
 const JUDGING = {
-  unjudgeable: { color: "gray", label: "no checklist" },
+  running: { color: "blue", label: "awaiting result" },
+  unjudgeable: { color: "gray", label: "no reference" },
   unjudged: { color: "gray", label: "unjudged" },
-  partial: { color: "orange", label: "partial" },
+  needs_review: { color: "orange", label: "needs review" },
   pass: { color: "green", label: "pass" },
   fail: { color: "red", label: "fail" }
 } as const;
-
-export function ChecklistBadge({ sample }: { sample: SampleSummary }) {
-  return isApproved(sample) ? (
-    <Badge color="green" variant="soft" size="1">
-      approved
-    </Badge>
-  ) : (
-    <Badge color="gray" variant="outline" size="1">
-      no checklist
-    </Badge>
-  );
-}
 
 /** Run status and judging badges, or nothing when the sample has no run. */
 export function RunBadges({ sample }: { sample: SampleSummary }) {

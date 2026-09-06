@@ -33,11 +33,6 @@ export const BoxSchema = z
   .refine(({ x, w }) => x + w <= 1.000001, "box must lie within the page")
   .refine(({ y, h }) => y + h <= 1.000001, "box must lie within the page");
 
-export const ChecklistSchema = z
-  .array(text)
-  .min(1, "expected a non-empty array")
-  .refine((items) => new Set(items).size === items.length, "items must be unique");
-
 export const SampleOutputSchema = z.strictObject({
   width: integer,
   height: integer,
@@ -54,7 +49,6 @@ export const SampleSchema = z
     box: BoxSchema,
     masks: z.array(BoxSchema).optional(),
     category: z.enum(CATEGORIES),
-    checklist: ChecklistSchema.optional(),
     output: SampleOutputSchema.optional()
   })
   .refine(({ role, option }) => (role === "answer_option") === (option !== undefined), {
