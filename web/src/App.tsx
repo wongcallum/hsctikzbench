@@ -4,7 +4,14 @@ import { fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel } from "./JudgingPanel.tsx";
 import { useLocation } from "./location.ts";
-import { isJudgeable, isPending, sampleRuns } from "./sample.ts";
+import {
+  isJudgeable,
+  isPending,
+  listedSamples,
+  sampleRuns,
+  scoreLines,
+  type ScoreLine
+} from "./sample.ts";
 import { SampleView } from "./SampleView.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import { RUBRIC_VERSION, type Mode, type Run, type SampleSummary, type Verdict } from "./types.ts";
@@ -36,7 +43,12 @@ export function App() {
     void refresh();
   }, [refresh]);
 
-  const sample = samples.find((s) => s.stem === location.stem) ?? samples[0] ?? null;
+  // Judging only lists samples with runs left to judge; the score line still covers every run.
+  const listed = listedSamples(samples, mode, location.stem);
+  const scores = scoreLines(samples, mode);
+  // A sample with only unfinished runs is not judgeable yet, so it stays out of the listing too.
+  const empty = samples.length === 0 ? "The manifest has no samples." : "Nothing left to judge.";
+  const sample = listed.find((s) => s.stem === location.stem) ?? listed[0] ?? null;
   const run = sample
     ? (sample.runs.find((r) => r.id === location.run) ?? sample.runs[0] ?? null)
     : null;
@@ -71,7 +83,9 @@ export function App() {
     <Theme accentColor="gray" grayColor="slate">
       {error ? (
         <Frame
-          samples={samples}
+          samples={listed}
+          scores={scores}
+          empty={empty}
           selected={sample?.stem ?? null}
           mode={mode}
           loading={loading}
@@ -89,7 +103,9 @@ export function App() {
         <Workspace
           sample={sample}
           run={run}
-          samples={samples}
+          samples={listed}
+          scores={scores}
+          empty={empty}
           mode={mode}
           loading={loading}
           onSelect={select}
@@ -99,7 +115,9 @@ export function App() {
         />
       ) : (
         <Frame
-          samples={samples}
+          samples={listed}
+          scores={scores}
+          empty={empty}
           selected={null}
           mode={mode}
           loading={loading}
@@ -108,7 +126,7 @@ export function App() {
           onRefresh={() => void refresh()}
         >
           <Flex p="4">
-            <Text color="gray">{loading ? "Loading…" : "The manifest has no samples."}</Text>
+            <Text color="gray">{loading ? "Loading…" : empty}</Text>
           </Flex>
         </Frame>
       )}
@@ -120,6 +138,8 @@ interface WorkspaceProps {
   sample: SampleSummary;
   run: Run | null;
   samples: SampleSummary[];
+  scores: ScoreLine[];
+  empty: string;
   mode: Mode;
   loading: boolean;
   onSelect: (stem: string, runId: string | null) => void;
@@ -132,6 +152,8 @@ function Workspace({
   sample,
   run,
   samples,
+  scores,
+  empty,
   mode,
   loading,
   onSelect,
@@ -271,6 +293,8 @@ function Workspace({
   return (
     <Frame
       samples={samples}
+      scores={scores}
+      empty={empty}
       selected={sample.stem}
       mode={mode}
       loading={loading || saving}
@@ -323,6 +347,8 @@ function Workspace({
 
 interface FrameProps {
   samples: SampleSummary[];
+  scores: ScoreLine[];
+  empty: string;
   selected: string | null;
   mode: Mode;
   loading: boolean;
@@ -334,6 +360,8 @@ interface FrameProps {
 
 function Frame({
   samples,
+  scores,
+  empty,
   selected,
   mode,
   loading,
@@ -346,6 +374,8 @@ function Frame({
     <Grid columns="280px auto 1fr" height="100vh">
       <Sidebar
         samples={samples}
+        scores={scores}
+        empty={empty}
         selected={selected}
         mode={mode}
         loading={loading}

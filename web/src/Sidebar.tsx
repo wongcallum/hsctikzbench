@@ -10,11 +10,16 @@ import {
   Text
 } from "@radix-ui/themes";
 import { SampleBadges } from "./badges.tsx";
-import { label, scoreLines } from "./sample.ts";
+import { label, type ScoreLine } from "./sample.ts";
 import type { Mode, SampleSummary } from "./types.ts";
 
 interface Props {
+  /** Samples to list; judging leaves out the ones with nothing left to judge. */
   samples: SampleSummary[];
+  /** Score lines over every run, listed or not. */
+  scores: ScoreLine[];
+  /** Message shown in place of an empty listing. */
+  empty: string;
   selected: string | null;
   mode: Mode;
   loading: boolean;
@@ -23,7 +28,17 @@ interface Props {
   onRefresh: () => void;
 }
 
-export function Sidebar({ samples, selected, mode, loading, onSelect, onMode, onRefresh }: Props) {
+export function Sidebar({
+  samples,
+  scores,
+  empty,
+  selected,
+  mode,
+  loading,
+  onSelect,
+  onMode,
+  onRefresh
+}: Props) {
   const exams = [...new Set(samples.map((s) => s.exam))];
   return (
     <Flex direction="column" minHeight="0">
@@ -44,7 +59,7 @@ export function Sidebar({ samples, selected, mode, loading, onSelect, onMode, on
         </Flex>
       </Flex>
       <Flex direction="column" px="3" pb="2" gap="1">
-        {scoreLines(samples, mode).map(({ batch, summary }) => (
+        {scores.map(({ batch, summary }) => (
           <Text key={batch ?? ""} size="1" color="gray">
             {batch !== null && (
               <>
@@ -61,7 +76,7 @@ export function Sidebar({ samples, selected, mode, loading, onSelect, onMode, on
           <Box px="3" pb="3">
             {samples.length === 0 && !loading && (
               <Text as="p" size="2" color="gray">
-                No samples in the manifest.
+                {empty}
               </Text>
             )}
             <RadioCards.Root

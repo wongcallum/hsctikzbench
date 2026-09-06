@@ -36,6 +36,21 @@ export function isPending(sample: SampleSummary, run: Run): boolean {
   return state === "unjudged" || state === "needs_review";
 }
 
+/** Whether any of the sample's runs is still waiting on a verdict. */
+export const hasPending = (sample: SampleSummary): boolean =>
+  sample.runs.some((run) => isPending(sample, run));
+
+/**
+ * Samples the sidebar lists: judging drops the ones with nothing left to judge, but keeps the
+ * selected sample so it never vanishes from under the judge mid-sample.
+ */
+export const listedSamples = (
+  samples: SampleSummary[],
+  mode: Mode,
+  selected: string | null
+): SampleSummary[] =>
+  mode === "view" ? samples : samples.filter((s) => hasPending(s) || s.stem === selected);
+
 export interface SampleRun {
   sample: SampleSummary;
   run: Run;
