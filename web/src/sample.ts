@@ -5,9 +5,13 @@ export function label(sample: SampleSummary): string {
   return `Q${sample.question} ${kind}`;
 }
 
-/** How a run is named in the selector: its batch on the view page, a position when blind. */
-export function runLabel(run: Run, index: number, mode: Mode): string {
-  return mode === "view" && run.source ? run.source.batch : `Run ${index + 1}`;
+/**
+ * How a run is named in the selector: its batch on the view page, a position when blind. The
+ * position counts every run of the sample, so hiding judged runs does not renumber the rest.
+ */
+export function runLabel(sample: SampleSummary, run: Run, mode: Mode): string {
+  if (mode === "view" && run.source) return run.source.batch;
+  return `Run ${sample.runs.findIndex((r) => r.id === run.id) + 1}`;
 }
 
 export type JudgingState =
@@ -50,6 +54,15 @@ export const listedSamples = (
   selected: string | null
 ): SampleSummary[] =>
   mode === "view" ? samples : samples.filter((s) => hasPending(s) || s.stem === selected);
+
+/**
+ * Runs the selector lists: judging drops the ones already resolved, but keeps the selected run so
+ * it does not vanish from under the judge the moment its verdict is saved.
+ */
+export const listedRuns = (sample: SampleSummary, mode: Mode, selected: string | null): Run[] =>
+  mode === "view"
+    ? sample.runs
+    : sample.runs.filter((run) => isPending(sample, run) || run.id === selected);
 
 export interface SampleRun {
   sample: SampleSummary;

@@ -1,5 +1,5 @@
 import { Callout, Flex, Grid, Separator, Text, Theme } from "@radix-ui/themes";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel } from "./JudgingPanel.tsx";
@@ -7,6 +7,7 @@ import { useLocation } from "./location.ts";
 import {
   isJudgeable,
   isPending,
+  listedRuns,
   listedSamples,
   sampleRuns,
   scoreLines,
@@ -44,14 +45,20 @@ export function App() {
   }, [refresh]);
 
   // Judging only lists samples with runs left to judge; the score line still covers every run.
-  const listed = listedSamples(samples, mode, location.stem);
+  const listed = useMemo(
+    () => listedSamples(samples, mode, location.stem),
+    [samples, mode, location.stem]
+  );
   const scores = scoreLines(samples, mode);
   // A sample with only unfinished runs is not judgeable yet, so it stays out of the listing too.
   const empty = samples.length === 0 ? "The manifest has no samples." : "Nothing left to judge.";
   const sample = listed.find((s) => s.stem === location.stem) ?? listed[0] ?? null;
-  const run = sample
-    ? (sample.runs.find((r) => r.id === location.run) ?? sample.runs[0] ?? null)
-    : null;
+  // Judging likewise only offers the runs still to judge.
+  const runs = useMemo(
+    () => (sample ? listedRuns(sample, mode, location.run) : []),
+    [sample, mode, location.run]
+  );
+  const run = runs.find((r) => r.id === location.run) ?? runs[0] ?? null;
 
   useEffect(() => {
     if (sample && (sample.stem !== location.stem || (run?.id ?? null) !== location.run)) {
@@ -103,6 +110,7 @@ export function App() {
         <Workspace
           sample={sample}
           run={run}
+          runs={runs}
           samples={listed}
           scores={scores}
           empty={empty}
@@ -137,6 +145,8 @@ export function App() {
 interface WorkspaceProps {
   sample: SampleSummary;
   run: Run | null;
+  /** The sample's runs to offer, in listing order. */
+  runs: Run[];
   samples: SampleSummary[];
   scores: ScoreLine[];
   empty: string;
@@ -151,6 +161,7 @@ interface WorkspaceProps {
 function Workspace({
   sample,
   run,
+  runs,
   samples,
   scores,
   empty,
@@ -266,8 +277,8 @@ function Workspace({
         return;
       }
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        const index = sample.runs.findIndex(({ id }) => id === run?.id);
-        const next = sample.runs[event.key === "ArrowRight" ? index + 1 : index - 1];
+        const index = runs.findIndex(({ id }) => id === run?.id);
+        const next = runs[event.key === "ArrowRight" ? index + 1 : index - 1];
         if (next) {
           event.preventDefault();
           select(sample.stem, next.id);
@@ -281,7 +292,7 @@ function Workspace({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [samples, sample, run, mode, select, selectSample, nextPending]);
+  }, [samples, sample, run, runs, mode, select, selectSample, nextPending]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -315,6 +326,7 @@ function Workspace({
       <SampleView
         sample={sample}
         run={run}
+        runs={runs}
         mode={mode}
         dirty={dirty}
         selectedRender={selectedRender}

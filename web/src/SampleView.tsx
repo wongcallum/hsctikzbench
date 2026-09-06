@@ -18,6 +18,8 @@ import type { Mode, Run, SampleSummary } from "./types.ts";
 interface Props {
   sample: SampleSummary;
   run: Run | null;
+  /** The sample's runs to offer, in listing order. */
+  runs: Run[];
   mode: Mode;
   dirty: boolean;
   selectedRender: string | null;
@@ -31,6 +33,7 @@ interface Props {
 export function SampleView({
   sample,
   run,
+  runs,
   mode,
   dirty,
   selectedRender,
@@ -67,20 +70,20 @@ export function SampleView({
             </Text>
           )}
         </Flex>
-        {sample.runs.length > 0 && (
+        {runs.length > 0 && (
           <Flex overflowX="auto" px="4" pb="3" flexShrink="0">
             <RadioCards.Root
-              columns={`repeat(${sample.runs.length}, max-content)`}
+              columns={`repeat(${runs.length}, max-content)`}
               gap="2"
               size="1"
               value={run?.id ?? ""}
               onValueChange={onSelectRun}
             >
-              {sample.runs.map((candidate, index) => (
+              {runs.map((candidate) => (
                 <RadioCards.Item key={candidate.id} value={candidate.id}>
                   <Flex direction="column" gap="1">
                     <Text size="2" weight="medium">
-                      {runLabel(candidate, index, mode)}
+                      {runLabel(sample, candidate, mode)}
                     </Text>
                     {mode === "view" && candidate.source?.model && (
                       <Text size="1" color="gray">
