@@ -87,7 +87,6 @@ export function App() {
         </Frame>
       ) : sample ? (
         <Workspace
-          key={`${mode}/${run?.id ?? sample.stem}`}
           sample={sample}
           run={run}
           samples={samples}
@@ -144,6 +143,16 @@ function Workspace({
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [edited, setEdited] = useState<{ verdict: Verdict | null; reason: string } | null>(null);
+
+  const identity = `${mode}/${run?.id ?? sample.stem}`;
+  const [shown, setShown] = useState(identity);
+  if (shown !== identity) {
+    setShown(identity);
+    setSelectedRender(null);
+    setSaving(false);
+    setActionError(null);
+    setEdited(null);
+  }
 
   const saved = run?.judgement ?? null;
   const verdict = edited?.verdict ?? saved?.verdict ?? null;
