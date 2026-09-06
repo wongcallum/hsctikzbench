@@ -5,20 +5,19 @@ import { runAgent } from "../loop.ts";
 import { modelFlags, resolveModel, type ModelFlags } from "../model.ts";
 import { OutputDir } from "../output.ts";
 import { buildSystemPrompt, checkTexCapabilities } from "../prompt.ts";
-import { checkContainer } from "../render.ts";
+import { createRenderer, rendererFlags, type RendererFlags } from "../renderer.ts";
 
 export const DEFAULT_PROMPT = new URL("../../prompt.md", import.meta.url);
 
 /** Flags shared by every command that runs the agent. */
-export interface AgentFlags extends ModelFlags {
-  readonly container: string;
+export interface AgentFlags extends ModelFlags, RendererFlags {
   readonly maxTurns: number;
   readonly prompt?: string;
 }
 
 export const agentFlags = {
   ...modelFlags,
-  container: { kind: "parsed", parse: String, brief: "Name of the running renderer container" },
+  ...rendererFlags,
   maxTurns: {
     kind: "parsed",
     parse: numberParser,
@@ -44,8 +43,9 @@ interface RunFlags extends AgentFlags {
 export const runCommand = buildCommand({
   async func(this: LocalContext, flags: RunFlags, reference: string): Promise<void> {
     const { models, model, authSource } = await resolveModel(flags);
-    await checkContainer(flags.container);
-    await checkTexCapabilities(flags.container);
+    const renderer = await createRenderer(flags);
+    await renderer.prepare();
+    await checkTexCapabilities(renderer);
     const referencePng = await readFile(reference);
     const systemPrompt = await loadSystemPrompt(flags.prompt);
     const out = new OutputDir(flags.out);
@@ -53,11 +53,12 @@ export const runCommand = buildCommand({
 
     const log = (line: string) => this.process.stderr.write(`${line}\n`);
     log(`auth: ${authSource}`);
+    log(`renderer: ${renderer.description}`);
     const result = await runAgent({
       models,
       model,
       reasoning: flags.reasoning,
-      container: flags.container,
+      renderer,
       maxTurns: flags.maxTurns,
       systemPrompt,
       referencePng,
