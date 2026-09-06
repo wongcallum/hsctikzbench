@@ -1,12 +1,13 @@
 import { Callout, Flex, Grid, Separator, Text, Theme } from "@radix-ui/themes";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { fetchSamples, saveJudgement } from "./api.ts";
+import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel } from "./JudgingPanel.tsx";
-import { isJudgeable, isPending } from "./sample.ts";
+import { useLocation } from "./location.ts";
+import { isJudgeable, isPending, sampleRuns } from "./sample.ts";
 import { SampleView } from "./SampleView.tsx";
 import { Sidebar } from "./Sidebar.tsx";
-import { RUBRIC_VERSION, type SampleSummary, type Verdict } from "./types.ts";
-import { useHash } from "./useHash.ts";
+import { RUBRIC_VERSION, type Mode, type Run, type SampleSummary, type Verdict } from "./types.ts";
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -14,34 +15,54 @@ export function App() {
   const [samples, setSamples] = useState<SampleSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hash, setHash] = useHash();
+  const [location, setLocation] = useLocation();
+  const mode = location.mode;
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setSamples(await fetchSamples());
+      setSamples(await fetchSamples(mode === "judge"));
       setError(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
+  // Drop the previous mode's listing before refetching so the judge page never shows provenance.
   useEffect(() => {
+    setSamples([]);
     void refresh();
   }, [refresh]);
 
-  const selected = samples.find((sample) => sample.stem === hash) ?? samples[0] ?? null;
+  const sample = samples.find((s) => s.stem === location.stem) ?? samples[0] ?? null;
+  const run = sample
+    ? (sample.runs.find((r) => r.id === location.run) ?? sample.runs[0] ?? null)
+    : null;
 
   useEffect(() => {
-    if (selected && selected.stem !== hash) setHash(selected.stem);
-  }, [selected, hash, setHash]);
+    if (sample && (sample.stem !== location.stem || (run?.id ?? null) !== location.run)) {
+      setLocation({ mode, stem: sample.stem, run: run?.id ?? null });
+    }
+  }, [sample, run, location, mode, setLocation]);
+
+  const select = useCallback(
+    (stem: string, runId: string | null) => setLocation({ mode, stem, run: runId }),
+    [mode, setLocation]
+  );
+  const setMode = useCallback(
+    (next: Mode) => setLocation({ mode: next, stem: location.stem, run: location.run }),
+    [location, setLocation]
+  );
 
   const patch = useCallback(
-    (stem: string, changes: Partial<SampleSummary>) =>
+    (runId: string, changes: Partial<Run>) =>
       setSamples((current) =>
-        current.map((sample) => (sample.stem === stem ? { ...sample, ...changes } : sample))
+        current.map((s) => ({
+          ...s,
+          runs: s.runs.map((r) => (r.id === runId ? { ...r, ...changes } : r))
+        }))
       ),
     []
   );
@@ -51,9 +72,11 @@ export function App() {
       {error ? (
         <Frame
           samples={samples}
-          selected={selected?.stem ?? null}
+          selected={sample?.stem ?? null}
+          mode={mode}
           loading={loading}
-          onSelect={setHash}
+          onSelect={(stem) => select(stem, null)}
+          onMode={setMode}
           onRefresh={() => void refresh()}
         >
           <Flex p="4">
@@ -62,13 +85,16 @@ export function App() {
             </Callout.Root>
           </Flex>
         </Frame>
-      ) : selected ? (
+      ) : sample ? (
         <Workspace
-          key={selected.stem}
-          sample={selected}
+          key={`${mode}/${run?.id ?? sample.stem}`}
+          sample={sample}
+          run={run}
           samples={samples}
+          mode={mode}
           loading={loading}
-          onSelect={setHash}
+          onSelect={select}
+          onMode={setMode}
           onRefresh={refresh}
           onPatch={patch}
         />
@@ -76,8 +102,10 @@ export function App() {
         <Frame
           samples={samples}
           selected={null}
+          mode={mode}
           loading={loading}
-          onSelect={setHash}
+          onSelect={(stem) => select(stem, null)}
+          onMode={setMode}
           onRefresh={() => void refresh()}
         >
           <Flex p="4">
@@ -91,31 +119,44 @@ export function App() {
 
 interface WorkspaceProps {
   sample: SampleSummary;
+  run: Run | null;
   samples: SampleSummary[];
+  mode: Mode;
   loading: boolean;
-  onSelect: (stem: string) => void;
+  onSelect: (stem: string, runId: string | null) => void;
+  onMode: (mode: Mode) => void;
   onRefresh: () => Promise<void>;
-  onPatch: (stem: string, changes: Partial<SampleSummary>) => void;
+  onPatch: (runId: string, changes: Partial<Run>) => void;
 }
 
-function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: WorkspaceProps) {
+function Workspace({
+  sample,
+  run,
+  samples,
+  mode,
+  loading,
+  onSelect,
+  onMode,
+  onRefresh,
+  onPatch
+}: WorkspaceProps) {
   const [selectedRender, setSelectedRender] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [edited, setEdited] = useState<{ verdict: Verdict | null; reason: string } | null>(null);
 
-  const saved = sample.run?.judgement ?? null;
+  const saved = run?.judgement ?? null;
   const verdict = edited?.verdict ?? saved?.verdict ?? null;
   const reason = edited?.reason ?? saved?.reason ?? "";
   const dirty = verdict !== (saved?.verdict ?? null) || reason !== (saved?.reason ?? "");
-  const viewingSubmission =
-    selectedRender === null || selectedRender === sample.run?.renders.at(-1);
+  const viewingSubmission = selectedRender === null || selectedRender === run?.renders.at(-1);
   const canSave =
     !saving &&
     dirty &&
     verdict !== null &&
     (verdict !== "fail" || reason.trim() !== "") &&
-    isJudgeable(sample) &&
+    run !== null &&
+    isJudgeable(sample, run) &&
     viewingSubmission;
 
   const confirmDiscard = useCallback(
@@ -124,10 +165,22 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
   );
 
   const select = useCallback(
-    (stem: string) => {
-      if (stem !== sample.stem && !saving && confirmDiscard()) onSelect(stem);
+    (stem: string, runId: string | null) => {
+      if (saving) return;
+      if (stem === sample.stem && runId === (run?.id ?? null)) return;
+      if (confirmDiscard()) onSelect(stem, runId);
     },
-    [sample.stem, saving, confirmDiscard, onSelect]
+    [sample.stem, run, saving, confirmDiscard, onSelect]
+  );
+
+  /** Moves to another sample, staying on the same batch when the view page can tell. */
+  const selectSample = useCallback(
+    (next: SampleSummary) => {
+      const batch = run?.source?.batch;
+      const match = batch === undefined ? null : next.runs.find((r) => r.source?.batch === batch);
+      select(next.stem, match?.id ?? null);
+    },
+    [run, select]
   );
 
   const cancel = useCallback(() => {
@@ -136,11 +189,10 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
   }, []);
 
   const judge = useCallback(() => {
-    const run = sample.run;
     if (!canSave || !run || !verdict) return;
     setSaving(true);
     setActionError(null);
-    saveJudgement(sample.stem, {
+    saveJudgement(run.id, {
       rubricVersion: RUBRIC_VERSION,
       verdict,
       reason: reason.trim(),
@@ -148,19 +200,22 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
     })
       .then(
         (judgement) => {
-          onPatch(sample.stem, { run: { ...run, judgement } });
+          onPatch(run.id, { judgement });
           setEdited(null);
         },
         (e: unknown) => setActionError(errorMessage(e))
       )
       .finally(() => setSaving(false));
-  }, [sample, canSave, verdict, reason, onPatch]);
+  }, [run, canSave, verdict, reason, onPatch]);
 
   const nextPending = useCallback(() => {
-    const index = samples.findIndex(({ stem }) => stem === sample.stem);
-    const next = [...samples.slice(index + 1), ...samples.slice(0, index + 1)].find(isPending);
-    if (next) select(next.stem);
-  }, [samples, sample.stem, select]);
+    const pairs = sampleRuns(samples);
+    const index = pairs.findIndex((pair) => pair.run.id === run?.id);
+    const next = [...pairs.slice(index + 1), ...pairs.slice(0, index + 1)].find((pair) =>
+      isPending(pair.sample, pair.run)
+    );
+    if (next) select(next.sample.stem, next.run.id);
+  }, [samples, run, select]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -175,18 +230,27 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
         const next = samples[event.key === "ArrowDown" ? index + 1 : index - 1];
         if (next) {
           event.preventDefault();
-          select(next.stem);
+          selectSample(next);
         }
         return;
       }
-      if (event.key === "n" || event.key === "N") {
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        const index = sample.runs.findIndex(({ id }) => id === run?.id);
+        const next = sample.runs[event.key === "ArrowRight" ? index + 1 : index - 1];
+        if (next) {
+          event.preventDefault();
+          select(sample.stem, next.id);
+        }
+        return;
+      }
+      if (mode === "judge" && (event.key === "n" || event.key === "N")) {
         event.preventDefault();
         nextPending();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [samples, sample.stem, select, nextPending]);
+  }, [samples, sample, run, mode, select, selectSample, nextPending]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -199,8 +263,15 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
     <Frame
       samples={samples}
       selected={sample.stem}
+      mode={mode}
       loading={loading || saving}
-      onSelect={select}
+      onSelect={(stem) => {
+        const next = samples.find((s) => s.stem === stem);
+        if (next) selectSample(next);
+      }}
+      onMode={(next) => {
+        if (!saving && confirmDiscard()) onMode(next);
+      }}
       onRefresh={() => {
         if (!saving && confirmDiscard()) {
           cancel();
@@ -210,24 +281,32 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
     >
       <SampleView
         sample={sample}
+        run={run}
+        mode={mode}
         dirty={dirty}
         selectedRender={selectedRender}
+        onSelectRun={(id) => select(sample.stem, id)}
         onSelectRender={setSelectedRender}
         error={actionError}
       >
-        <JudgingPanel
-          sample={sample}
-          verdict={verdict}
-          reason={reason}
-          dirty={dirty}
-          busy={saving}
-          canSave={canSave}
-          viewingSubmission={viewingSubmission}
-          onVerdict={(value) => setEdited({ verdict: value, reason })}
-          onReason={(value) => setEdited({ verdict, reason: value })}
-          onSave={judge}
-          onCancel={cancel}
-        />
+        {mode === "judge" ? (
+          <JudgingPanel
+            sample={sample}
+            run={run}
+            verdict={verdict}
+            reason={reason}
+            dirty={dirty}
+            busy={saving}
+            canSave={canSave}
+            viewingSubmission={viewingSubmission}
+            onVerdict={(value) => setEdited({ verdict: value, reason })}
+            onReason={(value) => setEdited({ verdict, reason: value })}
+            onSave={judge}
+            onCancel={cancel}
+          />
+        ) : (
+          <DetailsPanel run={run} />
+        )}
       </SampleView>
     </Frame>
   );
@@ -236,20 +315,33 @@ function Workspace({ sample, samples, loading, onSelect, onRefresh, onPatch }: W
 interface FrameProps {
   samples: SampleSummary[];
   selected: string | null;
+  mode: Mode;
   loading: boolean;
   onSelect: (stem: string) => void;
+  onMode: (mode: Mode) => void;
   onRefresh: () => void;
   children: ReactNode;
 }
 
-function Frame({ samples, selected, loading, onSelect, onRefresh, children }: FrameProps) {
+function Frame({
+  samples,
+  selected,
+  mode,
+  loading,
+  onSelect,
+  onMode,
+  onRefresh,
+  children
+}: FrameProps) {
   return (
     <Grid columns="280px auto 1fr" height="100vh">
       <Sidebar
         samples={samples}
         selected={selected}
+        mode={mode}
         loading={loading}
         onSelect={onSelect}
+        onMode={onMode}
         onRefresh={onRefresh}
       />
       <Separator orientation="vertical" size="4" />

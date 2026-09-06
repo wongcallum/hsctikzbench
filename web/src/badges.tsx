@@ -1,6 +1,6 @@
 import { Badge } from "@radix-ui/themes";
-import { judgingState } from "./sample.ts";
-import type { SampleSummary } from "./types.ts";
+import { isPending, judgingState } from "./sample.ts";
+import type { Run, SampleSummary } from "./types.ts";
 
 const STATUS = {
   submitted: { color: "green", label: "submitted" },
@@ -18,11 +18,10 @@ const JUDGING = {
   fail: { color: "red", label: "fail" }
 } as const;
 
-/** Run status and judging badges, or nothing when the sample has no run. */
-export function RunBadges({ sample }: { sample: SampleSummary }) {
-  const state = judgingState(sample);
-  if (!sample.run || state === null) return null;
-  const status = STATUS[sample.run.result?.status ?? "running"];
+/** Run status and judging badges for one run. */
+export function RunBadges({ sample, run }: { sample: SampleSummary; run: Run }) {
+  const state = judgingState(sample, run);
+  const status = STATUS[run.result?.status ?? "running"];
   const judging = JUDGING[state];
   return (
     <>
@@ -32,6 +31,28 @@ export function RunBadges({ sample }: { sample: SampleSummary }) {
       <Badge color={judging.color} variant={state === "unjudged" ? "outline" : "soft"} size="1">
         {judging.label}
       </Badge>
+    </>
+  );
+}
+
+/** Judging progress across a sample's runs, or nothing when it has none. */
+export function SampleBadges({ sample }: { sample: SampleSummary }) {
+  const runs = sample.runs;
+  if (runs.length === 0) return null;
+  if (runs.length === 1) return <RunBadges sample={sample} run={runs[0]!} />;
+  const running = runs.filter((run) => !run.result).length;
+  const pending = runs.filter((run) => isPending(sample, run)).length;
+  const judged = runs.length - running - pending;
+  return (
+    <>
+      <Badge color={pending > 0 ? "orange" : "green"} variant="soft" size="1">
+        {judged}/{runs.length} judged
+      </Badge>
+      {running > 0 && (
+        <Badge color="blue" variant="soft" size="1">
+          {running} running
+        </Badge>
+      )}
     </>
   );
 }

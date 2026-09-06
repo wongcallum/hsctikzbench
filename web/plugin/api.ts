@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getRequestListener } from "@hono/node-server";
@@ -19,13 +20,21 @@ import { JudgementSchema, type Judgement, type Run, type SampleSummary } from ".
 
 const JUDGEMENT_FILE = "judgement.json";
 const MAX_BODY = 1 << 20;
+const RUN_FILE_TYPES: Record<string, string> = {
+  ".json": "application/json",
+  ".png": "image/png",
+  ".tex": "text/plain; charset=utf-8"
+};
 
 export interface ApiOptions {
   /** Dataset manifest the samples are read from. */
   manifest: string;
   /** Directory holding <stem>.png for each sample. */
   cropsDir: string;
-  /** Directory holding one run directory per sample, named by sample stem. */
+  /**
+   * Directory holding one batch directory per bench invocation, each holding one run
+   * directory per sample named by sample stem.
+   */
   runsDir: string;
 }
 
@@ -37,9 +46,19 @@ class HttpError extends Error {
   }
 }
 
+interface RunLocation {
+  id: string;
+  batch: string;
+  stem: string;
+  dir: string;
+}
+
+const runId = (batch: string, stem: string) =>
+  createHash("sha256").update(`${batch}/${stem}`).digest("hex").slice(0, 12);
+
 /**
- * Serves the sample listing at GET /api/samples, accepts judgements at
- * PUT /api/samples/<stem>/judgement, and serves files under /crops/ and /runs/.
+ * Serves the sample listing at GET /api/samples (add ?blind to omit run provenance), accepts
+ * judgements at PUT /api/runs/<id>/judgement, and serves files under /crops/ and /runs/<id>/.
  */
 export function apiPlugin(options: ApiOptions): Plugin {
   const manifestPath = path.resolve(options.manifest);
@@ -49,18 +68,86 @@ export function apiPlugin(options: ApiOptions): Plugin {
   const readManifest = async (): Promise<Exam[]> =>
     parseManifest(JSON.parse(await readFile(manifestPath, "utf8")));
 
-  const requireSample = async (stem: string): Promise<void> => {
-    const exams = await readManifest();
-    const known = exams.some((exam) => exam.samples.some((s) => sampleStem(exam, s) === stem));
-    if (!known) throw new HttpError(404, `no sample ${stem} in manifest`);
+  const listBatches = async (): Promise<string[]> => {
+    const entries = await readdir(runsRoot, { withFileTypes: true }).catch(() => []);
+    return entries
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+      .map((entry) => entry.name)
+      .sort();
   };
 
-  const summarize = async (exam: Exam, sample: Sample): Promise<SampleSummary> => {
-    const stem = sampleStem(exam, sample);
-    const [hasCrop, run] = await Promise.all([
-      isFile(path.join(cropsRoot, `${stem}.png`)),
-      readRun(path.join(runsRoot, stem))
+  const locateRun = async (id: string): Promise<RunLocation> => {
+    const [exams, batches] = await Promise.all([readManifest(), listBatches()]);
+    for (const batch of batches) {
+      for (const exam of exams) {
+        for (const sample of exam.samples) {
+          const stem = sampleStem(exam, sample);
+          if (runId(batch, stem) !== id) continue;
+          const dir = path.join(runsRoot, batch, stem);
+          if (!(await isDir(dir))) throw new HttpError(404, `no run ${id}`);
+          return { id, batch, stem, dir };
+        }
+      }
+    }
+    throw new HttpError(404, `no run ${id}`);
+  };
+
+  const readRun = async (batch: string, stem: string, blind: boolean): Promise<Run | null> => {
+    const dir = path.join(runsRoot, batch, stem);
+    if (!(await isDir(dir))) return null;
+    const [result, hasSubmission, renders, judgement] = await Promise.all([
+      readJson<RunResult>(path.join(dir, RESULT_FILE)),
+      isFile(path.join(dir, "submission.png")),
+      readdir(path.join(dir, "renders")).then(
+        (names) => names.filter((n) => n.endsWith(".png")).sort(),
+        () => []
+      ),
+      readJson<unknown>(path.join(dir, JUDGEMENT_FILE))
     ]);
+    const parsed = JudgementSchema.safeParse(judgement);
+    return {
+      id: runId(batch, stem),
+      result: result && {
+        status: result.status,
+        turns: result.turns,
+        renders: result.renders,
+        successfulRenders: result.successfulRenders,
+        // Error text may name the provider, so a blind listing drops it.
+        ...(blind || result.error === undefined ? {} : { error: result.error })
+      },
+      hasSubmission,
+      renders,
+      judgement: parsed.success ? parsed.data : null,
+      source: blind
+        ? null
+        : {
+            batch,
+            model: result && {
+              provider: result.provider,
+              model: result.model,
+              reasoning: result.reasoning,
+              usage: result.usage,
+              durationMs: result.durationMs,
+              startedAt: result.startedAt
+            }
+          }
+    };
+  };
+
+  const summarize = async (
+    exam: Exam,
+    sample: Sample,
+    batches: string[],
+    blind: boolean
+  ): Promise<SampleSummary> => {
+    const stem = sampleStem(exam, sample);
+    const [hasCrop, found] = await Promise.all([
+      isFile(path.join(cropsRoot, `${stem}.png`)),
+      Promise.all(batches.map((batch) => readRun(batch, stem, blind)))
+    ]);
+    const runs = found.filter((run) => run !== null);
+    // Batches are sorted by name; a blind listing orders by id so the position says nothing.
+    if (blind) runs.sort((a, b) => a.id.localeCompare(b.id));
     return {
       stem,
       exam: examId(exam),
@@ -69,31 +156,35 @@ export function apiPlugin(options: ApiOptions): Plugin {
       role: sample.role,
       category: sample.category,
       hasCrop,
-      run
+      runs
     };
   };
 
   return {
     name: "hsctikzbench-api",
     configureServer(server) {
-      const list = async (): Promise<SampleSummary[]> => {
-        const exams = await readManifest();
-        return Promise.all(exams.flatMap((exam) => exam.samples.map((s) => summarize(exam, s))));
+      const list = async (blind: boolean): Promise<SampleSummary[]> => {
+        const [exams, batches] = await Promise.all([readManifest(), listBatches()]);
+        return Promise.all(
+          exams.flatMap((exam) => exam.samples.map((s) => summarize(exam, s, batches, blind)))
+        );
       };
 
-      const saveJudgement = async (stem: string, body: unknown): Promise<Judgement> => {
+      const saveJudgement = async (id: string, body: unknown): Promise<Judgement> => {
         const judgement = parseJudgement(body);
-        await requireSample(stem);
-        const dir = path.join(runsRoot, stem);
-        const run = await readRun(dir);
-        if (!run) throw new HttpError(404, `no run for ${stem}`);
+        const location = await locateRun(id);
+        const run = await readRun(location.batch, location.stem, false);
+        if (!run) throw new HttpError(404, `no run ${id}`);
         if (!run.result) throw new HttpError(409, "run has not finished");
         if (!hasSubmission(run))
           throw new HttpError(409, "no submission; already counted as a failure");
-        if (!(await isFile(path.join(cropsRoot, `${stem}.png`)))) {
+        if (!(await isFile(path.join(cropsRoot, `${location.stem}.png`)))) {
           throw new HttpError(409, "a reference crop is required to judge this submission");
         }
-        await writeFile(path.join(dir, JUDGEMENT_FILE), `${JSON.stringify(judgement, null, 2)}\n`);
+        await writeFile(
+          path.join(location.dir, JUDGEMENT_FILE),
+          `${JSON.stringify(judgement, null, 2)}\n`
+        );
         return judgement;
       };
 
@@ -107,9 +198,9 @@ export function apiPlugin(options: ApiOptions): Plugin {
         bodyLimit({ maxSize: MAX_BODY, onError: (c) => c.text("body too large", 413) })
       );
 
-      app.get("/api/samples", async (c) => c.json(await list()));
-      app.put("/api/samples/:stem/judgement", async (c) =>
-        c.json(await saveJudgement(c.req.param("stem"), await jsonBody(c)))
+      app.get("/api/samples", async (c) => c.json(await list(c.req.query("blind") !== undefined)));
+      app.put("/api/runs/:id/judgement", async (c) =>
+        c.json(await saveJudgement(c.req.param("id"), await jsonBody(c)))
       );
 
       const noCache = async (_file: string, c: Context) => c.header("Cache-Control", "no-store");
@@ -123,16 +214,24 @@ export function apiPlugin(options: ApiOptions): Plugin {
           onFound: noCache
         })
       );
-      app.on(
-        ["GET", "HEAD"],
-        "/runs/*",
-        onlyExtensions([".json", ".png", ".tex"]),
-        serveStatic({
-          root: runsRoot,
-          rewriteRequestPath: (requestPath) => requestPath.slice("/runs".length),
-          onFound: noCache
-        })
-      );
+      app.get("/runs/:id/*", async (c) => {
+        const segments = c.req.path.split("/").slice(3).map(decodeSegment);
+        if (segments.length === 0 || segments.some((s) => s === "" || s === "." || s === "..")) {
+          return c.notFound();
+        }
+        const type = RUN_FILE_TYPES[path.extname(segments.at(-1)!)];
+        if (!type) return c.notFound();
+        const run = await locateRun(c.req.param("id"));
+        let body: Buffer;
+        try {
+          body = await readFile(path.join(run.dir, ...segments));
+        } catch {
+          return c.notFound();
+        }
+        c.header("Content-Type", type);
+        c.header("Cache-Control", "no-store");
+        return c.body(new Uint8Array(body));
+      });
 
       app.onError((error, c) =>
         c.text(errorMessage(error), error instanceof HttpError ? error.status : 500)
@@ -154,26 +253,19 @@ function parseJudgement(value: unknown): Judgement {
   return parsed.data;
 }
 
-async function readRun(dir: string): Promise<Run | null> {
-  if (!(await isDir(dir))) return null;
-  const [result, hasSubmission, renders, judgement] = await Promise.all([
-    readJson<RunResult>(path.join(dir, RESULT_FILE)),
-    isFile(path.join(dir, "submission.png")),
-    readdir(path.join(dir, "renders")).then(
-      (names) => names.filter((n) => n.endsWith(".png")).sort(),
-      () => []
-    ),
-    readJson<unknown>(path.join(dir, JUDGEMENT_FILE))
-  ]);
-  const parsed = JudgementSchema.safeParse(judgement);
-  return { result, hasSubmission, renders, judgement: parsed.success ? parsed.data : null };
-}
-
 async function readJson<T>(file: string): Promise<T | null> {
   try {
     return JSON.parse(await readFile(file, "utf8")) as T;
   } catch {
     return null;
+  }
+}
+
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
   }
 }
 

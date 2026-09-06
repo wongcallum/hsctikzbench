@@ -1,6 +1,6 @@
 import { Button, Flex, Kbd, Text, TextArea, Heading } from "@radix-ui/themes";
 import { hasSubmission, isJudgeable } from "./sample.ts";
-import type { SampleSummary, Verdict } from "./types.ts";
+import type { Run, SampleSummary, Verdict } from "./types.ts";
 
 const VERDICTS = [
   ["pass", "Pass", "green"],
@@ -10,6 +10,7 @@ const VERDICTS = [
 
 interface Props {
   sample: SampleSummary;
+  run: Run | null;
   verdict: Verdict | null;
   reason: string;
   dirty: boolean;
@@ -24,6 +25,7 @@ interface Props {
 
 export function JudgingPanel({
   sample,
+  run,
   verdict,
   reason,
   dirty,
@@ -35,7 +37,7 @@ export function JudgingPanel({
   onSave,
   onCancel
 }: Props) {
-  const blocked = !isJudgeable(sample) || !viewingSubmission;
+  const blocked = !run || !isJudgeable(sample, run) || !viewingSubmission;
   return (
     <Flex direction="column" gap="3">
       <Heading size="3">Judgement</Heading>
@@ -53,7 +55,7 @@ export function JudgingPanel({
         <li>Arrows, ticks, endpoints, shading, and blanks</li>
         <li>Missing or unwanted content</li>
       </ol>
-      <Blocker sample={sample} viewingSubmission={viewingSubmission} />
+      <Blocker sample={sample} run={run} viewingSubmission={viewingSubmission} />
       <Flex gap="2" wrap="wrap">
         {VERDICTS.map(([value, label, color]) => (
           <Button
@@ -86,13 +88,13 @@ export function JudgingPanel({
           Cancel
         </Button>
       </Flex>
-      {sample.run?.judgement && !dirty && (
+      {run?.judgement && !dirty && (
         <Text size="1" color="gray">
-          Saved: {sample.run.judgement.verdict.replaceAll("_", " ")}
+          Saved: {run.judgement.verdict.replaceAll("_", " ")}
         </Text>
       )}
       <Text size="1" color="gray">
-        <Kbd>n</Kbd> next pending <Kbd>↑</Kbd>/<Kbd>↓</Kbd> browse
+        <Kbd>n</Kbd> next pending <Kbd>↑</Kbd>/<Kbd>↓</Kbd> samples <Kbd>←</Kbd>/<Kbd>→</Kbd> runs
       </Text>
     </Flex>
   );
@@ -100,12 +102,13 @@ export function JudgingPanel({
 
 function Blocker({
   sample,
+  run,
   viewingSubmission
 }: {
   sample: SampleSummary;
+  run: Run | null;
   viewingSubmission: boolean;
 }) {
-  const run = sample.run;
   if (!run) {
     return (
       <Text size="2" color="gray">

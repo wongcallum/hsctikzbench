@@ -20,11 +20,32 @@ export const JudgementSchema = z
 export type Judgement = z.infer<typeof JudgementSchema>;
 export type Verdict = Judgement["verdict"];
 
+export type Mode = "judge" | "view";
+
+export type RunOutcome = Pick<
+  RunResult,
+  "status" | "error" | "turns" | "renders" | "successfulRenders"
+>;
+
+export type ModelInfo = Pick<
+  RunResult,
+  "provider" | "model" | "reasoning" | "usage" | "durationMs" | "startedAt"
+>;
+
+export interface RunSource {
+  /** Name of the bench output directory the run belongs to. */
+  batch: string;
+  /** Model details from the result; null while the run is still in progress. */
+  model: ModelInfo | null;
+}
+
 export interface Run {
-  result: RunResult | null;
+  id: string;
+  result: RunOutcome | null;
   hasSubmission: boolean;
   renders: string[];
   judgement: Judgement | null;
+  source: RunSource | null;
 }
 
 export interface SampleSummary {
@@ -35,5 +56,5 @@ export interface SampleSummary {
   role: Role;
   category: Category;
   hasCrop: boolean;
-  run: Run | null;
+  runs: Run[];
 }

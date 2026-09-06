@@ -6,10 +6,11 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-export const fetchSamples = () => request<SampleSummary[]>("/api/samples");
+export const fetchSamples = (blind: boolean) =>
+  request<SampleSummary[]>(blind ? "/api/samples?blind" : "/api/samples");
 
-export const saveJudgement = (stem: string, judgement: Judgement) =>
-  request<Judgement>(`/api/samples/${encodeURIComponent(stem)}/judgement`, {
+export const saveJudgement = (runId: string, judgement: Judgement) =>
+  request<Judgement>(`/api/runs/${encodeURIComponent(runId)}/judgement`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(judgement)
@@ -17,5 +18,5 @@ export const saveJudgement = (stem: string, judgement: Judgement) =>
 
 export const cropUrl = (stem: string) => `/crops/${encodeURIComponent(stem)}.png`;
 
-export const runFileUrl = (stem: string, file: string) =>
-  `/runs/${encodeURIComponent(stem)}/${file.split("/").map(encodeURIComponent).join("/")}`;
+export const runFileUrl = (runId: string, file: string) =>
+  `/runs/${encodeURIComponent(runId)}/${file.split("/").map(encodeURIComponent).join("/")}`;

@@ -12,30 +12,35 @@ import type { ReactNode } from "react";
 import { cropUrl, runFileUrl } from "./api.ts";
 import { RunBadges } from "./badges.tsx";
 import { ImagePane } from "./ImagePane.tsx";
-import { hasSubmission, label } from "./sample.ts";
-import type { Run, SampleSummary } from "./types.ts";
+import { hasSubmission, label, runLabel } from "./sample.ts";
+import type { Mode, Run, SampleSummary } from "./types.ts";
 
 interface Props {
   sample: SampleSummary;
+  run: Run | null;
+  mode: Mode;
   dirty: boolean;
   selectedRender: string | null;
+  onSelectRun: (id: string) => void;
   onSelectRender: (name: string | null) => void;
   error: string | null;
-  /** The judging panel shown in the right column. */
+  /** The panel shown in the right column. */
   children: ReactNode;
 }
 
 export function SampleView({
   sample,
+  run,
+  mode,
   dirty,
   selectedRender,
+  onSelectRun,
   onSelectRender,
   error,
   children
 }: Props) {
-  const run = sample.run;
   const submittedRender = run && hasSubmission(run) ? (run.renders.at(-1) ?? null) : null;
-  const result = run ? resultImage(sample.stem, run, selectedRender) : null;
+  const result = run ? resultImage(run, selectedRender) : null;
 
   return (
     <Grid columns="1fr auto 360px" minHeight="0" minWidth="0">
@@ -51,12 +56,6 @@ export function SampleView({
           <Badge color="gray" variant="outline" size="1">
             {sample.role.replaceAll("_", " ")}
           </Badge>
-          <RunBadges sample={sample} />
-          {run?.result && (
-            <Badge color="gray" variant="soft" size="1">
-              {run.result.turns} turns · {run.result.renders} renders
-            </Badge>
-          )}
           {dirty && (
             <Badge color="orange" variant="soft" size="1">
               unsaved
@@ -68,6 +67,35 @@ export function SampleView({
             </Text>
           )}
         </Flex>
+        {sample.runs.length > 0 && (
+          <Flex overflowX="auto" px="4" pb="3" flexShrink="0">
+            <RadioCards.Root
+              columns={`repeat(${sample.runs.length}, max-content)`}
+              gap="2"
+              size="1"
+              value={run?.id ?? ""}
+              onValueChange={onSelectRun}
+            >
+              {sample.runs.map((candidate, index) => (
+                <RadioCards.Item key={candidate.id} value={candidate.id}>
+                  <Flex direction="column" gap="1">
+                    <Text size="2" weight="medium">
+                      {runLabel(candidate, index, mode)}
+                    </Text>
+                    {mode === "view" && candidate.source?.model && (
+                      <Text size="1" color="gray">
+                        {candidate.source.model.model} · {candidate.source.model.reasoning}
+                      </Text>
+                    )}
+                    <Flex align="center" gap="2" wrap="wrap">
+                      <RunBadges sample={sample} run={candidate} />
+                    </Flex>
+                  </Flex>
+                </RadioCards.Item>
+              ))}
+            </RadioCards.Root>
+          </Flex>
+        )}
         <Grid columns="2" gap="3" px="4" flexGrow="1" minHeight="0">
           <ImagePane
             label="Reference"
@@ -94,7 +122,7 @@ export function SampleView({
                 <RadioCards.Item key={name} value={name}>
                   <Flex direction="column" align="center" gap="1">
                     <img
-                      src={runFileUrl(sample.stem, `renders/${name}`)}
+                      src={runFileUrl(run.id, `renders/${name}`)}
                       alt={name}
                       style={{ height: 96, backgroundColor: "white" }}
                     />
@@ -125,17 +153,17 @@ export function SampleView({
 }
 
 /** Picks the image for the result pane: an explicitly selected render, else the submission. */
-function resultImage(stem: string, run: Run, selected: string | null) {
+function resultImage(run: Run, selected: string | null) {
   const last = run.renders.at(-1) ?? null;
   const submitted = hasSubmission(run);
   if (selected !== null) {
     const note = submitted && selected === last ? " (submitted)" : "";
-    return { src: runFileUrl(stem, `renders/${selected}`), detail: `renders/${selected}${note}` };
+    return { src: runFileUrl(run.id, `renders/${selected}`), detail: `renders/${selected}${note}` };
   }
-  if (submitted) return { src: runFileUrl(stem, "submission.png"), detail: "submission.png" };
+  if (submitted) return { src: runFileUrl(run.id, "submission.png"), detail: "submission.png" };
   if (last === null) return null;
   return {
-    src: runFileUrl(stem, `renders/${last}`),
+    src: runFileUrl(run.id, `renders/${last}`),
     detail: `renders/${last} (last render, not submitted)`
   };
 }

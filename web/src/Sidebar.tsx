@@ -1,31 +1,61 @@
-import { Badge, Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
-import { RunBadges } from "./badges.tsx";
-import { label, scoreSummary } from "./sample.ts";
-import type { SampleSummary } from "./types.ts";
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  RadioCards,
+  ScrollArea,
+  SegmentedControl,
+  Text
+} from "@radix-ui/themes";
+import { SampleBadges } from "./badges.tsx";
+import { label, scoreLines } from "./sample.ts";
+import type { Mode, SampleSummary } from "./types.ts";
 
 interface Props {
   samples: SampleSummary[];
   selected: string | null;
+  mode: Mode;
   loading: boolean;
   onSelect: (stem: string) => void;
+  onMode: (mode: Mode) => void;
   onRefresh: () => void;
 }
 
-export function Sidebar({ samples, selected, loading, onSelect, onRefresh }: Props) {
+export function Sidebar({ samples, selected, mode, loading, onSelect, onMode, onRefresh }: Props) {
   const exams = [...new Set(samples.map((s) => s.exam))];
   return (
     <Flex direction="column" minHeight="0">
       <Flex align="center" justify="between" p="3" gap="2">
         <Heading size="3">Samples</Heading>
-        <Button size="1" variant="soft" onClick={onRefresh} disabled={loading}>
-          Refresh
-        </Button>
+        <Flex align="center" gap="2">
+          <SegmentedControl.Root
+            size="1"
+            value={mode}
+            onValueChange={(value) => onMode(value === "view" ? "view" : "judge")}
+          >
+            <SegmentedControl.Item value="judge">Judge</SegmentedControl.Item>
+            <SegmentedControl.Item value="view">View</SegmentedControl.Item>
+          </SegmentedControl.Root>
+          <Button size="1" variant="soft" onClick={onRefresh} disabled={loading}>
+            Refresh
+          </Button>
+        </Flex>
       </Flex>
-      <Box px="3" pb="2">
-        <Text size="1" color="gray">
-          {scoreSummary(samples)}
-        </Text>
-      </Box>
+      <Flex direction="column" px="3" pb="2" gap="1">
+        {scoreLines(samples, mode).map(({ batch, summary }) => (
+          <Text key={batch ?? ""} size="1" color="gray">
+            {batch !== null && (
+              <>
+                <Text weight="bold">{batch}</Text>
+                {" · "}
+              </>
+            )}
+            {summary}
+          </Text>
+        ))}
+      </Flex>
       <Box flexGrow="1" minHeight="0">
         <ScrollArea type="auto" scrollbars="vertical">
           <Box px="3" pb="3">
@@ -58,7 +88,7 @@ export function Sidebar({ samples, selected, loading, onSelect, onRefresh }: Pro
                             <Badge color="gray" variant="outline" size="1">
                               {sample.category.replaceAll("_", " ")}
                             </Badge>
-                            <RunBadges sample={sample} />
+                            <SampleBadges sample={sample} />
                           </Flex>
                         </Flex>
                       </RadioCards.Item>
