@@ -46,23 +46,29 @@ export const hasPending = (sample: SampleSummary): boolean =>
 
 /**
  * Samples the sidebar lists: judging drops the ones with nothing left to judge, but keeps the
- * selected sample so it never vanishes from under the judge mid-sample.
+ * selected sample with a judgeable run so it never vanishes from under the judge mid-sample.
  */
 export const listedSamples = (
   samples: SampleSummary[],
   mode: Mode,
   selected: string | null
 ): SampleSummary[] =>
-  mode === "view" ? samples : samples.filter((s) => hasPending(s) || s.stem === selected);
+  mode === "view"
+    ? samples
+    : samples.filter(
+        (s) => hasPending(s) || (s.stem === selected && s.runs.some((run) => isJudgeable(s, run)))
+      );
 
 /**
- * Runs the selector lists: judging drops the ones already resolved, but keeps the selected run so
- * it does not vanish from under the judge the moment its verdict is saved.
+ * Runs the selector lists: judging drops unjudgeable and resolved runs, but keeps the selected
+ * judgeable run so it does not vanish from under the judge the moment its verdict is saved.
  */
 export const listedRuns = (sample: SampleSummary, mode: Mode, selected: string | null): Run[] =>
   mode === "view"
     ? sample.runs
-    : sample.runs.filter((run) => isPending(sample, run) || run.id === selected);
+    : sample.runs.filter(
+        (run) => isPending(sample, run) || (run.id === selected && isJudgeable(sample, run))
+      );
 
 export interface SampleRun {
   sample: SampleSummary;
