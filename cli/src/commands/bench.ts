@@ -4,14 +4,11 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommand, numberParser } from "@stricli/core";
 import pMap from "p-map";
+import { prepareAgent, agentFlags, type AgentFlags } from "../agent.ts";
 import type { LocalContext } from "../context.ts";
 import { runAgent } from "../loop.ts";
 import { examId, parseManifest, sampleStem, type Exam, type Sample } from "../manifest.ts";
-import { resolveModel } from "../model.ts";
 import { OutputDir, type RunResult, type RunStatus } from "../output.ts";
-import { checkTexCapabilities } from "../prompt.ts";
-import { createRenderer } from "../renderer.ts";
-import { agentFlags, loadSystemPrompt, type AgentFlags } from "./run.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const DATASET_DIR = join(REPO_ROOT, "dataset");
@@ -50,11 +47,7 @@ export const benchCommand = buildCommand({
     const jobs = selectJobs(manifest, flags);
     if (jobs.length === 0) throw new Error("no samples selected");
 
-    const { models, model, authSource } = await resolveModel(flags);
-    const renderer = await createRenderer(flags);
-    await renderer.prepare();
-    await checkTexCapabilities(renderer);
-    const systemPrompt = await loadSystemPrompt(flags.prompt);
+    const { models, model, authSource, renderer, systemPrompt } = await prepareAgent(flags);
     log(`auth: ${authSource}`);
     log(`renderer: ${renderer.description}`);
     log(`${jobs.length} samples, ${flags.jobs} jobs, output in ${flags.out}`);
