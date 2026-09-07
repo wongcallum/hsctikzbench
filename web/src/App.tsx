@@ -122,19 +122,23 @@ export function App() {
 
   return (
     <Theme accentColor="gray" grayColor="slate">
-      <Frame
-        samples={listed}
-        scores={scores}
-        empty={empty}
-        selected={sample?.stem ?? null}
-        mode={mode}
-        loading={loading}
-        onSelect={(stem) => select(stem, null)}
-        onMode={setMode}
-        onRefresh={() => void refresh()}
-      >
-        {content}
-      </Frame>
+      {!error && sample ? (
+        content
+      ) : (
+        <Frame
+          samples={listed}
+          scores={scores}
+          empty={empty}
+          selected={sample?.stem ?? null}
+          mode={mode}
+          loading={loading}
+          onSelect={(stem) => select(stem, null)}
+          onMode={setMode}
+          onRefresh={() => void refresh()}
+        >
+          {content}
+        </Frame>
+      )}
     </Theme>
   );
 }
