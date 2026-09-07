@@ -100,7 +100,6 @@ export function App() {
     </Flex>
   ) : sample ? (
     <Workspace
-      key={`${mode}/${run?.id ?? sample.stem}`}
       sample={sample}
       run={run}
       runs={runs}
@@ -159,6 +158,24 @@ interface WorkspaceProps {
   onPatch: (runId: string, changes: Partial<Run>) => void;
 }
 
+interface EditorState {
+  selection: string;
+  session: symbol;
+  selectedRender: string | null;
+  saving: boolean;
+  actionError: string | null;
+  edited: { verdict: Verdict | null; reason: string } | null;
+}
+
+const freshEditor = (selection: string): EditorState => ({
+  selection,
+  session: Symbol(),
+  selectedRender: null,
+  saving: false,
+  actionError: null,
+  edited: null
+});
+
 function Workspace({
   sample,
   run,
@@ -173,10 +190,17 @@ function Workspace({
   onRefresh,
   onPatch
 }: WorkspaceProps) {
-  const [selectedRender, setSelectedRender] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [edited, setEdited] = useState<{ verdict: Verdict | null; reason: string } | null>(null);
+  const selection = `${mode}/${run?.id ?? sample.stem}`;
+  const [editor, setEditor] = useState(() => freshEditor(selection));
+  // Reset before rendering children while keeping the frame and sidebar mounted.
+  if (editor.selection !== selection) setEditor(freshEditor(selection));
+  const { session, selectedRender, saving, actionError, edited } = editor;
+  // Ignore saves that finish after navigating away, even if this sample is revisited.
+  const updateEditor = useCallback(
+    (changes: Partial<Omit<EditorState, "selection" | "session">>) =>
+      setEditor((current) => (current.session === session ? { ...current, ...changes } : current)),
+    [session]
+  );
 
   const saved = run?.judgement ?? null;
   const verdict = edited?.verdict ?? saved?.verdict ?? null;
@@ -217,14 +241,12 @@ function Workspace({
   );
 
   const cancel = useCallback(() => {
-    setEdited(null);
-    setActionError(null);
-  }, []);
+    updateEditor({ edited: null, actionError: null });
+  }, [updateEditor]);
 
   const judge = useCallback(() => {
     if (!canSave || !run || !verdict) return;
-    setSaving(true);
-    setActionError(null);
+    updateEditor({ saving: true, actionError: null });
     saveJudgement(run.id, {
       rubricVersion: RUBRIC_VERSION,
       verdict,
@@ -234,12 +256,12 @@ function Workspace({
       .then(
         (judgement) => {
           onPatch(run.id, { judgement });
-          setEdited(null);
+          updateEditor({ edited: null });
         },
-        (e: unknown) => setActionError(errorMessage(e))
+        (e: unknown) => updateEditor({ actionError: errorMessage(e) })
       )
-      .finally(() => setSaving(false));
-  }, [run, canSave, verdict, reason, onPatch]);
+      .finally(() => updateEditor({ saving: false }));
+  }, [run, canSave, verdict, reason, onPatch, updateEditor]);
 
   const nextPending = useCallback(() => {
     const pairs = sampleRuns(samples);
@@ -315,6 +337,7 @@ function Workspace({
       }}
     >
       <SampleView
+        key={selection}
         sample={sample}
         run={run}
         runs={runs}
@@ -322,7 +345,7 @@ function Workspace({
         dirty={dirty}
         selectedRender={selectedRender}
         onSelectRun={(id) => select(sample.stem, id)}
-        onSelectRender={setSelectedRender}
+        onSelectRender={(selectedRender) => updateEditor({ selectedRender })}
         error={actionError}
       >
         {mode === "judge" ? (
@@ -335,8 +358,8 @@ function Workspace({
             busy={saving}
             canSave={canSave}
             viewingSubmission={viewingSubmission}
-            onVerdict={(value) => setEdited({ verdict: value, reason })}
-            onReason={(value) => setEdited({ verdict, reason: value })}
+            onVerdict={(value) => updateEditor({ edited: { verdict: value, reason } })}
+            onReason={(value) => updateEditor({ edited: { verdict, reason: value } })}
             onSave={judge}
             onCancel={cancel}
           />
