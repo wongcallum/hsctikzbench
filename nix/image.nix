@@ -5,7 +5,8 @@
 }:
 dockerTools.buildLayeredImage {
   name = "hsctikzbench-renderer";
-  tag = null;
+  # keep in sync with DEFAULT_IMAGE in cli/src/renderer.ts
+  tag = "0.1.0";
   contents = [
     renderer
     tini
@@ -22,11 +23,10 @@ dockerTools.buildLayeredImage {
       "HOME=/tmp"
       "TMPDIR=/tmp"
     ];
-    Cmd = [
+    Entrypoint = [
       "tini"
       "--"
-      "render"
-      "idle"
     ];
+    Cmd = [ "render" ];
   };
 }
