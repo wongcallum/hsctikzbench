@@ -2,8 +2,6 @@ import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult } from "hsctikzbench-cli/output";
 import * as z from "zod";
 
-export type { RunResult, RunStatus } from "hsctikzbench-cli/output";
-
 export const RUBRIC_VERSION = 1;
 export const JudgementSchema = z
   .strictObject({

@@ -5,14 +5,7 @@ import { fileURLToPath } from "node:url";
 import { buildCommand, buildRouteMap, numberParser } from "@stricli/core";
 import pMap from "p-map";
 import type { LocalContext } from "../context.ts";
-import {
-  examId,
-  parseManifest,
-  sampleStem,
-  serializeManifest,
-  type Exam,
-  type Sample
-} from "../manifest.ts";
+import { examId, parseManifest, sampleStem, serializeManifest, type Sample } from "../manifest.ts";
 import { crop } from "../render.ts";
 import { createRenderer, rendererFlags, type Renderer, type RendererFlags } from "../renderer.ts";
 

@@ -57,7 +57,8 @@ const SANDBOX_ARGS = [
   "512"
 ];
 
-export type PullPolicy = "missing" | "never" | "always";
+export const PULL_POLICIES = ["missing", "never", "always"] as const;
+export type PullPolicy = (typeof PULL_POLICIES)[number];
 
 class ContainerRenderer implements Renderer {
   constructor(
@@ -167,13 +168,6 @@ export async function createRenderer(flags: RendererFlags): Promise<Renderer> {
   );
 }
 
-export function parsePullPolicy(value: string): PullPolicy {
-  if (value !== "missing" && value !== "never" && value !== "always") {
-    throw new Error(`--pull must be one of missing, never, always`);
-  }
-  return value;
-}
-
 async function runProcess(
   bin: string,
   args: string[],
@@ -255,8 +249,8 @@ export const rendererFlags = {
     default: process.env["HSCTIKZBENCH_RENDERER_IMAGE"] ?? DEFAULT_IMAGE
   },
   pull: {
-    kind: "parsed",
-    parse: parsePullPolicy,
+    kind: "enum",
+    values: PULL_POLICIES,
     brief: "When to pull the renderer image: missing, never, always",
     default: "missing"
   }

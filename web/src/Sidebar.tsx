@@ -40,7 +40,12 @@ export function Sidebar({
   onMode,
   onRefresh
 }: Props) {
-  const exams = [...new Set(samples.map((s) => s.exam))];
+  const groups = new Map<string, SampleSummary[]>();
+  for (const sample of samples) {
+    const group = groups.get(sample.exam);
+    if (group) group.push(sample);
+    else groups.set(sample.exam, [sample]);
+  }
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
   const toggle = (exam: string) =>
     setCollapsed((current) => {
@@ -101,8 +106,7 @@ export function Sidebar({
                 {empty}
               </Text>
             )}
-            {exams.map((exam) => {
-              const group = samples.filter((s) => s.exam === exam);
+            {[...groups].map(([exam, group]) => {
               const open = !collapsed.has(exam);
               return (
                 <Flex key={exam} direction="column" gap="2" mt="2">
