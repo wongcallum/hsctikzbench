@@ -5,14 +5,7 @@ import { fileURLToPath } from "node:url";
 import { buildCommand, buildRouteMap, numberParser } from "@stricli/core";
 import pMap from "p-map";
 import type { LocalContext } from "../context.ts";
-import {
-  examId,
-  parseManifest,
-  sampleStem,
-  serializeManifest,
-  type Exam,
-  type Sample
-} from "../manifest.ts";
+import { examId, parseManifest, sampleStem, serializeManifest, type Sample } from "../manifest.ts";
 import { crop } from "../render.ts";
 import { createRenderer, rendererFlags, type Renderer, type RendererFlags } from "../renderer.ts";
 
@@ -35,9 +28,9 @@ type Outcome =
   | { kind: "failed"; message: string };
 
 interface Job {
-  exam: Exam;
-  sample: Sample;
-  stem: string;
+  readonly sample: Sample;
+  readonly stem: string;
+  readonly pdf: Buffer;
 }
 
 const buildCommandDef = buildCommand({
@@ -64,7 +57,7 @@ const buildCommandDef = buildCommand({
 
     const outcomes = new Map<string, Outcome>();
     const jobs: Job[] = [];
-    const pdfs = new Map<Exam, Buffer>();
+    const preparedExams = new Set<string>();
     for (const exam of exams) {
       const id = examId(exam);
       const pdfPath = join(flags.pdfs, `${id}.pdf`);
@@ -84,17 +77,24 @@ const buildCommandDef = buildCommand({
           outcomes.set(sampleStem(exam, s), { kind: "failed", message });
         continue;
       }
-      pdfs.set(exam, pdf);
-      for (const sample of exam.samples)
-        jobs.push({ exam, sample, stem: sampleStem(exam, sample) });
+      preparedExams.add(id);
+      for (const sample of exam.samples) jobs.push({ sample, stem: sampleStem(exam, sample), pdf });
     }
-    log(`${jobs.length} samples across ${pdfs.size} exams, ${flags.jobs} jobs`);
+    log(`${jobs.length} samples across ${preparedExams.size} exams, ${flags.jobs} jobs`);
 
     let done = 0;
     await pMap(
       jobs,
       async (job) => {
-        const outcome = await buildOne(flags, renderer, pdfs.get(job.exam)!, job);
+        let outcome: Outcome;
+        try {
+          outcome = await buildOne(flags, renderer, job.pdf, job);
+        } catch (error) {
+          outcome = {
+            kind: "failed",
+            message: error instanceof Error ? error.message : String(error)
+          };
+        }
         outcomes.set(job.stem, outcome);
         done++;
         if (outcome.kind !== "ok") log(`${outcome.kind}: ${job.stem}: ${outcome.message}`);

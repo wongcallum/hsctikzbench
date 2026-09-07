@@ -5,8 +5,7 @@
   "type": "module",
   "exports": {
     "./manifest": "./src/manifest.ts",
-    "./output": "./src/output.ts",
-    "./model": "./src/model.ts"
+    "./output": "./src/output.ts"
   },
   "scripts": {
     "start": "tsx src/cli.ts",

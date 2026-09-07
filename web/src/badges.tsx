@@ -1,5 +1,5 @@
 import { Badge } from "@radix-ui/themes";
-import { isPending, judgingState } from "./sample.ts";
+import { judgingCounts, judgingState } from "./sample.ts";
 import type { Run, SampleSummary } from "./types.ts";
 
 const STATUS = {
@@ -40,17 +40,20 @@ export function SampleBadges({ sample }: { sample: SampleSummary }) {
   const runs = sample.runs;
   if (runs.length === 0) return null;
   if (runs.length === 1) return <RunBadges sample={sample} run={runs[0]!} />;
-  const running = runs.filter((run) => !run.result).length;
-  const pending = runs.filter((run) => isPending(sample, run)).length;
-  const judged = runs.length - running - pending;
+  const counts = judgingCounts(runs.map((run) => ({ sample, run })));
   return (
     <>
-      <Badge color={pending > 0 ? "orange" : "green"} variant="soft" size="1">
-        {judged}/{runs.length} judged
+      <Badge color={counts.pending > 0 ? "orange" : "green"} variant="soft" size="1">
+        {counts.resolved}/{counts.total} judged
       </Badge>
-      {running > 0 && (
+      {counts.running > 0 && (
         <Badge color="blue" variant="soft" size="1">
-          {running} running
+          {counts.running} running
+        </Badge>
+      )}
+      {counts.unjudgeable > 0 && (
+        <Badge color="gray" variant="soft" size="1">
+          {counts.unjudgeable} no reference
         </Badge>
       )}
     </>

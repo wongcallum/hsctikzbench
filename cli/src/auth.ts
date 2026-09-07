@@ -60,7 +60,7 @@ export class FileCredentialStore implements CredentialStore {
   }
 
   private enqueue<T>(task: () => Promise<T>): Promise<T> {
-    const run = this.chain.then(task, task);
+    const run = this.chain.then(task);
     this.chain = run.catch(() => {});
     return run;
   }

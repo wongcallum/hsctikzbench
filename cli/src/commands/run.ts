@@ -1,40 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { buildCommand, numberParser } from "@stricli/core";
+import { buildCommand } from "@stricli/core";
+import { agentFlags, prepareAgent, type AgentFlags } from "../agent.ts";
 import type { LocalContext } from "../context.ts";
 import { runAgent } from "../loop.ts";
-import { modelFlags, resolveModel, type ModelFlags } from "../model.ts";
 import { OutputDir } from "../output.ts";
-import { buildSystemPrompt, checkTexCapabilities } from "../prompt.ts";
-import { createRenderer, rendererFlags, type RendererFlags } from "../renderer.ts";
-
-export const DEFAULT_PROMPT = new URL("../../prompt.md", import.meta.url);
-
-/** Flags shared by every command that runs the agent. */
-export interface AgentFlags extends ModelFlags, RendererFlags {
-  readonly maxTurns: number;
-  readonly prompt?: string;
-}
-
-export const agentFlags = {
-  ...modelFlags,
-  ...rendererFlags,
-  maxTurns: {
-    kind: "parsed",
-    parse: numberParser,
-    brief: "Maximum number of model calls",
-    default: "20"
-  },
-  prompt: {
-    kind: "parsed",
-    parse: String,
-    brief: "Path to a system prompt file replacing the default",
-    optional: true
-  }
-} as const;
-
-export async function loadSystemPrompt(path: string | undefined): Promise<string> {
-  return buildSystemPrompt(await readFile(path ?? DEFAULT_PROMPT, "utf8"));
-}
 
 interface RunFlags extends AgentFlags {
   readonly out: string;
@@ -42,12 +11,8 @@ interface RunFlags extends AgentFlags {
 
 export const runCommand = buildCommand({
   async func(this: LocalContext, flags: RunFlags, reference: string): Promise<void> {
-    const { models, model, authSource } = await resolveModel(flags);
-    const renderer = await createRenderer(flags);
-    await renderer.prepare();
-    await checkTexCapabilities(renderer);
+    const { models, model, authSource, renderer, systemPrompt } = await prepareAgent(flags);
     const referencePng = await readFile(reference);
-    const systemPrompt = await loadSystemPrompt(flags.prompt);
     const out = new OutputDir(flags.out);
     await out.prepare(referencePng);
 

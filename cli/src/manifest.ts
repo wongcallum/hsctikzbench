@@ -91,14 +91,12 @@ export function sampleStem(exam: Exam, sample: Sample): string {
   return `${examId(exam)}--q-${slug(sample.question)}--${kind}-${sample.index}`;
 }
 
-class ManifestError extends Error {}
-
 export function parseManifest(json: unknown): Exam[] {
   const parsed = ManifestSchema.safeParse(json);
   if (!parsed.success) {
     const issue = parsed.error.issues[0]!;
     const where = issue.path.length > 0 ? issue.path.join(".") : "root";
-    throw new ManifestError(`manifest: ${where}: ${issue.message}`);
+    throw new Error(`manifest: ${where}: ${issue.message}`);
   }
 
   const exams = parsed.data;
@@ -106,14 +104,14 @@ export function parseManifest(json: unknown): Exam[] {
   for (const [i, exam] of exams.entries()) {
     const id = examId(exam);
     if (seen.has(id)) {
-      throw new ManifestError(`manifest: exams[${i}]: duplicate exam ${id}`);
+      throw new Error(`manifest: exams[${i}]: duplicate exam ${id}`);
     }
     seen.set(id, `exams[${i}]`);
     for (const [j, sample] of exam.samples.entries()) {
       const stem = sampleStem(exam, sample);
       const where = `exams[${i}].samples[${j}]`;
       if (seen.has(stem)) {
-        throw new ManifestError(
+        throw new Error(
           `manifest: ${where}: duplicate sample ${stem} (also ${seen.get(stem)}); set index to distinguish them`
         );
       }

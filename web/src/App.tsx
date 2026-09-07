@@ -1,5 +1,5 @@
 import { Callout, Flex, Grid, Separator, Text, Theme } from "@radix-ui/themes";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel } from "./JudgingPanel.tsx";
@@ -24,23 +24,29 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useLocation();
+  const refreshId = useRef(0);
   const mode = location.mode;
 
   const refresh = useCallback(async () => {
+    const id = ++refreshId.current;
     setLoading(true);
     try {
-      setSamples(await fetchSamples(mode === "judge"));
+      const next = await fetchSamples(mode === "judge");
+      if (id !== refreshId.current) return;
+      setSamples(next);
       setError(null);
     } catch (e) {
+      if (id !== refreshId.current) return;
       setError(errorMessage(e));
     } finally {
-      setLoading(false);
+      if (id === refreshId.current) setLoading(false);
     }
   }, [mode]);
 
   // Drop the previous mode's listing before refetching so the judge page never shows provenance.
   useEffect(() => {
     setSamples([]);
+    setError(null);
     void refresh();
   }, [refresh]);
 
@@ -86,58 +92,49 @@ export function App() {
     []
   );
 
+  const content = error ? (
+    <Flex p="4">
+      <Callout.Root color="red">
+        <Callout.Text>{error}</Callout.Text>
+      </Callout.Root>
+    </Flex>
+  ) : sample ? (
+    <Workspace
+      key={`${mode}/${run?.id ?? sample.stem}`}
+      sample={sample}
+      run={run}
+      runs={runs}
+      samples={listed}
+      scores={scores}
+      empty={empty}
+      mode={mode}
+      loading={loading}
+      onSelect={select}
+      onMode={setMode}
+      onRefresh={refresh}
+      onPatch={patch}
+    />
+  ) : (
+    <Flex p="4">
+      <Text color="gray">{loading ? "Loading…" : empty}</Text>
+    </Flex>
+  );
+
   return (
     <Theme accentColor="gray" grayColor="slate">
-      {error ? (
-        <Frame
-          samples={listed}
-          scores={scores}
-          empty={empty}
-          selected={sample?.stem ?? null}
-          mode={mode}
-          loading={loading}
-          onSelect={(stem) => select(stem, null)}
-          onMode={setMode}
-          onRefresh={() => void refresh()}
-        >
-          <Flex p="4">
-            <Callout.Root color="red">
-              <Callout.Text>{error}</Callout.Text>
-            </Callout.Root>
-          </Flex>
-        </Frame>
-      ) : sample ? (
-        <Workspace
-          sample={sample}
-          run={run}
-          runs={runs}
-          samples={listed}
-          scores={scores}
-          empty={empty}
-          mode={mode}
-          loading={loading}
-          onSelect={select}
-          onMode={setMode}
-          onRefresh={refresh}
-          onPatch={patch}
-        />
-      ) : (
-        <Frame
-          samples={listed}
-          scores={scores}
-          empty={empty}
-          selected={null}
-          mode={mode}
-          loading={loading}
-          onSelect={(stem) => select(stem, null)}
-          onMode={setMode}
-          onRefresh={() => void refresh()}
-        >
-          <Flex p="4">
-            <Text color="gray">{loading ? "Loading…" : empty}</Text>
-          </Flex>
-        </Frame>
-      )}
+      <Frame
+        samples={listed}
+        scores={scores}
+        empty={empty}
+        selected={sample?.stem ?? null}
+        mode={mode}
+        loading={loading}
+        onSelect={(stem) => select(stem, null)}
+        onMode={setMode}
+        onRefresh={() => void refresh()}
+      >
+        {content}
+      </Frame>
     </Theme>
   );
 }
@@ -176,16 +173,6 @@ function Workspace({
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [edited, setEdited] = useState<{ verdict: Verdict | null; reason: string } | null>(null);
-
-  const identity = `${mode}/${run?.id ?? sample.stem}`;
-  const [shown, setShown] = useState(identity);
-  if (shown !== identity) {
-    setShown(identity);
-    setSelectedRender(null);
-    setSaving(false);
-    setActionError(null);
-    setEdited(null);
-  }
 
   const saved = run?.judgement ?? null;
   const verdict = edited?.verdict ?? saved?.verdict ?? null;
