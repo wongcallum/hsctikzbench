@@ -73,6 +73,7 @@ export function SampleView({
         {runs.length > 0 && (
           <Flex overflowX="auto" px="4" pb="3" flexShrink="0">
             <RadioCards.Root
+              orientation="horizontal"
               columns={`repeat(${runs.length}, max-content)`}
               gap="2"
               size="1"
@@ -115,6 +116,7 @@ export function SampleView({
         {run && run.renders.length > 0 && (
           <Flex overflowX="auto" px="4" py="3" flexShrink="0">
             <RadioCards.Root
+              orientation="horizontal"
               columns={`repeat(${run.renders.length}, max-content)`}
               gap="2"
               size="1"

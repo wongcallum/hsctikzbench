@@ -130,6 +130,7 @@ export function Sidebar({
                   </Button>
                   {open && (
                     <RadioCards.Root
+                      orientation="vertical"
                       columns="1"
                       gap="2"
                       size="1"

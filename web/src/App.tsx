@@ -19,6 +19,13 @@ import { RUBRIC_VERSION, type Mode, type Run, type SampleSummary, type Verdict }
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+function claimedByGroup(group: Element, key: string): boolean {
+  const orientation = group.getAttribute("aria-orientation");
+  if (key === "ArrowUp" || key === "ArrowDown") return orientation !== "horizontal";
+  if (key === "ArrowLeft" || key === "ArrowRight") return orientation !== "vertical";
+  return true;
+}
+
 export function App() {
   const [samples, setSamples] = useState<SampleSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -275,11 +282,10 @@ function Workspace({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
-      if (
-        event.target instanceof HTMLElement &&
-        event.target.closest("input, textarea, [role=dialog], [role=radiogroup]")
-      )
-        return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target?.closest("input, textarea, [role=dialog]")) return;
+      const group = target?.closest("[role=radiogroup]");
+      if (group && claimedByGroup(group, event.key)) return;
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         const index = samples.findIndex(({ stem }) => stem === sample.stem);
         const next = samples[event.key === "ArrowDown" ? index + 1 : index - 1];
