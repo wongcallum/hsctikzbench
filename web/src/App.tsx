@@ -1,5 +1,5 @@
 import { Callout, Flex, Grid, Separator, Text, Theme } from "@radix-ui/themes";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel } from "./JudgingPanel.tsx";
@@ -24,23 +24,29 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useLocation();
+  const refreshId = useRef(0);
   const mode = location.mode;
 
   const refresh = useCallback(async () => {
+    const id = ++refreshId.current;
     setLoading(true);
     try {
-      setSamples(await fetchSamples(mode === "judge"));
+      const next = await fetchSamples(mode === "judge");
+      if (id !== refreshId.current) return;
+      setSamples(next);
       setError(null);
     } catch (e) {
+      if (id !== refreshId.current) return;
       setError(errorMessage(e));
     } finally {
-      setLoading(false);
+      if (id === refreshId.current) setLoading(false);
     }
   }, [mode]);
 
   // Drop the previous mode's listing before refetching so the judge page never shows provenance.
   useEffect(() => {
     setSamples([]);
+    setError(null);
     void refresh();
   }, [refresh]);
 
