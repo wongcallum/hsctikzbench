@@ -210,10 +210,11 @@ function isMissingImage(stderr: string): boolean {
 function runtimeHint(runtime: string, stderr: string): string {
   if (/permission denied/i.test(stderr) && /sock/i.test(stderr)) {
     return (
-      "\nThe daemon socket is not accessible."
+      `\nThe ${runtime} socket is not readable by this user. Check its group and permissions, ` +
+      `or pass --renderer local.`
     );
   }
-  return `\nCheck the runtime works or use --renderer local.`;
+  return `\nCheck that ${runtime} works, or pass --renderer local.`;
 }
 
 function isRegistryRef(image: string): boolean {
