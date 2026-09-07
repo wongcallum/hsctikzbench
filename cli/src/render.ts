@@ -1,5 +1,5 @@
 import type { Box } from "./manifest.ts";
-import { RendererError, type Renderer } from "./renderer.ts";
+import { RendererError, type ExecResult, type Renderer } from "./renderer.ts";
 
 const EXIT_COMPILE = 2;
 const EXIT_TIMEOUT = 3;
@@ -13,24 +13,14 @@ const MAX_ERROR_LINES = 40;
 export type RenderResult = { ok: true; png: Buffer } | { ok: false; message: string };
 
 export async function render(renderer: Renderer, source: string): Promise<RenderResult> {
-  const { code, stdout, stderr } = await renderer.exec(["render"], source);
-  const log = stderr.toString("utf8");
-  switch (code) {
-    case 0:
-      return { ok: true, png: stdout };
-    case EXIT_COMPILE:
-      return { ok: false, message: extractLatexError(log) };
-    case EXIT_TIMEOUT:
-    case EXIT_TOO_LARGE:
-      return { ok: false, message: rendererMessage(log, "render") };
-    case EXIT_RASTER:
-      return {
-        ok: false,
-        message: `${rendererMessage(log, "render")}\n${tail(log, LOG_TAIL_LINES)}`
-      };
-    default:
-      throw new RendererError(`renderer exited with ${code}: ${tail(log, LOG_TAIL_LINES)}`);
-  }
+  const response = await renderer.exec(["render"], source);
+  if (response.code === 0) return { ok: true, png: response.stdout };
+  return interpretFailure(response, {
+    [EXIT_COMPILE]: extractLatexError,
+    [EXIT_TIMEOUT]: (log) => rendererMessage(log, "render"),
+    [EXIT_TOO_LARGE]: (log) => rendererMessage(log, "render"),
+    [EXIT_RASTER]: (log) => rasterError(log, "render")
+  });
 }
 
 export interface CropSpec {
@@ -44,23 +34,27 @@ export async function crop(renderer: Renderer, pdf: Buffer, spec: CropSpec): Pro
   const args = ["crop", "--page", String(spec.page), "--box", rectArg(spec.box)];
 
   for (const mask of spec.masks ?? []) args.push("--mask", rectArg(mask));
-  const { code, stdout, stderr } = await renderer.exec(args, pdf);
-  const log = stderr.toString("utf8");
+  const response = await renderer.exec(args, pdf);
+  if (response.code === 0) return { ok: true, png: response.stdout };
+  return interpretFailure(response, {
+    [EXIT_TIMEOUT]: (log) => rendererMessage(log, "crop"),
+    [EXIT_SPEC]: (log) => rendererMessage(log, "crop"),
+    [EXIT_RASTER]: (log) => rasterError(log, "crop")
+  });
+}
 
-  switch (code) {
-    case 0:
-      return { ok: true, png: stdout };
-    case EXIT_TIMEOUT:
-    case EXIT_SPEC:
-      return { ok: false, message: rendererMessage(log, "crop") };
-    case EXIT_RASTER:
-      return {
-        ok: false,
-        message: `${rendererMessage(log, "crop")}\n${tail(log, LOG_TAIL_LINES)}`
-      };
-    default:
-      throw new RendererError(`renderer exited with ${code}: ${tail(log, LOG_TAIL_LINES)}`);
-  }
+function interpretFailure(
+  response: Pick<ExecResult, "code" | "stderr">,
+  handlers: Partial<Record<number, (log: string) => string>>
+): RenderResult {
+  const log = response.stderr.toString("utf8");
+  const message = handlers[response.code]?.(log);
+  if (message !== undefined) return { ok: false, message };
+  throw new RendererError(`renderer exited with ${response.code}: ${tail(log, LOG_TAIL_LINES)}`);
+}
+
+function rasterError(log: string, command: string): string {
+  return `${rendererMessage(log, command)}\n${tail(log, LOG_TAIL_LINES)}`;
 }
 
 // not verified by human yet.
