@@ -3,7 +3,6 @@ import {
   retryAssistantCall,
   validateToolCall,
   type Context,
-  type Message,
   type Model,
   type ModelThinkingLevel,
   type Models,
@@ -88,7 +87,6 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
   let submission: Submission | undefined;
 
   const remaining = () => `Turns remaining: ${maxTurns - turns}`;
-  const push = (m: Message) => context.messages.push(m);
   const toolResult = (
     call: ToolCall,
     text: string,
@@ -109,18 +107,19 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       timestamp: Date.now()
     };
   };
-  const nudge = (text: string) => push({ role: "user", content: text, timestamp: Date.now() });
+  const nudge = (text: string) =>
+    context.messages.push({ role: "user", content: text, timestamp: Date.now() });
+  const complete = () =>
+    models.completeSimple(
+      model,
+      context,
+      opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
+    );
 
-  const loop = async (): Promise<void> => {
+  try {
     while (turns < maxTurns) {
       turns++;
 
-      const complete = () =>
-        models.completeSimple(
-          model,
-          context,
-          opts.reasoning === "off" ? {} : { reasoning: opts.reasoning }
-        );
       const reply = await retryAssistantCall(
         complete,
         { enabled: true, maxRetries: PROVIDER_RETRIES, baseDelayMs: PROVIDER_RETRY_BASE_MS },
@@ -132,7 +131,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
             )
         }
       );
-      push(reply);
+      context.messages.push(reply);
 
       usage.input += reply.usage.input;
       usage.output += reply.usage.output;
@@ -165,7 +164,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       }
       if (calls.length > 1) {
         for (const call of calls)
-          push(
+          context.messages.push(
             toolResult(call, "Only one tool call per reply is allowed. None were executed.", true)
           );
         continue;
@@ -175,7 +174,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       try {
         validateToolCall(tools, call);
       } catch (e) {
-        push(
+        context.messages.push(
           toolResult(call, `Invalid tool call: ${e instanceof Error ? e.message : String(e)}`, true)
         );
         continue;
@@ -190,17 +189,17 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
           const name = await out.saveRender(renders, result.png);
           imageNames.set(result.png.toString("base64"), name);
           lastGoodRender = { source, png: result.png };
-          push(toolResult(call, "Rendered successfully.", false, result.png));
+          context.messages.push(toolResult(call, "Rendered successfully.", false, result.png));
         } else {
           lastGoodRender = undefined;
-          push(toolResult(call, `Render failed:\n${result.message}`, true));
+          context.messages.push(toolResult(call, `Render failed:\n${result.message}`, true));
         }
         continue;
       }
 
       // submit
       if (!lastGoodRender) {
-        push(
+        context.messages.push(
           toolResult(
             call,
             "Nothing to submit: your most recent render did not succeed. Fix it and render again first.",
@@ -210,14 +209,10 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
         continue;
       }
       submission = lastGoodRender;
-      push(toolResult(call, "Submitted.", false));
+      context.messages.push(toolResult(call, "Submitted.", false));
       status = "submitted";
       break;
     }
-  };
-
-  try {
-    await loop();
   } catch (e) {
     // e.g. the renderer backend became unavailable mid-run. Keep whatever transcript we
     // have rather than losing the run.
