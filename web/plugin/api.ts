@@ -47,10 +47,16 @@ class HttpError extends Error {
 }
 
 interface RunLocation {
-  id: string;
-  batch: string;
-  stem: string;
-  dir: string;
+  readonly id: string;
+  readonly batch: string;
+  readonly stem: string;
+  readonly dir: string;
+}
+
+interface RunIndex {
+  readonly exams: Exam[];
+  readonly batches: string[];
+  readonly locations: Map<string, RunLocation>;
 }
 
 const runId = (batch: string, stem: string) =>
@@ -76,20 +82,28 @@ export function apiPlugin(options: ApiOptions): Plugin {
       .sort();
   };
 
-  const locateRun = async (id: string): Promise<RunLocation> => {
+  const refreshRunIndex = async (): Promise<RunIndex> => {
     const [exams, batches] = await Promise.all([readManifest(), listBatches()]);
+    const locations = new Map<string, RunLocation>();
     for (const batch of batches) {
       for (const exam of exams) {
         for (const sample of exam.samples) {
           const stem = sampleStem(exam, sample);
-          if (runId(batch, stem) !== id) continue;
-          const dir = path.join(runsRoot, batch, stem);
-          if (!(await isDir(dir))) throw new HttpError(404, `no run ${id}`);
-          return { id, batch, stem, dir };
+          const id = runId(batch, stem);
+          locations.set(id, { id, batch, stem, dir: path.join(runsRoot, batch, stem) });
         }
       }
     }
-    throw new HttpError(404, `no run ${id}`);
+    return (runIndex = { exams, batches, locations });
+  };
+
+  let runIndex: RunIndex | null = null;
+
+  const locateRun = async (id: string): Promise<RunLocation> => {
+    let location = (runIndex ?? (await refreshRunIndex())).locations.get(id);
+    if (!location) location = (await refreshRunIndex()).locations.get(id);
+    if (!location || !(await isDir(location.dir))) throw new HttpError(404, `no run ${id}`);
+    return location;
   };
 
   const readRun = async (batch: string, stem: string, blind: boolean): Promise<Run | null> => {
@@ -164,7 +178,7 @@ export function apiPlugin(options: ApiOptions): Plugin {
     name: "hsctikzbench-api",
     configureServer(server) {
       const list = async (blind: boolean): Promise<SampleSummary[]> => {
-        const [exams, batches] = await Promise.all([readManifest(), listBatches()]);
+        const { exams, batches } = await refreshRunIndex();
         return Promise.all(
           exams.flatMap((exam) => exam.samples.map((s) => summarize(exam, s, batches, blind)))
         );
