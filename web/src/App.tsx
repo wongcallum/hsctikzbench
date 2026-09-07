@@ -86,58 +86,49 @@ export function App() {
     []
   );
 
+  const content = error ? (
+    <Flex p="4">
+      <Callout.Root color="red">
+        <Callout.Text>{error}</Callout.Text>
+      </Callout.Root>
+    </Flex>
+  ) : sample ? (
+    <Workspace
+      key={`${mode}/${run?.id ?? sample.stem}`}
+      sample={sample}
+      run={run}
+      runs={runs}
+      samples={listed}
+      scores={scores}
+      empty={empty}
+      mode={mode}
+      loading={loading}
+      onSelect={select}
+      onMode={setMode}
+      onRefresh={refresh}
+      onPatch={patch}
+    />
+  ) : (
+    <Flex p="4">
+      <Text color="gray">{loading ? "Loading…" : empty}</Text>
+    </Flex>
+  );
+
   return (
     <Theme accentColor="gray" grayColor="slate">
-      {error ? (
-        <Frame
-          samples={listed}
-          scores={scores}
-          empty={empty}
-          selected={sample?.stem ?? null}
-          mode={mode}
-          loading={loading}
-          onSelect={(stem) => select(stem, null)}
-          onMode={setMode}
-          onRefresh={() => void refresh()}
-        >
-          <Flex p="4">
-            <Callout.Root color="red">
-              <Callout.Text>{error}</Callout.Text>
-            </Callout.Root>
-          </Flex>
-        </Frame>
-      ) : sample ? (
-        <Workspace
-          sample={sample}
-          run={run}
-          runs={runs}
-          samples={listed}
-          scores={scores}
-          empty={empty}
-          mode={mode}
-          loading={loading}
-          onSelect={select}
-          onMode={setMode}
-          onRefresh={refresh}
-          onPatch={patch}
-        />
-      ) : (
-        <Frame
-          samples={listed}
-          scores={scores}
-          empty={empty}
-          selected={null}
-          mode={mode}
-          loading={loading}
-          onSelect={(stem) => select(stem, null)}
-          onMode={setMode}
-          onRefresh={() => void refresh()}
-        >
-          <Flex p="4">
-            <Text color="gray">{loading ? "Loading…" : empty}</Text>
-          </Flex>
-        </Frame>
-      )}
+      <Frame
+        samples={listed}
+        scores={scores}
+        empty={empty}
+        selected={sample?.stem ?? null}
+        mode={mode}
+        loading={loading}
+        onSelect={(stem) => select(stem, null)}
+        onMode={setMode}
+        onRefresh={() => void refresh()}
+      >
+        {content}
+      </Frame>
     </Theme>
   );
 }
@@ -176,16 +167,6 @@ function Workspace({
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [edited, setEdited] = useState<{ verdict: Verdict | null; reason: string } | null>(null);
-
-  const identity = `${mode}/${run?.id ?? sample.stem}`;
-  const [shown, setShown] = useState(identity);
-  if (shown !== identity) {
-    setShown(identity);
-    setSelectedRender(null);
-    setSaving(false);
-    setActionError(null);
-    setEdited(null);
-  }
 
   const saved = run?.judgement ?? null;
   const verdict = edited?.verdict ?? saved?.verdict ?? null;
