@@ -60,6 +60,36 @@ const SANDBOX_ARGS = [
 export const PULL_POLICIES = ["missing", "never", "always"] as const;
 export type PullPolicy = (typeof PULL_POLICIES)[number];
 
+const activeContainers = new Set<() => Promise<void>>();
+let shuttingDown = false;
+
+function handleShutdown(signal: NodeJS.Signals): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  // Keep the signal handlers installed while cleanup runs, including on repeated Ctrl+C.
+  void Promise.allSettled([...activeContainers].map((cleanup) => cleanup())).then(() => {
+    process.exit(signal === "SIGINT" ? 130 : 143);
+  });
+}
+
+const handleSigint = () => handleShutdown("SIGINT");
+const handleSigterm = () => handleShutdown("SIGTERM");
+
+function trackContainer(cleanup: () => Promise<void>): () => void {
+  if (activeContainers.size === 0) {
+    process.on("SIGINT", handleSigint);
+    process.on("SIGTERM", handleSigterm);
+  }
+  activeContainers.add(cleanup);
+  return () => {
+    activeContainers.delete(cleanup);
+    if (activeContainers.size === 0 && !shuttingDown) {
+      process.off("SIGINT", handleSigint);
+      process.off("SIGTERM", handleSigterm);
+    }
+  };
+}
+
 class ContainerRenderer implements Renderer {
   constructor(
     private readonly runtime: string,
@@ -95,6 +125,7 @@ class ContainerRenderer implements Renderer {
   }
 
   async exec(args: string[], input?: string | Buffer): Promise<ExecResult> {
+    if (shuttingDown) throw new RendererError("renderer is shutting down");
     // the runtime CLI is only a client, so killing it would leave the container behind
     const name = `hsctikzbench-${randomBytes(6).toString("hex")}`;
     const runArgs = [
@@ -108,11 +139,27 @@ class ContainerRenderer implements Renderer {
       DEFAULT_RENDER_BIN,
       ...args
     ];
+    const controller = new AbortController();
+    let removal: Promise<unknown> | undefined;
+    const remove = () => (removal ??= runProcess(this.runtime, ["rm", "-f", name]).catch(() => {}));
+    const execution = runProcess(this.runtime, runArgs, input, controller.signal).catch(
+      async (e) => {
+        // Stop the runtime client before removing its container. This also handles
+        // timeouts and spawn failures.
+        await remove();
+        throw e;
+      }
+    );
+    const untrack = trackContainer(async () => {
+      controller.abort();
+      await execution.catch(() => {});
+      // The client may already have exited successfully when the signal arrived.
+      await remove();
+    });
     try {
-      return await runProcess(this.runtime, runArgs, input);
-    } catch (e) {
-      await runProcess(this.runtime, ["rm", "-f", name]).catch(() => {});
-      throw e;
+      return await execution;
+    } finally {
+      untrack();
     }
   }
 
@@ -171,11 +218,13 @@ export async function createRenderer(flags: RendererFlags): Promise<Renderer> {
 async function runProcess(
   bin: string,
   args: string[],
-  input?: string | Buffer
+  input?: string | Buffer,
+  cancelSignal?: AbortSignal
 ): Promise<ExecResult> {
   const result = await execa(bin, args, {
     encoding: "buffer",
     input,
+    cancelSignal,
     timeout: EXEC_TIMEOUT_MS,
     killSignal: "SIGKILL",
     reject: false
