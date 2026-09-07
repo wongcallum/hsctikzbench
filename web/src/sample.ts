@@ -69,19 +69,58 @@ export interface SampleRun {
   run: Run;
 }
 
+export interface JudgingCounts {
+  total: number;
+  running: number;
+  unjudgeable: number;
+  pending: number;
+  resolved: number;
+  passed: number;
+}
+
 /** Every run in listing order: samples in manifest order, each sample's runs in listed order. */
 export const sampleRuns = (samples: SampleSummary[]): SampleRun[] =>
   samples.flatMap((sample) => sample.runs.map((run) => ({ sample, run })));
 
+export function judgingCounts(pairs: readonly SampleRun[]): JudgingCounts {
+  const counts: JudgingCounts = {
+    total: pairs.length,
+    running: 0,
+    unjudgeable: 0,
+    pending: 0,
+    resolved: 0,
+    passed: 0
+  };
+  for (const { sample, run } of pairs) {
+    switch (judgingState(sample, run)) {
+      case "running":
+        counts.running++;
+        break;
+      case "unjudgeable":
+        counts.unjudgeable++;
+        break;
+      case "unjudged":
+      case "needs_review":
+        counts.pending++;
+        break;
+      case "pass":
+        counts.passed++;
+        counts.resolved++;
+        break;
+      case "fail":
+        counts.resolved++;
+        break;
+    }
+  }
+  return counts;
+}
+
 export function scoreSummary(pairs: SampleRun[]): string {
-  const states = pairs
-    .map(({ sample, run }) => judgingState(sample, run))
-    .filter((state) => state !== "running");
-  const resolved = states.filter((state) => state === "pass" || state === "fail").length;
-  const passed = states.filter((state) => state === "pass").length;
-  const progress = `${resolved}/${states.length} resolved · ${passed} pass`;
-  if (states.length === 0 || resolved !== states.length) return `${progress} · score pending`;
-  return `${progress} · faithful reproduction ${((passed / states.length) * 100).toFixed(1)}%`;
+  const { total, running, resolved, passed } = judgingCounts(pairs);
+  const considered = total - running;
+  const progress = `${resolved}/${considered} resolved · ${passed} pass`;
+  if (considered === 0 || resolved !== considered) return `${progress} · score pending`;
+  return `${progress} · faithful reproduction ${((passed / considered) * 100).toFixed(1)}%`;
 }
 
 export interface ScoreLine {
