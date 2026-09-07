@@ -82,8 +82,11 @@ class ContainerRenderer implements Renderer {
     if (inspect.code === 0) return;
 
     const stderr = inspect.stderr.toString("utf8").trim();
-    const problem = daemonProblem(stderr);
-    if (problem !== undefined) throw new RendererError(`${this.runtime}: ${problem}`);
+    if (!isMissingImage(stderr)) {
+      throw new RendererError(
+        `${this.runtime} could not look up ${this.image}:\n${stderr}${runtimeHint(this.runtime, stderr)}`
+      );
+    }
     if (this.pullPolicy === "never" || !isRegistryRef(this.image)) {
       throw new RendererError(this.missingImageMessage());
     }
@@ -123,10 +126,14 @@ class ContainerRenderer implements Renderer {
   }
 
   private missingImageMessage(): string {
+    const missing = `image ${this.image} is not available to ${this.runtime}.`;
+    if (isRegistryRef(this.image)) {
+      return `${missing} Fetch it with \`${this.runtime} pull ${this.image}\``;
+    }
     return (
-      `image ${this.image} is not available to ${this.runtime}. Build and load it with:\n` +
+      `${missing} Build and load it with:\n` +
       `  nix build .#image && ${this.runtime} load < result\n` +
-      `or pass --renderer-image with a published image to pull instead.`
+      `or pass --renderer-image to pull instead.`
     );
   }
 }
@@ -196,18 +203,17 @@ async function runProcess(
   };
 }
 
-/** Distinguishes an unreachable runtime from an image that is merely absent. */
-function daemonProblem(stderr: string): string | undefined {
-  if (/permission denied/i.test(stderr) && /\.sock/i.test(stderr)) {
+function isMissingImage(stderr: string): boolean {
+  return /no such image|image not known|not found|unable to find/i.test(stderr);
+}
+
+function runtimeHint(runtime: string, stderr: string): string {
+  if (/permission denied/i.test(stderr) && /sock/i.test(stderr)) {
     return (
-      "no permission to reach the daemon socket. Use --renderer podman, which is rootless, " +
-      "or point DOCKER_HOST at a rootless docker socket."
+      "\nThe daemon socket is not accessible."
     );
   }
-  if (/cannot connect to|connection refused|daemon running|is the daemon running/i.test(stderr)) {
-    return `cannot reach the daemon (${stderr}). Start it, or use --renderer local.`;
-  }
-  return undefined;
+  return `\nCheck the runtime works or use --renderer local.`;
 }
 
 function isRegistryRef(image: string): boolean {
