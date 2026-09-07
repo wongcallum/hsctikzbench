@@ -1,4 +1,5 @@
 {
+  lib,
   buildGoModule,
   ghostscript_headless,
   texlive,
@@ -39,6 +40,6 @@ buildGoModule {
   meta = {
     description = "Renders LaTeX documents and crops PDFs to PNGs";
     mainProgram = "render";
-    platforms = [ "x86_64-linux" ];
+    platforms = lib.platforms.unix;
   };
 }

@@ -10,7 +10,7 @@ import { examId, parseManifest, sampleStem, type Exam, type Sample } from "../ma
 import { resolveModel } from "../model.ts";
 import { OutputDir, type RunResult, type RunStatus } from "../output.ts";
 import { checkTexCapabilities } from "../prompt.ts";
-import { checkContainer } from "../render.ts";
+import { createRenderer } from "../renderer.ts";
 import { agentFlags, loadSystemPrompt, type AgentFlags } from "./run.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -51,10 +51,12 @@ export const benchCommand = buildCommand({
     if (jobs.length === 0) throw new Error("no samples selected");
 
     const { models, model, authSource } = await resolveModel(flags);
-    await checkContainer(flags.container);
-    await checkTexCapabilities(flags.container);
+    const renderer = await createRenderer(flags);
+    await renderer.prepare();
+    await checkTexCapabilities(renderer);
     const systemPrompt = await loadSystemPrompt(flags.prompt);
     log(`auth: ${authSource}`);
+    log(`renderer: ${renderer.description}`);
     log(`${jobs.length} samples, ${flags.jobs} jobs, output in ${flags.out}`);
 
     const outcomes = new Map<string, Outcome>();
@@ -69,7 +71,7 @@ export const benchCommand = buildCommand({
         models,
         model,
         reasoning: flags.reasoning,
-        container: flags.container,
+        renderer,
         maxTurns: flags.maxTurns,
         systemPrompt,
         referencePng,

@@ -1,4 +1,5 @@
-import { render, RendererError } from "./render.ts";
+import { render } from "./render.ts";
+import { RendererError, type Renderer } from "./renderer.ts";
 
 const TEX_CAP_PLACEHOLDER = "{{TEX_CAPABILITIES}}";
 
@@ -40,8 +41,8 @@ export function buildTestDocument(): string {
   ].join("\n");
 }
 
-export async function checkTexCapabilities(container: string): Promise<void> {
-  const result = await render(container, buildTestDocument());
+export async function checkTexCapabilities(renderer: Renderer): Promise<void> {
+  const result = await render(renderer, buildTestDocument());
   if (!result.ok) {
     throw new RendererError(
       `renderer cannot load packages advertised in the prompt:\n${result.message}`

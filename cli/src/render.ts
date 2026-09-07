@@ -1,5 +1,5 @@
-import { execa } from "execa";
 import type { Box } from "./manifest.ts";
+import { RendererError, type Renderer } from "./renderer.ts";
 
 const EXIT_COMPILE = 2;
 const EXIT_TIMEOUT = 3;
@@ -7,31 +7,13 @@ const EXIT_TOO_LARGE = 4;
 const EXIT_RASTER = 5;
 const EXIT_SPEC = 6;
 
-// slightly above the renderer's 60s timeout
-const EXEC_TIMEOUT_MS = 90_000;
-
 const LOG_TAIL_LINES = 20;
 const MAX_ERROR_LINES = 40;
 
 export type RenderResult = { ok: true; png: Buffer } | { ok: false; message: string };
 
-export class RendererError extends Error {}
-
-export async function checkContainer(container: string): Promise<void> {
-  const { code, stdout, stderr } = await runDocker([
-    "inspect",
-    "-f",
-    "{{.State.Running}}",
-    container
-  ]);
-  if (code !== 0)
-    throw new RendererError(`container ${container} not found: ${stderr.toString("utf8").trim()}`);
-  if (stdout.toString("utf8").trim() !== "true")
-    throw new RendererError(`container ${container} is not running`);
-}
-
-export async function render(container: string, source: string): Promise<RenderResult> {
-  const { code, stdout, stderr } = await runDocker(["exec", "-i", container, "render"], source);
+export async function render(renderer: Renderer, source: string): Promise<RenderResult> {
+  const { code, stdout, stderr } = await renderer.exec(["render"], source);
   const log = stderr.toString("utf8");
   switch (code) {
     case 0:
@@ -47,7 +29,7 @@ export async function render(container: string, source: string): Promise<RenderR
         message: `${rendererMessage(log, "render")}\n${tail(log, LOG_TAIL_LINES)}`
       };
     default:
-      throw new RendererError(`docker exec exited with ${code}: ${tail(log, LOG_TAIL_LINES)}`);
+      throw new RendererError(`renderer exited with ${code}: ${tail(log, LOG_TAIL_LINES)}`);
   }
 }
 
@@ -57,22 +39,12 @@ export interface CropSpec {
   readonly masks?: readonly Box[];
 }
 
-export async function crop(container: string, pdf: Buffer, spec: CropSpec): Promise<RenderResult> {
+export async function crop(renderer: Renderer, pdf: Buffer, spec: CropSpec): Promise<RenderResult> {
   const rectArg = (r: Box) => [r.x, r.y, r.w, r.h].join(",");
-  const args = [
-    "exec",
-    "-i",
-    container,
-    "render",
-    "crop",
-    "--page",
-    String(spec.page),
-    "--box",
-    rectArg(spec.box)
-  ];
+  const args = ["crop", "--page", String(spec.page), "--box", rectArg(spec.box)];
 
   for (const mask of spec.masks ?? []) args.push("--mask", rectArg(mask));
-  const { code, stdout, stderr } = await runDocker(args, pdf);
+  const { code, stdout, stderr } = await renderer.exec(args, pdf);
   const log = stderr.toString("utf8");
 
   switch (code) {
@@ -87,7 +59,7 @@ export async function crop(container: string, pdf: Buffer, spec: CropSpec): Prom
         message: `${rendererMessage(log, "crop")}\n${tail(log, LOG_TAIL_LINES)}`
       };
     default:
-      throw new RendererError(`docker exec exited with ${code}: ${tail(log, LOG_TAIL_LINES)}`);
+      throw new RendererError(`renderer exited with ${code}: ${tail(log, LOG_TAIL_LINES)}`);
   }
 }
 
@@ -123,35 +95,4 @@ function rendererMessage(log: string, command: string): string {
 
 function tail(text: string, n: number): string {
   return text.trimEnd().split("\n").slice(-n).join("\n");
-}
-
-interface ExecResult {
-  code: number;
-  stdout: Buffer;
-  stderr: Buffer;
-}
-
-async function runDocker(args: string[], input?: string | Buffer): Promise<ExecResult> {
-  const result = await execa("docker", args, {
-    encoding: "buffer",
-    input,
-    timeout: EXEC_TIMEOUT_MS,
-    killSignal: "SIGKILL",
-    reject: false
-  });
-
-  if (result.timedOut) {
-    throw new RendererError(
-      `docker ${args.join(" ")} did not exit within ${EXEC_TIMEOUT_MS / 1000}s`
-    );
-  }
-  if (result.exitCode === undefined) {
-    throw new RendererError(`failed to run docker: ${result.shortMessage}`);
-  }
-
-  return {
-    code: result.exitCode,
-    stdout: Buffer.from(result.stdout),
-    stderr: Buffer.from(result.stderr)
-  };
 }

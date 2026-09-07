@@ -13,6 +13,7 @@ import {
   type ToolResultMessage
 } from "@earendil-works/pi-ai";
 import { render, type RenderResult } from "./render.ts";
+import type { Renderer } from "./renderer.ts";
 import {
   OutputDir,
   REFERENCE_FILE,
@@ -47,7 +48,7 @@ export interface RunOptions {
   models: Models;
   model: Model<Api>;
   reasoning: ModelThinkingLevel;
-  container: string;
+  renderer: Renderer;
   maxTurns: number;
   systemPrompt: string;
   referencePng: Buffer;
@@ -183,7 +184,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       if (call.name === "render") {
         const source = String(call.arguments["source"]);
         renders++;
-        const result: RenderResult = await render(opts.container, source);
+        const result: RenderResult = await render(opts.renderer, source);
         if (result.ok) {
           successfulRenders++;
           const name = await out.saveRender(renders, result.png);
@@ -218,7 +219,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
   try {
     await loop();
   } catch (e) {
-    // e.g. the renderer container died, or docker itself failed. Keep whatever transcript we
+    // e.g. the renderer backend became unavailable mid-run. Keep whatever transcript we
     // have rather than losing the run.
     status = "error";
     error = e instanceof Error ? e.message : String(e);

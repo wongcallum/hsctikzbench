@@ -13,14 +13,14 @@ import {
   type Exam,
   type Sample
 } from "../manifest.ts";
-import { checkContainer, crop } from "../render.ts";
+import { crop } from "../render.ts";
+import { createRenderer, rendererFlags, type Renderer, type RendererFlags } from "../renderer.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const DATASET_DIR = join(REPO_ROOT, "dataset");
 const DATA_DIR = join(REPO_ROOT, "data");
 
-interface BuildFlags {
-  readonly container: string;
+interface BuildFlags extends RendererFlags {
   readonly manifest: string;
   readonly pdfs: string;
   readonly out: string;
@@ -57,7 +57,9 @@ const buildCommandDef = buildCommand({
       throw new Error("--jobs must be a positive integer");
     }
 
-    await checkContainer(flags.container);
+    const renderer = await createRenderer(flags);
+    await renderer.prepare();
+    log(`renderer: ${renderer.description}`);
     await mkdir(flags.out, { recursive: true });
 
     const outcomes = new Map<string, Outcome>();
@@ -92,7 +94,7 @@ const buildCommandDef = buildCommand({
     await pMap(
       jobs,
       async (job) => {
-        const outcome = await buildOne(flags, pdfs.get(job.exam)!, job);
+        const outcome = await buildOne(flags, renderer, pdfs.get(job.exam)!, job);
         outcomes.set(job.stem, outcome);
         done++;
         if (outcome.kind !== "ok") log(`${outcome.kind}: ${job.stem}: ${outcome.message}`);
@@ -117,7 +119,7 @@ const buildCommandDef = buildCommand({
   },
   parameters: {
     flags: {
-      container: { kind: "parsed", parse: String, brief: "Name of the running renderer container" },
+      ...rendererFlags,
       manifest: {
         kind: "parsed",
         parse: String,
@@ -162,8 +164,13 @@ const buildCommandDef = buildCommand({
   }
 });
 
-async function buildOne(flags: BuildFlags, pdf: Buffer, { sample, stem }: Job): Promise<Outcome> {
-  const result = await crop(flags.container, pdf, {
+async function buildOne(
+  flags: BuildFlags,
+  renderer: Renderer,
+  pdf: Buffer,
+  { sample, stem }: Job
+): Promise<Outcome> {
+  const result = await crop(renderer, pdf, {
     page: sample.page,
     box: sample.box,
     masks: sample.masks

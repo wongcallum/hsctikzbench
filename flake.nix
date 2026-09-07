@@ -6,16 +6,29 @@
   };
 
   outputs =
-    { self, nixpkgs }:
+    { nixpkgs, ... }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
-      renderer = pkgs.callPackage ./nix/renderer.nix { };
-      image = pkgs.callPackage ./nix/image.nix { inherit renderer; };
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
     {
-      packages.${system} = {
-        inherit renderer image;
-      };
+      packages = forAllSystems (
+        pkgs:
+        let
+          renderer = pkgs.callPackage ./nix/renderer.nix { };
+        in
+        {
+          inherit renderer;
+          default = renderer;
+        }
+        # the image holds Linux binaries, so only a Linux builder can produce it
+        // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          image = pkgs.callPackage ./nix/image.nix { inherit renderer; };
+        }
+      );
     };
 }

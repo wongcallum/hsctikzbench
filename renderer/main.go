@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"regexp"
 	"syscall"
@@ -53,16 +52,8 @@ var (
 
 func main() {
 	name, args := "render", os.Args[1:]
-	if len(args) > 0 {
-		switch args[0] {
-		case "idle":
-			stop := make(chan os.Signal, 1)
-			signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-			<-stop
-			return
-		case "render", "crop":
-			name, args = args[0], args[1:]
-		}
+	if len(args) > 0 && (args[0] == "render" || args[0] == "crop") {
+		name, args = args[0], args[1:]
 	}
 
 	var err error
