@@ -1,12 +1,11 @@
 import { DataList, Flex, Heading, Kbd, Link, Text } from "@radix-ui/themes";
 import { runFileUrl } from "./api.ts";
-import type { Run } from "./types.ts";
+import type { Run } from "../../shared/judge.ts";
 
 interface Props {
   run: Run | null;
 }
 
-/** Provenance, cost, and judgement of the selected run, shown on the view page. */
 export function DetailsPanel({ run }: Props) {
   return (
     <Flex direction="column" gap="3">

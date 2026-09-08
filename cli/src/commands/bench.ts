@@ -9,6 +9,7 @@ import type { LocalContext } from "../context.ts";
 import { runAgent } from "../loop.ts";
 import { examId, parseManifest, sampleStem, type Exam, type Sample } from "../manifest.ts";
 import { OutputDir, type RunResult, type RunStatus } from "../output.ts";
+import { openProgress, type SampleOutcome } from "../progress.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const DATASET_DIR = join(REPO_ROOT, "dataset");
@@ -22,6 +23,7 @@ interface BenchFlags extends AgentFlags {
   readonly sample: readonly string[];
   readonly jobs: number;
   readonly resume: boolean;
+  readonly progressFd?: number;
 }
 
 interface Job {
@@ -46,11 +48,13 @@ export const benchCommand = buildCommand({
     const manifest = parseManifest(JSON.parse(await readFile(flags.manifest, "utf8")));
     const jobs = selectJobs(manifest, flags);
     if (jobs.length === 0) throw new Error("no samples selected");
+    const progress = openProgress(flags.progressFd);
 
     const { models, model, authSource, renderer, systemPrompt } = await prepareAgent(flags);
     log(`auth: ${authSource}`);
     log(`renderer: ${renderer.description}`);
     log(`${jobs.length} samples, ${flags.jobs} jobs, output in ${flags.out}`);
+    progress({ type: "start", stems: jobs.map((j) => j.stem), maxTurns: flags.maxTurns });
 
     const outcomes = new Map<string, Outcome>();
     let done = 0;
@@ -78,7 +82,8 @@ export const benchCommand = buildCommand({
         systemPrompt,
         referencePng,
         out: dir,
-        log: (line) => log(`[${job.stem}] ${line}`)
+        log: (line) => log(`[${job.stem}] ${line}`),
+        onTurn: (turn) => progress({ type: "turn", stem: job.stem, ...turn })
       });
       return { kind: "ran", result, retriedAfter };
     };
@@ -94,6 +99,7 @@ export const benchCommand = buildCommand({
         outcomes.set(job.stem, outcome);
         done++;
         log(`[${job.stem}] ${describe(outcome)}  (${done}/${jobs.length})`);
+        progress({ type: "done", stem: job.stem, done, total: jobs.length, ...summarize(outcome) });
       },
       { concurrency: flags.jobs }
     );
@@ -171,6 +177,12 @@ export const benchCommand = buildCommand({
           "Skip samples that already produced a result, and rerun ones that were interrupted " +
           "or that errored",
         default: false
+      },
+      progressFd: {
+        kind: "parsed",
+        parse: numberParser,
+        brief: "File descriptor to write one JSON progress event per line to",
+        optional: true
       }
     }
   },
@@ -220,6 +232,29 @@ async function loadCrop(cropsDir: string, { sample, stem }: Job): Promise<Buffer
     }
   }
   return png;
+}
+
+function summarize(outcome: Outcome): {
+  outcome: SampleOutcome;
+  turns: number | null;
+  cost: number | null;
+  message: string | null;
+} {
+  switch (outcome.kind) {
+    case "skipped":
+      return { outcome: "skipped", turns: null, cost: null, message: null };
+    case "failed":
+      return { outcome: "failed", turns: null, cost: null, message: outcome.message };
+    case "ran": {
+      const { result } = outcome;
+      return {
+        outcome: result.status,
+        turns: result.turns,
+        cost: result.usage.cost,
+        message: result.error ?? null
+      };
+    }
+  }
 }
 
 function describe(outcome: Outcome): string {

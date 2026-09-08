@@ -5,5 +5,5 @@
     "moduleResolution": "nodenext",
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "plugin"]
+  "include": ["server", "shared", "vite.config.ts"]
 }

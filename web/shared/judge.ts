@@ -1,6 +1,6 @@
-import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult } from "hsctikzbench-cli/output";
 import * as z from "zod";
+import type { ManifestSample } from "./types.ts";
 
 export const RUBRIC_VERSION = 1;
 export const JudgementSchema = z
@@ -18,8 +18,6 @@ export const JudgementSchema = z
 export type Judgement = z.infer<typeof JudgementSchema>;
 export type Verdict = Judgement["verdict"];
 
-export type Mode = "judge" | "view";
-
 export type RunOutcome = Pick<
   RunResult,
   "status" | "error" | "turns" | "renders" | "successfulRenders"
@@ -31,9 +29,7 @@ export type ModelInfo = Pick<
 >;
 
 export interface RunSource {
-  /** Name of the bench output directory the run belongs to. */
   batch: string;
-  /** Model details from the result; null while the run is still in progress. */
   model: ModelInfo | null;
 }
 
@@ -46,13 +42,10 @@ export interface Run {
   source: RunSource | null;
 }
 
-export interface SampleSummary {
-  stem: string;
+export interface SampleSummary extends ManifestSample {
   exam: string;
-  question: string;
-  option: string | null;
-  role: Role;
-  category: Category;
   hasCrop: boolean;
   runs: Run[];
 }
+
+export const hasSubmission = (run: Run) => run.result?.status === "submitted" && run.hasSubmission;

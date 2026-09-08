@@ -1,4 +1,9 @@
-import { getSupportedThinkingLevels, type ModelThinkingLevel } from "@earendil-works/pi-ai";
+import {
+  getSupportedThinkingLevels,
+  type Api,
+  type Model,
+  type ModelThinkingLevel
+} from "@earendil-works/pi-ai";
 import { authFlag, createModels } from "./context.ts";
 
 export const REASONING_LEVELS = [
@@ -12,6 +17,10 @@ export const REASONING_LEVELS = [
 ] as const satisfies readonly ModelThinkingLevel[];
 
 export type ReasoningLevel = (typeof REASONING_LEVELS)[number];
+
+export function supportedReasoningLevels(model: Model<Api>): string[] {
+  return model.reasoning ? getSupportedThinkingLevels(model) : ["off"];
+}
 
 export interface ModelFlags {
   readonly provider: string;

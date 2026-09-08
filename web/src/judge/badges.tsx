@@ -1,6 +1,6 @@
 import { Badge } from "@radix-ui/themes";
 import { judgingCounts, judgingState } from "./sample.ts";
-import type { Run, SampleSummary } from "./types.ts";
+import type { Run, SampleSummary } from "../../shared/judge.ts";
 
 const STATUS = {
   submitted: { color: "green", label: "submitted" },

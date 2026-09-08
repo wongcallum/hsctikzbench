@@ -5,7 +5,10 @@
   "type": "module",
   "exports": {
     "./manifest": "./src/manifest.ts",
-    "./output": "./src/output.ts"
+    "./output": "./src/output.ts",
+    "./context": "./src/context.ts",
+    "./model": "./src/model.ts",
+    "./progress": "./src/progress.ts"
   },
   "scripts": {
     "start": "tsx src/cli.ts",

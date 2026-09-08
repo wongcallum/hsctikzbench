@@ -1,0 +1,463 @@
+import { Callout, Flex, Grid, Separator, Text } from "@radix-ui/themes";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { fetchSamples, saveJudgement } from "./api.ts";
+import { DetailsPanel } from "./DetailsPanel.tsx";
+import { JudgingPanel } from "./JudgingPanel.tsx";
+import { setLeaveGuard, type JudgeLocation, type Mode } from "../location.ts";
+import {
+  isJudgeable,
+  isPending,
+  listedRuns,
+  listedSamples,
+  sampleRuns,
+  scoreLines,
+  type ScoreLine
+} from "./sample.ts";
+import { SampleView } from "./SampleView.tsx";
+import { Sidebar } from "./Sidebar.tsx";
+import { RUBRIC_VERSION, type Run, type SampleSummary, type Verdict } from "../../shared/judge.ts";
+
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+function claimedByGroup(group: Element, key: string): boolean {
+  const orientation = group.getAttribute("aria-orientation");
+  if (key === "ArrowUp" || key === "ArrowDown") return orientation !== "horizontal";
+  if (key === "ArrowLeft" || key === "ArrowRight") return orientation !== "vertical";
+  return false;
+}
+
+const VERDICT_KEYS: Record<string, Verdict> = {
+  p: "pass",
+  f: "fail",
+  n: "needs_review"
+};
+
+interface AppProps {
+  location: JudgeLocation;
+  setLocation: (next: JudgeLocation) => void;
+}
+
+export function JudgeApp({ location, setLocation }: AppProps) {
+  const [samples, setSamples] = useState<SampleSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const refreshId = useRef(0);
+  const mode = location.mode;
+
+  const refresh = useCallback(async () => {
+    const id = ++refreshId.current;
+    setLoading(true);
+    try {
+      const next = await fetchSamples(mode === "judge");
+      if (id !== refreshId.current) return;
+      setSamples(next);
+      setError(null);
+    } catch (e) {
+      if (id !== refreshId.current) return;
+      setError(errorMessage(e));
+    } finally {
+      if (id === refreshId.current) setLoading(false);
+    }
+  }, [mode]);
+
+  // Drop the previous mode's listing before refetching so the judge page never shows provenance.
+  useEffect(() => {
+    setSamples([]);
+    setError(null);
+    void refresh();
+  }, [refresh]);
+
+  const listed = useMemo(
+    () => listedSamples(samples, mode, location.stem),
+    [samples, mode, location.stem]
+  );
+  const scores = scoreLines(samples, mode);
+  const empty = samples.length === 0 ? "The manifest has no samples." : "Nothing left to judge.";
+  const sample = listed.find((s) => s.stem === location.stem) ?? listed[0] ?? null;
+  const runs = useMemo(
+    () => (sample ? listedRuns(sample, mode, location.run) : []),
+    [sample, mode, location.run]
+  );
+  const run = runs.find((r) => r.id === location.run) ?? runs[0] ?? null;
+
+  useEffect(() => {
+    if (sample && (sample.stem !== location.stem || (run?.id ?? null) !== location.run)) {
+      setLocation({ mode, stem: sample.stem, run: run?.id ?? null });
+    }
+  }, [sample, run, location, mode, setLocation]);
+
+  const select = useCallback(
+    (stem: string, runId: string | null) => setLocation({ mode, stem, run: runId }),
+    [mode, setLocation]
+  );
+  const patch = useCallback(
+    (runId: string, changes: Partial<Run>) =>
+      setSamples((current) =>
+        current.map((s) => ({
+          ...s,
+          runs: s.runs.map((r) => (r.id === runId ? { ...r, ...changes } : r))
+        }))
+      ),
+    []
+  );
+
+  const content = error ? (
+    <Flex p="4">
+      <Callout.Root color="red">
+        <Callout.Text>{error}</Callout.Text>
+      </Callout.Root>
+    </Flex>
+  ) : sample ? (
+    <Workspace
+      sample={sample}
+      run={run}
+      runs={runs}
+      samples={listed}
+      scores={scores}
+      empty={empty}
+      mode={mode}
+      loading={loading}
+      onSelect={select}
+      onRefresh={refresh}
+      onPatch={patch}
+    />
+  ) : (
+    <Flex p="4">
+      <Text color="gray">{loading ? "Loading…" : empty}</Text>
+    </Flex>
+  );
+
+  if (!error && sample) return content;
+  return (
+    <Frame
+      samples={listed}
+      scores={scores}
+      empty={empty}
+      selected={sample?.stem ?? null}
+      mode={mode}
+      loading={loading}
+      onSelect={(stem) => select(stem, null)}
+      onRefresh={() => void refresh()}
+    >
+      {content}
+    </Frame>
+  );
+}
+
+interface WorkspaceProps {
+  sample: SampleSummary;
+  run: Run | null;
+  runs: Run[];
+  samples: SampleSummary[];
+  scores: ScoreLine[];
+  empty: string;
+  mode: Mode;
+  loading: boolean;
+  onSelect: (stem: string, runId: string | null) => void;
+  onRefresh: () => Promise<void>;
+  onPatch: (runId: string, changes: Partial<Run>) => void;
+}
+
+interface EditorState {
+  selection: string;
+  session: symbol;
+  selectedRender: string | null;
+  saving: boolean;
+  actionError: string | null;
+  edited: { verdict: Verdict | null; reason: string } | null;
+}
+
+const freshEditor = (selection: string): EditorState => ({
+  selection,
+  session: Symbol(),
+  selectedRender: null,
+  saving: false,
+  actionError: null,
+  edited: null
+});
+
+function Workspace({
+  sample,
+  run,
+  runs,
+  samples,
+  scores,
+  empty,
+  mode,
+  loading,
+  onSelect,
+  onRefresh,
+  onPatch
+}: WorkspaceProps) {
+  const selection = `${mode}/${run?.id ?? sample.stem}`;
+  const [editor, setEditor] = useState(() => freshEditor(selection));
+  // Reset before rendering children while keeping the frame and sidebar mounted.
+  if (editor.selection !== selection) setEditor(freshEditor(selection));
+  const { session, selectedRender, saving, actionError, edited } = editor;
+  // Ignore saves that finish after navigating away, even if this sample is revisited.
+  const updateEditor = useCallback(
+    (changes: Partial<Omit<EditorState, "selection" | "session">>) =>
+      setEditor((current) => (current.session === session ? { ...current, ...changes } : current)),
+    [session]
+  );
+
+  const saved = run?.judgement ?? null;
+  const verdict = edited?.verdict ?? saved?.verdict ?? null;
+  const reason = edited?.reason ?? saved?.reason ?? "";
+  const dirty = verdict !== (saved?.verdict ?? null) || reason !== (saved?.reason ?? "");
+  const viewingSubmission = selectedRender === null || selectedRender === run?.renders.at(-1);
+  const canSave =
+    !saving &&
+    dirty &&
+    verdict !== null &&
+    (verdict !== "fail" || reason.trim() !== "") &&
+    run !== null &&
+    isJudgeable(sample, run) &&
+    viewingSubmission;
+
+  const canJudge = !saving && run !== null && isJudgeable(sample, run) && viewingSubmission;
+
+  const confirmDiscard = useCallback(
+    () => !dirty || window.confirm("Discard the unsaved judgement?"),
+    [dirty]
+  );
+  useEffect(() => {
+    setLeaveGuard(confirmDiscard);
+    return () => setLeaveGuard(null);
+  }, [confirmDiscard]);
+
+  const select = useCallback(
+    (stem: string, runId: string | null) => {
+      if (saving) return;
+      if (stem === sample.stem && runId === (run?.id ?? null)) return;
+      if (confirmDiscard()) onSelect(stem, runId);
+    },
+    [sample.stem, run, saving, confirmDiscard, onSelect]
+  );
+
+  const selectSample = useCallback(
+    (next: SampleSummary) => {
+      const batch = run?.source?.batch;
+      const match = batch === undefined ? null : next.runs.find((r) => r.source?.batch === batch);
+      select(next.stem, match?.id ?? null);
+    },
+    [run, select]
+  );
+
+  const setVerdict = useCallback(
+    (value: Verdict) => {
+      if (canJudge) updateEditor({ edited: { verdict: value, reason } });
+    },
+    [canJudge, reason, updateEditor]
+  );
+
+  const cancel = useCallback(() => {
+    updateEditor({ edited: null, actionError: null });
+  }, [updateEditor]);
+
+  const judge = useCallback(() => {
+    if (!canSave || !run || !verdict) return;
+    updateEditor({ saving: true, actionError: null });
+    saveJudgement(run.id, {
+      rubricVersion: RUBRIC_VERSION,
+      verdict,
+      reason: reason.trim(),
+      judgedAt: new Date().toISOString()
+    })
+      .then(
+        (judgement) => {
+          onPatch(run.id, { judgement });
+          updateEditor({ edited: null });
+        },
+        (e: unknown) => updateEditor({ actionError: errorMessage(e) })
+      )
+      .finally(() => updateEditor({ saving: false }));
+  }, [run, canSave, verdict, reason, onPatch, updateEditor]);
+
+  const seekPending = useCallback(
+    (step: 1 | -1) => {
+      const pairs = sampleRuns(samples);
+      const index = pairs.findIndex((pair) => pair.run.id === run?.id);
+      const rotate = (at: number) => [...pairs.slice(at), ...pairs.slice(0, at)];
+      const order = step === 1 ? rotate(index + 1) : rotate(Math.max(index, 0)).reverse();
+      const next = order.find((pair) => isPending(pair.sample, pair.run));
+      if (next) select(next.sample.stem, next.run.id);
+    },
+    [samples, run, select]
+  );
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target?.closest("[role=dialog]")) return;
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.altKey) {
+        event.preventDefault();
+        judge();
+        return;
+      }
+      if (target?.closest("input, textarea")) {
+        // Escape leaves the reason field; pressing it again then discards the edit.
+        if (event.key === "Escape") target.blur();
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const group = target?.closest("[role=radiogroup]");
+      if (group && claimedByGroup(group, event.key)) return;
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        const index = samples.findIndex(({ stem }) => stem === sample.stem);
+        const next = samples[event.key === "ArrowDown" ? index + 1 : index - 1];
+        if (next) {
+          event.preventDefault();
+          selectSample(next);
+        }
+        return;
+      }
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        const index = runs.findIndex(({ id }) => id === run?.id);
+        const next = runs[event.key === "ArrowRight" ? index + 1 : index - 1];
+        if (next) {
+          event.preventDefault();
+          select(sample.stem, next.id);
+        }
+        return;
+      }
+      if (mode !== "judge") return;
+      if (event.key === " ") {
+        event.preventDefault();
+        seekPending(event.shiftKey ? -1 : 1);
+        return;
+      }
+      const keyed = VERDICT_KEYS[event.key.toLowerCase()];
+      if (keyed) {
+        event.preventDefault();
+        setVerdict(keyed);
+        return;
+      }
+      if (event.key === "Enter") {
+        if (target?.closest("a, button, [role=radio]")) return;
+        event.preventDefault();
+        judge();
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancel();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [
+    samples,
+    sample,
+    run,
+    runs,
+    mode,
+    select,
+    selectSample,
+    seekPending,
+    setVerdict,
+    judge,
+    cancel
+  ]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  return (
+    <Frame
+      samples={samples}
+      scores={scores}
+      empty={empty}
+      selected={sample.stem}
+      mode={mode}
+      loading={loading || saving}
+      onSelect={(stem) => {
+        const next = samples.find((s) => s.stem === stem);
+        if (next) selectSample(next);
+      }}
+      onRefresh={() => {
+        if (!saving && confirmDiscard()) {
+          cancel();
+          void onRefresh();
+        }
+      }}
+    >
+      <SampleView
+        key={selection}
+        sample={sample}
+        run={run}
+        runs={runs}
+        mode={mode}
+        dirty={dirty}
+        selectedRender={selectedRender}
+        onSelectRun={(id) => select(sample.stem, id)}
+        onSelectRender={(selectedRender) => updateEditor({ selectedRender })}
+        error={actionError}
+      >
+        {mode === "judge" ? (
+          <JudgingPanel
+            sample={sample}
+            run={run}
+            verdict={verdict}
+            reason={reason}
+            dirty={dirty}
+            busy={saving}
+            canSave={canSave}
+            viewingSubmission={viewingSubmission}
+            onVerdict={setVerdict}
+            onReason={(value) => updateEditor({ edited: { verdict, reason: value } })}
+            onSave={judge}
+            onCancel={cancel}
+          />
+        ) : (
+          <DetailsPanel run={run} />
+        )}
+      </SampleView>
+    </Frame>
+  );
+}
+
+interface FrameProps {
+  samples: SampleSummary[];
+  scores: ScoreLine[];
+  empty: string;
+  selected: string | null;
+  mode: Mode;
+  loading: boolean;
+  onSelect: (stem: string) => void;
+  onRefresh: () => void;
+  children: ReactNode;
+}
+
+function Frame({
+  samples,
+  scores,
+  empty,
+  selected,
+  mode,
+  loading,
+  onSelect,
+  onRefresh,
+  children
+}: FrameProps) {
+  return (
+    <Grid columns="280px auto 1fr" height="100%">
+      <Sidebar
+        samples={samples}
+        scores={scores}
+        empty={empty}
+        selected={selected}
+        mode={mode}
+        loading={loading}
+        onSelect={onSelect}
+        onRefresh={onRefresh}
+      />
+      <Separator orientation="vertical" size="4" />
+      {children}
+    </Grid>
+  );
+}

@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "pnpm --filter hsctikzbench-web dev",
+    "build": "pnpm --filter hsctikzbench-web build",
+    "start": "pnpm --filter hsctikzbench-web start",
     "typecheck": "pnpm -r typecheck",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",

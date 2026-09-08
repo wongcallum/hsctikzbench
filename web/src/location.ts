@@ -1,17 +1,17 @@
-import { useCallback, useSyncExternalStore } from "react";
-import type { Mode } from "./types.ts";
+import { useMemo, useSyncExternalStore } from "react";
 
-/** What the URL hash points at: `#/<mode>/<stem>/<runId>`, each part after the mode optional. */
-export interface Location {
+export type Mode = "judge" | "view";
+
+export interface JudgeLocation {
   mode: Mode;
   stem: string | null;
   run: string | null;
 }
 
-function subscribe(onChange: () => void): () => void {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-}
+export type Route =
+  | { page: "launch"; from: string | null }
+  | { page: "batch"; name: string; stem: string | null }
+  | ({ page: "judge" } & JudgeLocation);
 
 function decode(segment: string): string {
   try {
@@ -21,23 +21,52 @@ function decode(segment: string): string {
   }
 }
 
-export function parseLocation(hash: string): Location {
-  const [mode, stem, run] = hash.replace(/^#/, "").split("/").filter(Boolean).map(decode);
-  return { mode: mode === "view" ? "view" : "judge", stem: stem ?? null, run: run ?? null };
+export function parseHash(hash: string): Route {
+  const parts = hash.replace(/^#\/?/, "").split("/").map(decode);
+  const [head, a, b] = parts;
+  if (head === "batch" && a) return { page: "batch", name: a, stem: b || null };
+  if (head === "new" && a) return { page: "launch", from: a };
+  if (head === "judge" || head === "view") {
+    return { page: "judge", mode: head, stem: a || null, run: b || null };
+  }
+  return { page: "launch", from: null };
 }
 
-export function formatLocation({ mode, stem, run }: Location): string {
-  const parts = [mode, stem, run].filter((part) => part !== null);
-  return `/${parts.map(encodeURIComponent).join("/")}`;
+export function hrefFor(route: Route): string {
+  const join = (...parts: (string | null)[]) =>
+    `#/${parts
+      .filter((p) => p !== null)
+      .map(encodeURIComponent)
+      .join("/")}`;
+  switch (route.page) {
+    case "launch":
+      return route.from ? join("new", route.from) : "#/";
+    case "batch":
+      return join("batch", route.name, route.stem);
+    case "judge":
+      return join(route.mode, route.stem, route.stem && route.run);
+  }
+}
+
+export const navigate = (route: Route) => {
+  const next = hrefFor(route);
+  if (window.location.hash !== next) window.location.hash = next;
+};
+
+let leaveGuard: (() => boolean) | null = null;
+export const setLeaveGuard = (guard: (() => boolean) | null) => {
+  leaveGuard = guard;
+};
+export const confirmLeave = () => leaveGuard?.() ?? true;
+
+function subscribe(onChange: () => void): () => void {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
 }
 
 const read = () => window.location.hash;
 
-export function useLocation(): [Location, (value: Location) => void] {
+export function useRoute(): Route {
   const hash = useSyncExternalStore(subscribe, read);
-  const set = useCallback((value: Location) => {
-    const next = formatLocation(value);
-    if (window.location.hash.slice(1) !== next) window.location.hash = next;
-  }, []);
-  return [parseLocation(hash), set];
+  return useMemo(() => parseHash(hash), [hash]);
 }

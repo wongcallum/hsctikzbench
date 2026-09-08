@@ -13,7 +13,8 @@ import { cropUrl, runFileUrl } from "./api.ts";
 import { RunBadges } from "./badges.tsx";
 import { ImagePane } from "./ImagePane.tsx";
 import { hasSubmission, label, runLabel } from "./sample.ts";
-import type { Mode, Run, SampleSummary } from "./types.ts";
+import type { Run, SampleSummary } from "../../shared/judge.ts";
+import type { Mode } from "../location.ts";
 
 interface Props {
   sample: SampleSummary;

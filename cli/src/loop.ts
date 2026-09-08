@@ -54,6 +54,14 @@ export interface RunOptions {
   referencePng: Buffer;
   out: OutputDir;
   log: (line: string) => void;
+  onTurn?: (progress: TurnProgress) => void;
+}
+
+export interface TurnProgress {
+  turn: number;
+  maxTurns: number;
+  cost: number;
+  note: string;
 }
 
 export async function runAgent(opts: RunOptions): Promise<RunResult> {
@@ -88,6 +96,10 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
   let submission: Submission | undefined;
 
   const remaining = () => `Turns remaining: ${maxTurns - turns}`;
+  const turnLog = (note: string) => {
+    log(`turn ${turns}/${maxTurns}  ${note}`);
+    opts.onTurn?.({ turn: turns, maxTurns, cost: usage.cost, note });
+  };
   const toolResult = (
     call: ToolCall,
     text: string,
@@ -127,8 +139,8 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
         undefined,
         {
           onRetryScheduled: (attempt, maxAttempts, delay, message) =>
-            log(
-              `turn ${turns}/${maxTurns}  provider error: ${message}; retry ${attempt}/${maxAttempts} in ${delay / 1000}s`
+            turnLog(
+              `provider error: ${message}; retry ${attempt}/${maxAttempts} in ${delay / 1000}s`
             )
         }
       );
@@ -143,14 +155,14 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       if (reply.stopReason === "error") {
         status = "error";
         error = reply.errorMessage ?? "provider returned an error";
-        log(`turn ${turns}/${maxTurns}  error: ${error}`);
+        turnLog(`error: ${error}`);
         break;
       }
 
       const calls = reply.content.filter((b): b is ToolCall => b.type === "toolCall");
       const summary = calls.length === 0 ? "(no tool call)" : calls.map((c) => c.name).join("+");
-      log(
-        `turn ${turns}/${maxTurns}  ${summary}  stop=${reply.stopReason}  in=${usage.input} out=${usage.output} cost=$${usage.cost.toFixed(4)}`
+      turnLog(
+        `${summary}  stop=${reply.stopReason}  in=${usage.input} out=${usage.output} cost=$${usage.cost.toFixed(4)}`
       );
 
       if (reply.stopReason === "length") {
@@ -218,7 +230,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
     // have rather than losing the run.
     status = "error";
     error = e instanceof Error ? e.message : String(e);
-    log(`turn ${turns}/${maxTurns}  crashed: ${error}`);
+    turnLog(`crashed: ${error}`);
   }
 
   const result: RunResult = {

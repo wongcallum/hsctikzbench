@@ -1,6 +1,6 @@
 import { Button, Flex, Kbd, Text, TextArea, Heading } from "@radix-ui/themes";
 import { hasSubmission, isJudgeable } from "./sample.ts";
-import type { Run, SampleSummary, Verdict } from "./types.ts";
+import type { Run, SampleSummary, Verdict } from "../../shared/judge.ts";
 
 const VERDICTS = [
   ["pass", "Pass", "green", "p"],

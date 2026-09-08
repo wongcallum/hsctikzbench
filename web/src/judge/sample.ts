@@ -1,4 +1,7 @@
-import type { Mode, Run, SampleSummary } from "./types.ts";
+import { hasSubmission, type Run, type SampleSummary } from "../../shared/judge.ts";
+import type { Mode } from "../location.ts";
+
+export { hasSubmission };
 
 export function label(sample: SampleSummary): string {
   const kind = sample.option === null ? "figure" : `option ${sample.option}`;
@@ -21,8 +24,6 @@ export type JudgingState =
   | "needs_review"
   | "pass"
   | "fail";
-
-export const hasSubmission = (run: Run) => run.result?.status === "submitted" && run.hasSubmission;
 
 /** Whether the run has both a submitted image and a reference crop to judge it against. */
 export const isJudgeable = (sample: SampleSummary, run: Run) =>

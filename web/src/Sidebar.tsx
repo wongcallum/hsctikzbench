@@ -2,164 +2,119 @@ import {
   Badge,
   Box,
   Button,
+  Callout,
   Flex,
   Heading,
   RadioCards,
   ScrollArea,
-  SegmentedControl,
   Text
 } from "@radix-ui/themes";
-import { useEffect, useState } from "react";
-import { SampleBadges } from "./badges.tsx";
-import { label, type ScoreLine } from "./sample.ts";
-import type { Mode, SampleSummary } from "./types.ts";
+import type { BatchSummary, StatusCounts } from "../shared/types.ts";
+import { jobTone, money, relative } from "./format.ts";
+import { hrefFor, navigate, type Route } from "./location.ts";
 
 interface Props {
-  /** Samples to list; judging leaves out the ones with nothing left to judge. */
-  samples: SampleSummary[];
-  /** Score lines over every run, listed or not. */
-  scores: ScoreLine[];
-  /** Message shown in place of an empty listing. */
-  empty: string;
-  selected: string | null;
-  mode: Mode;
-  loading: boolean;
-  onSelect: (stem: string) => void;
-  onMode: (mode: Mode) => void;
-  onRefresh: () => void;
+  route: Route;
+  batches: BatchSummary[];
+  error: string | null;
 }
 
-export function Sidebar({
-  samples,
-  scores,
-  empty,
-  selected,
-  mode,
-  loading,
-  onSelect,
-  onMode,
-  onRefresh
-}: Props) {
-  const groups = new Map<string, SampleSummary[]>();
-  for (const sample of samples) {
-    const group = groups.get(sample.exam);
-    if (group) group.push(sample);
-    else groups.set(sample.exam, [sample]);
-  }
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
-  const toggle = (exam: string) =>
-    setCollapsed((current) => {
-      const next = new Set(current);
-      if (!next.delete(exam)) next.add(exam);
-      return next;
-    });
-
-  // Selecting a sample inside a collapsed exam opens it so the selection is never hidden. This
-  // only fires when the selected exam changes, so collapsing the exam holding it still works.
-  const selectedExam = samples.find((s) => s.stem === selected)?.exam ?? null;
-  useEffect(() => {
-    if (selectedExam === null) return;
-    setCollapsed((current) => {
-      if (!current.has(selectedExam)) return current;
-      const next = new Set(current);
-      next.delete(selectedExam);
-      return next;
-    });
-  }, [selectedExam]);
-
+export function Sidebar({ route, batches, error }: Props) {
+  const current = route.page === "batch" ? route.name : null;
   return (
     <Flex direction="column" minHeight="0">
       <Flex align="center" justify="between" p="3" gap="2">
-        <Heading size="3">Samples</Heading>
-        <Flex align="center" gap="2">
-          <SegmentedControl.Root
-            size="1"
-            value={mode}
-            onValueChange={(value) => onMode(value === "view" ? "view" : "judge")}
-          >
-            <SegmentedControl.Item value="judge">Judge</SegmentedControl.Item>
-            <SegmentedControl.Item value="view">View</SegmentedControl.Item>
-          </SegmentedControl.Root>
-          <Button size="1" variant="soft" onClick={onRefresh} disabled={loading}>
-            Refresh
-          </Button>
-        </Flex>
+        <Heading size="3">Batches</Heading>
+        <Button asChild size="1" variant={route.page === "launch" ? "solid" : "soft"}>
+          <a href={hrefFor({ page: "launch", from: null })}>New run</a>
+        </Button>
       </Flex>
-      <Flex direction="column" px="3" pb="2" gap="1">
-        {scores.map(({ batch, summary }) => (
-          <Text key={batch ?? ""} size="1" color="gray">
-            {batch !== null && (
-              <>
-                <Text weight="bold">{batch}</Text>
-                {" · "}
-              </>
-            )}
-            {summary}
-          </Text>
-        ))}
-      </Flex>
+      {error && (
+        <Box px="3" pb="2">
+          <Callout.Root color="red" size="1">
+            <Callout.Text>{error}</Callout.Text>
+          </Callout.Root>
+        </Box>
+      )}
       <Box flexGrow="1" minHeight="0">
         <ScrollArea type="auto" scrollbars="vertical">
           <Box px="3" pb="3">
-            {samples.length === 0 && !loading && (
+            {batches.length === 0 && !error && (
               <Text as="p" size="2" color="gray">
-                {empty}
+                No runs yet.
               </Text>
             )}
-            {[...groups].map(([exam, group]) => {
-              const open = !collapsed.has(exam);
-              return (
-                <Flex key={exam} direction="column" gap="2" mt="2">
-                  <Button
-                    variant="ghost"
-                    color="gray"
-                    size="1"
-                    onClick={() => toggle(exam)}
-                    aria-expanded={open}
-                    style={{ justifyContent: "flex-start" }}
-                  >
-                    <Flex as="span" align="center" gap="2" width="100%" minWidth="0">
-                      <Text size="1">{open ? "▾" : "▸"}</Text>
-                      <Text size="1" weight="bold" truncate>
-                        {exam}
+            <RadioCards.Root
+              orientation="vertical"
+              columns="1"
+              gap="2"
+              size="1"
+              value={current ?? ""}
+              onValueChange={(name) => navigate({ page: "batch", name, stem: null })}
+            >
+              {batches.map((batch) => (
+                <RadioCards.Item key={batch.name} value={batch.name}>
+                  <Flex direction="column" gap="1" width="100%" minWidth="0">
+                    <Flex align="center" justify="between" gap="2" minWidth="0">
+                      <Text size="2" weight="medium" truncate title={batch.name}>
+                        {batch.name}
                       </Text>
-                      <Text size="1" color="gray">
-                        {group.length}
+                      {batch.jobStatus && (
+                        <Badge color={jobTone[batch.jobStatus]} variant="soft" size="1">
+                          {batch.jobStatus}
+                        </Badge>
+                      )}
+                    </Flex>
+                    <CountBar counts={batch.counts} />
+                    <Flex justify="between" gap="2" minWidth="0">
+                      <Text size="1" color="gray" truncate title={batch.model ?? ""}>
+                        {batch.model ?? "no results"}
+                      </Text>
+                      <Text size="1" color="gray" style={{ whiteSpace: "nowrap" }}>
+                        {batch.cost > 0 ? `${money(batch.cost)} · ` : ""}
+                        {relative(batch.updatedAt)}
                       </Text>
                     </Flex>
-                  </Button>
-                  {open && (
-                    <RadioCards.Root
-                      orientation="vertical"
-                      columns="1"
-                      gap="2"
-                      size="1"
-                      value={selected ?? ""}
-                      onValueChange={onSelect}
-                    >
-                      {group.map((sample) => (
-                        <RadioCards.Item key={sample.stem} value={sample.stem}>
-                          <Flex direction="column" gap="1" width="100%" minWidth="0">
-                            <Text size="2" weight="medium" truncate>
-                              {label(sample)}
-                            </Text>
-                            <Flex align="center" gap="2" wrap="wrap">
-                              <Badge color="gray" variant="outline" size="1">
-                                {sample.category.replaceAll("_", " ")}
-                              </Badge>
-                              <SampleBadges sample={sample} />
-                            </Flex>
-                          </Flex>
-                        </RadioCards.Item>
-                      ))}
-                    </RadioCards.Root>
-                  )}
-                </Flex>
-              );
-            })}
+                  </Flex>
+                </RadioCards.Item>
+              ))}
+            </RadioCards.Root>
           </Box>
         </ScrollArea>
       </Box>
+    </Flex>
+  );
+}
+
+const SEGMENTS: [keyof StatusCounts, string][] = [
+  ["submitted", "var(--green-9)"],
+  ["max_turns", "var(--orange-9)"],
+  ["error", "var(--red-9)"],
+  ["interrupted", "var(--orange-6)"],
+  ["running", "var(--blue-9)"],
+  ["pending", "var(--gray-6)"]
+];
+
+export function CountBar({ counts }: { counts: StatusCounts }) {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const title = SEGMENTS.filter(([k]) => counts[k] > 0)
+    .map(([k]) => `${counts[k]} ${k.replaceAll("_", " ")}`)
+    .join(", ");
+  return (
+    <Flex
+      height="6px"
+      width="100%"
+      overflow="hidden"
+      title={title}
+      style={{ borderRadius: "var(--radius-1)", backgroundColor: "var(--gray-a4)" }}
+    >
+      {total > 0 &&
+        SEGMENTS.map(
+          ([key, color]) =>
+            counts[key] > 0 && (
+              <Box key={key} style={{ flex: counts[key], backgroundColor: color }} />
+            )
+        )}
     </Flex>
   );
 }
