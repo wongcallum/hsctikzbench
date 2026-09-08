@@ -60,9 +60,8 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
   const { models, model, out, log, maxTurns } = opts;
   const startedAt = new Date();
   const fit = pngSize(opts.referencePng);
-  const imageNames = new Map<string, string>();
+  const imageNames: string[] = [REFERENCE_FILE];
   const referenceB64 = opts.referencePng.toString("base64");
-  imageNames.set(referenceB64, REFERENCE_FILE);
 
   const context: Context = {
     systemPrompt: opts.systemPrompt,
@@ -188,8 +187,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
         const result: RenderResult = await render(opts.renderer, source, fit);
         if (result.ok) {
           successfulRenders++;
-          const name = await out.saveRender(renders, result.png);
-          imageNames.set(result.png.toString("base64"), name);
+          imageNames.push(await out.saveRender(renders, result.png));
           lastGoodRender = { source, png: result.png };
           context.messages.push(toolResult(call, "Rendered successfully.", false, result.png));
         } else {

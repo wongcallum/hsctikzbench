@@ -74,29 +74,35 @@ export class OutputDir {
     return name;
   }
 
+  /** imageNames are in the order the images entered the context: reference, then renders. */
   async finish(
     result: RunResult,
     context: Context,
-    imageNames: Map<string, string>,
+    imageNames: readonly string[],
     submission?: Submission
   ): Promise<void> {
     if (submission) {
       await writeFile(join(this.dir, "submission.tex"), submission.source);
       await writeFile(join(this.dir, "submission.png"), submission.png);
     }
+    let next = 0;
     const transcript = {
       ...context,
-      messages: context.messages.map((m) => stripImages(m, imageNames))
+      messages: context.messages.map((m) =>
+        stripImages(m, () => imageNames[next++] ?? "<unsaved image>")
+      )
     };
     await writeFile(join(this.dir, "transcript.json"), JSON.stringify(transcript, null, 2));
     await writeFile(join(this.dir, RESULT_FILE), JSON.stringify(result, null, 2));
   }
 }
 
-function stripImages(message: Message, imageNames: Map<string, string>): Message {
+// Names come from the order images entered the context, not their bytes: a model that
+// renders the same source twice produces byte-identical PNGs.
+function stripImages(message: Message, nextName: () => string): Message {
   if (message.role === "assistant" || typeof message.content === "string") return message;
   const content = message.content.map((part) =>
-    part.type === "image" ? { ...part, data: imageNames.get(part.data) ?? "<unsaved image>" } : part
+    part.type === "image" ? { ...part, data: nextName() } : part
   );
   return { ...message, content } as Message;
 }
