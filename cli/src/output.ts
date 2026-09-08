@@ -24,6 +24,16 @@ export interface RunResult {
   };
   durationMs: number;
   startedAt: string;
+  harness?: HarnessInfo;
+}
+
+/** What the run was measured under; absent on runs from before renders were scaled. */
+export interface HarnessInfo {
+  renderer: string;
+  fit: string;
+  referenceSha256: string;
+  promptSha256: string;
+  maxTurns: number;
 }
 
 export interface Submission {

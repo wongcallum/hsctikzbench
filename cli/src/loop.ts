@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   Type,
   retryAssistantCall,
@@ -233,7 +234,14 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
     successfulRenders,
     usage,
     durationMs: Date.now() - startedAt.getTime(),
-    startedAt: startedAt.toISOString()
+    startedAt: startedAt.toISOString(),
+    harness: {
+      renderer: opts.renderer.description,
+      fit: `${fit.width}x${fit.height}`,
+      referenceSha256: createHash("sha256").update(opts.referencePng).digest("hex"),
+      promptSha256: createHash("sha256").update(opts.systemPrompt).digest("hex"),
+      maxTurns
+    }
   };
 
   await out.finish(result, context, imageNames, submission);
