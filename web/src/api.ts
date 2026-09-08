@@ -5,20 +5,22 @@ import type {
   Job,
   JobProgress,
   LaunchParams,
+  Me,
   SseEvent
 } from "../shared/types.ts";
+import { json, request } from "./http.ts";
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+export async function fetchMe(): Promise<Me | null> {
+  const res = await fetch("/api/me");
+  if (res.status === 401) return null;
   if (!res.ok) throw new Error(await res.text());
-  return (await res.json()) as T;
+  return (await res.json()) as Me;
 }
 
-const json = (method: string, body?: unknown): RequestInit => ({
-  method,
-  headers: { "Content-Type": "application/json" },
-  ...(body === undefined ? {} : { body: JSON.stringify(body) })
-});
+export async function signOut(): Promise<void> {
+  const res = await fetch("/auth/logout", { method: "POST" });
+  if (!res.ok) throw new Error(await res.text());
+}
 
 export const fetchInfo = () => request<Info>("/api/info");
 export const fetchBatches = () => request<BatchSummary[]>("/api/batches");

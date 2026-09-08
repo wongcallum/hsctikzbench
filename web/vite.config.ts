@@ -7,7 +7,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: Object.fromEntries(
-      ["/api", "/files", "/runs"].map((prefix) => [prefix, { target: API, changeOrigin: false }])
+      ["/api", "/auth", "/files", "/runs"].map((prefix) => [
+        prefix,
+        { target: API, changeOrigin: false }
+      ])
     )
   }
 });

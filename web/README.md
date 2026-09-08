@@ -24,17 +24,32 @@ for the CLI. Log in with `pnpm --filter hsctikzbench-cli start login <provider>`
 
 ## Environment
 
-| Variable               | Default                    | Meaning                                                                                                               |
-| ---------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `RUNS_DIR`             | `../data/runs`             | Where batches are written and read from                                                                               |
-| `CROPS_DIR`            | `../data/crops`            | Reference crops from `dataset build`                                                                                  |
-| `MANIFEST`             | `../dataset/manifest.json` | Sample listing                                                                                                        |
-| `AUTH_FILE`            | `../cli/auth.json`         | Credentials file for listing configured providers                                                                     |
-| `RUNNER_STATE_DIR`     | `./state`                  | Job records and logs                                                                                                  |
-| `PORT` / `HOST`        | `8787` / `127.0.0.1`       | Where the server listens                                                                                              |
-| `RUNNER_BENCH_COMMAND` |                            | Replace the bench command, e.g. `node scripts/fake-bench.mjs` to try the UI without a model; runs from this directory |
+| Variable                                    | Default                    | Meaning                                                                                                               |
+| ------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `RUNS_DIR`                                  | `../data/runs`             | Where batches are written and read from                                                                               |
+| `CROPS_DIR`                                 | `../data/crops`            | Reference crops from `dataset build`                                                                                  |
+| `MANIFEST`                                  | `../dataset/manifest.json` | Sample listing                                                                                                        |
+| `AUTH_FILE`                                 | `../cli/auth.json`         | Credentials file for listing configured providers                                                                     |
+| `RUNNER_STATE_DIR`                          | `./state`                  | Job records and logs                                                                                                  |
+| `PORT` / `HOST`                             | `8787` / `127.0.0.1`       | Where the server listens                                                                                              |
+| `RUNNER_BENCH_COMMAND`                      |                            | Replace the bench command, e.g. `node scripts/fake-bench.mjs` to try the UI without a model; runs from this directory |
+| `USERS_FILE`                                | `./users.json`             | Allowlist: `{ "<github login>": { "role": "owner" \| "judge" } }`, re-read when it changes                            |
+| `SESSION_SECRET`                            |                            | Signs session cookies; required in production, random per process otherwise. Change it to sign everyone out           |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` |                            | OAuth app with callback `<PUBLIC_URL>/auth/callback`; required in production                                          |
+| `PUBLIC_URL`                                | `http://localhost:<PORT>`  | Where browsers reach the server (the vite URL in development). HTTPS here makes cookies Secure                        |
+| `AUTH_DEV_USER`                             |                            | Development only: `/auth/login` signs in as this allowlisted login without GitHub. Refused in production              |
 
 Paths are relative to this directory.
+
+## Signing in
+
+Every request under `/api`, `/files` and `/runs` needs a session, and only the owner may
+launch or watch jobs; judges see the judging page alone, always blind. `GET /auth/login`
+starts the GitHub flow (scope `read:user`), `GET /auth/callback` finishes it, `POST
+/auth/logout` ends the session, and `GET /api/me` says who is signed in. Sessions are
+signed cookies (`HttpOnly`, `SameSite=Lax`, 90 days, re-signed on use) naming a GitHub
+login; the allowlist is checked on every request, so removing a login locks it out at
+once. Create the OAuth app at github.com/settings/developers, one per callback URL.
 
 ## How it works
 

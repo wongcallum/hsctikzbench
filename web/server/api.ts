@@ -5,6 +5,7 @@ import { bodyLimit } from "hono/body-limit";
 import { streamSSE } from "hono/streaming";
 import * as z from "zod";
 import { BATCH_NAME, type LaunchParams } from "../shared/types.ts";
+import { authRoutes, requireOwner, requireUser, type AuthEnv } from "./auth.ts";
 import { batchDetail, listBatches } from "./batches.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
@@ -42,8 +43,8 @@ async function listDir(dir: string): Promise<string[]> {
   }
 }
 
-export function createApi(jobs: JobManager): Hono {
-  const app = new Hono();
+export function createApi(jobs: JobManager): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
 
   app.use("/api/*", async (c, next) => {
     c.header("Cache-Control", "no-store");
@@ -53,6 +54,19 @@ export function createApi(jobs: JobManager): Hono {
     "/api/*",
     bodyLimit({ maxSize: MAX_BODY, onError: (c) => c.text("body too large", 413) })
   );
+  app.route("/", authRoutes());
+
+  // Everyone signed in may judge and see run files; only the owner launches and watches jobs.
+  for (const prefix of ["/api/*", "/files/*", "/runs/*"]) app.use(prefix, requireUser);
+  for (const prefix of [
+    "/api/jobs",
+    "/api/jobs/*",
+    "/api/info",
+    "/api/batches",
+    "/api/batches/*"
+  ]) {
+    app.use(prefix, requireOwner);
+  }
 
   app.get("/api/info", async (c) => c.json(await collectInfo()));
 
@@ -165,10 +179,11 @@ export function createApi(jobs: JobManager): Hono {
     return c.json(detail);
   });
 
-  // Judging: runs addressed by id, so a blind listing never reveals the batch.
-  app.get("/api/samples", async (c) =>
-    c.json(await listSamples(c.req.query("blind") !== undefined))
-  );
+  // Runs are addressed by id, so a blind listing never reveals the batch.
+  app.get("/api/samples", async (c) => {
+    const blind = c.req.query("blind") !== undefined || c.get("user").role !== "owner";
+    return c.json(await listSamples(blind));
+  });
 
   app.put("/api/runs/:id/judgement", async (c) =>
     c.json(await saveJudgement(c.req.param("id"), await jsonBody(c)))

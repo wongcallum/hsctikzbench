@@ -1,20 +1,42 @@
-import { Box, Flex, Grid, Heading, Separator, TabNav } from "@radix-ui/themes";
+import { Badge, Box, Button, Flex, Grid, Heading, Separator, TabNav, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useState } from "react";
-import type { BatchSummary, Info } from "../shared/types.ts";
-import { fetchBatches, fetchInfo } from "./api.ts";
+import type { BatchSummary, Info, Me } from "../shared/types.ts";
+import { fetchBatches, fetchInfo, fetchMe, signOut } from "./api.ts";
 import { BatchView } from "./BatchView.tsx";
+import { SIGNED_OUT_EVENT } from "./http.ts";
 import { JudgeApp } from "./judge/App.tsx";
 import { Launch } from "./Launch.tsx";
 import { confirmLeave, hrefFor, navigate, useRoute, type Route } from "./location.ts";
 import { Sidebar } from "./Sidebar.tsx";
+import { SignIn } from "./SignIn.tsx";
 
 const BATCH_POLL_MS = 3000;
 
 export function App() {
   const route = useRoute();
+  // undefined while the first /api/me is in flight; null when signed out.
+  const [me, setMe] = useState<Me | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetchMe().then(setMe, () => setMe(null));
+    const signedOut = () => setMe(null);
+    window.addEventListener(SIGNED_OUT_EVENT, signedOut);
+    return () => window.removeEventListener(SIGNED_OUT_EVENT, signedOut);
+  }, []);
+
+  const owner = me?.role === "owner";
+  const allowed = owner || (route.page === "judge" && route.mode === "judge");
+  useEffect(() => {
+    if (me && !allowed) navigate({ page: "judge", mode: "judge", stem: null, run: null });
+  }, [me, allowed]);
+
+  if (me === undefined) return null;
+  if (me === null) return <SignIn />;
+  if (!allowed) return null;
+
   return (
     <Flex direction="column" height="100vh">
-      <TopNav route={route} />
+      <TopNav route={route} me={me} onSignOut={() => setMe(null)} />
       <Separator size="4" />
       <Box flexGrow="1" minHeight="0">
         {route.page === "judge" ? (
@@ -27,12 +49,28 @@ export function App() {
   );
 }
 
-function TopNav({ route }: { route: Route }) {
-  const tabs: [string, string, boolean][] = [
-    ["Runs", hrefFor({ page: "launch", from: null }), route.page !== "judge"],
-    ["Judge", "#/judge", route.page === "judge" && route.mode === "judge"],
-    ["View", "#/view", route.page === "judge" && route.mode === "view"]
-  ];
+function TopNav({ route, me, onSignOut }: { route: Route; me: Me; onSignOut: () => void }) {
+  const owner = me.role === "owner";
+  const tabs: [string, string, boolean][] = owner
+    ? [
+        ["Runs", hrefFor({ page: "launch", from: null }), route.page !== "judge"],
+        ["Judge", "#/judge", route.page === "judge" && route.mode === "judge"],
+        ["View", "#/view", route.page === "judge" && route.mode === "view"]
+      ]
+    : [["Judge", "#/judge", true]];
+  const [signingOut, setSigningOut] = useState(false);
+  const leave = async () => {
+    if (!confirmLeave()) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+      // Drop any ?auth= leftovers along with the page state.
+      window.history.replaceState(null, "", "/");
+      onSignOut();
+    } finally {
+      setSigningOut(false);
+    }
+  };
   return (
     <Flex align="center" gap="4" px="4" flexShrink="0">
       <Heading size="3">HSCTikZBench</Heading>
@@ -50,6 +88,15 @@ function TopNav({ route }: { route: Route }) {
           </TabNav.Link>
         ))}
       </TabNav.Root>
+      <Flex align="center" gap="2" ml="auto">
+        <Text size="2">{me.login}</Text>
+        <Badge color={owner ? "blue" : "gray"} variant="soft" size="1">
+          {me.role}
+        </Badge>
+        <Button size="1" variant="soft" color="gray" onClick={leave} disabled={signingOut}>
+          Sign out
+        </Button>
+      </Flex>
     </Flex>
   );
 }

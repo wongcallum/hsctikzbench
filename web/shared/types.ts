@@ -3,6 +3,13 @@ import type { RunResult, RunStatus } from "hsctikzbench-cli/output";
 
 export type { RunResult, RunStatus };
 
+export type UserRole = "owner" | "judge";
+
+export interface Me {
+  login: string;
+  role: UserRole;
+}
+
 export type JobStatus = "running" | "succeeded" | "failed" | "cancelled" | "interrupted";
 
 export interface LaunchParams {

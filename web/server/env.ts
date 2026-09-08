@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,11 +17,29 @@ export const env = createEnv({
     PORT: z.coerce.number().int().positive().default(8787),
     HOST: z.string().min(1).default("127.0.0.1"),
     RUNNER_BENCH_COMMAND: z.string().min(1).optional(),
-    NODE_ENV: z.enum(["development", "production", "test"]).default("development")
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    SESSION_SECRET: z.string().min(32).optional(),
+    USERS_FILE: z.string().min(1).default(local("../users.json")),
+    GITHUB_CLIENT_ID: z.string().min(1).optional(),
+    GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
+    PUBLIC_URL: z.url().optional(),
+    AUTH_DEV_USER: z.string().min(1).optional()
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true
 });
+
+const production = env.NODE_ENV === "production";
+if (production) {
+  if (env.AUTH_DEV_USER !== undefined)
+    throw new Error("AUTH_DEV_USER must not be set in production");
+  if (env.SESSION_SECRET === undefined) throw new Error("SESSION_SECRET is required in production");
+  if (env.GITHUB_CLIENT_ID === undefined || env.GITHUB_CLIENT_SECRET === undefined) {
+    throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required in production");
+  }
+}
+
+const publicUrl = (env.PUBLIC_URL ?? `http://localhost:${env.PORT}`).replace(/\/$/, "");
 
 export const config = {
   root: local("../"),
@@ -32,8 +51,18 @@ export const config = {
   stateDir: path.resolve(env.RUNNER_STATE_DIR),
   port: env.PORT,
   host: env.HOST,
-  production: env.NODE_ENV === "production",
-  benchCommand: env.RUNNER_BENCH_COMMAND
+  production,
+  benchCommand: env.RUNNER_BENCH_COMMAND,
+  usersFile: path.resolve(env.USERS_FILE),
+  // Without a configured secret, sessions last only as long as the process.
+  sessionSecret: env.SESSION_SECRET ?? randomBytes(32).toString("hex"),
+  publicUrl,
+  secureCookies: publicUrl.startsWith("https:"),
+  github:
+    env.GITHUB_CLIENT_ID !== undefined && env.GITHUB_CLIENT_SECRET !== undefined
+      ? { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET }
+      : null,
+  devUser: env.AUTH_DEV_USER ?? null
 };
 
 export function repoProblems(): string[] {

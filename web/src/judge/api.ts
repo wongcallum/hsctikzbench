@@ -1,20 +1,11 @@
 import type { Judgement, SampleSummary } from "../../shared/judge.ts";
-
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-  return (await res.json()) as T;
-}
+import { json, request } from "../http.ts";
 
 export const fetchSamples = (blind: boolean) =>
   request<SampleSummary[]>(blind ? "/api/samples?blind" : "/api/samples");
 
 export const saveJudgement = (runId: string, judgement: Judgement) =>
-  request<Judgement>(`/api/runs/${encodeURIComponent(runId)}/judgement`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(judgement)
-  });
+  request<Judgement>(`/api/runs/${encodeURIComponent(runId)}/judgement`, json("PUT", judgement));
 
 export const cropUrl = (stem: string) => `/files/crops/${encodeURIComponent(stem)}.png`;
 
