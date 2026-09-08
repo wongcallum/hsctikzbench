@@ -33,7 +33,7 @@ interface Job {
 type Outcome =
   | { kind: "skipped" }
   | { kind: "failed"; message: string }
-  | { kind: "ran"; result: RunResult };
+  | { kind: "ran"; result: RunResult; retriedAfter?: string };
 
 export const benchCommand = buildCommand({
   async func(this: LocalContext, flags: BenchFlags): Promise<void> {
@@ -56,9 +56,18 @@ export const benchCommand = buildCommand({
     let done = 0;
     const runOne = async (job: Job): Promise<Outcome> => {
       const dir = new OutputDir(join(flags.out, job.stem));
-      if (flags.resume && (await dir.isComplete())) return { kind: "skipped" };
+      let retriedAfter: string | undefined;
+      if (flags.resume) {
+        const previous = await dir.previousResult();
+        // max_turns is a real outcome and stays skipped; an errored run measured nothing.
+        if (previous && previous.status !== "error") return { kind: "skipped" };
+        if (previous) {
+          retriedAfter = previous.error ?? "no message recorded";
+          out(`RETRYING ${job.stem}: earlier run errored (${retriedAfter})`);
+        }
+      }
       const referencePng = await loadCrop(flags.crops, job);
-      // Under --resume a directory without a result is a run that was interrupted; start it over.
+      // Under --resume a directory with no result to keep was interrupted or errored; start over.
       await dir.prepare(referencePng, { replace: flags.resume });
       const result = await runAgent({
         models,
@@ -71,7 +80,7 @@ export const benchCommand = buildCommand({
         out: dir,
         log: (line) => log(`[${job.stem}] ${line}`)
       });
-      return { kind: "ran", result };
+      return { kind: "ran", result, retriedAfter };
     };
     await pMap(
       jobs,
@@ -97,11 +106,13 @@ export const benchCommand = buildCommand({
       failed: 0
     };
     let cost = 0;
+    let retried = 0;
     for (const stem of [...outcomes.keys()].sort()) {
       const outcome = outcomes.get(stem)!;
       if (outcome.kind === "ran") {
         counts[outcome.result.status]++;
         cost += outcome.result.usage.cost;
+        if (outcome.retriedAfter !== undefined) retried++;
       } else {
         counts[outcome.kind]++;
       }
@@ -109,7 +120,8 @@ export const benchCommand = buildCommand({
     }
     out(
       `${counts.submitted} submitted, ${counts.max_turns} hit max turns, ${counts.error} errored, ` +
-        `${counts.failed} failed to start, ${counts.skipped} skipped; cost $${cost.toFixed(4)}`
+        `${counts.failed} failed to start, ${counts.skipped} skipped, ` +
+        `${retried} retried after an earlier error; cost $${cost.toFixed(4)}`
     );
     if (counts.error > 0 || counts.failed > 0) this.process.exitCode = 1;
   },
@@ -156,7 +168,8 @@ export const benchCommand = buildCommand({
       resume: {
         kind: "boolean",
         brief:
-          "Skip samples that already have a result in the output directory and restart interrupted ones",
+          "Skip samples that already produced a result, and rerun ones that were interrupted " +
+          "or that errored",
         default: false
       }
     }
@@ -218,7 +231,8 @@ function describe(outcome: Outcome): string {
     case "ran": {
       const { result } = outcome;
       const detail = result.status === "error" ? `: ${result.error}` : "";
-      return `${result.status}${detail}  turns=${result.turns} cost=$${result.usage.cost.toFixed(4)}`;
+      const retried = outcome.retriedAfter === undefined ? "" : "  RETRIED after an earlier error";
+      return `${result.status}${detail}  turns=${result.turns} cost=$${result.usage.cost.toFixed(4)}${retried}`;
     }
   }
 }

@@ -1,4 +1,4 @@
-import { access, mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Context, Message } from "@earendil-works/pi-ai";
 
@@ -50,12 +50,11 @@ export class OutputDir {
     this.dir = dir;
   }
 
-  async isComplete(): Promise<boolean> {
+  async previousResult(): Promise<RunResult | undefined> {
     try {
-      await access(join(this.dir, RESULT_FILE));
-      return true;
+      return JSON.parse(await readFile(join(this.dir, RESULT_FILE), "utf8")) as RunResult;
     } catch {
-      return false;
+      return undefined;
     }
   }
 
