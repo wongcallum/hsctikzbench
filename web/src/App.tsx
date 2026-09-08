@@ -23,8 +23,14 @@ function claimedByGroup(group: Element, key: string): boolean {
   const orientation = group.getAttribute("aria-orientation");
   if (key === "ArrowUp" || key === "ArrowDown") return orientation !== "horizontal";
   if (key === "ArrowLeft" || key === "ArrowRight") return orientation !== "vertical";
-  return true;
+  return false;
 }
+
+const VERDICT_KEYS: Record<string, Verdict> = {
+  p: "pass",
+  f: "fail",
+  n: "needs_review"
+};
 
 export function App() {
   const [samples, setSamples] = useState<SampleSummary[]>([]);
@@ -223,6 +229,8 @@ function Workspace({
     isJudgeable(sample, run) &&
     viewingSubmission;
 
+  const canJudge = !saving && run !== null && isJudgeable(sample, run) && viewingSubmission;
+
   const confirmDiscard = useCallback(
     () => !dirty || window.confirm("Discard the unsaved judgement?"),
     [dirty]
@@ -245,6 +253,13 @@ function Workspace({
       select(next.stem, match?.id ?? null);
     },
     [run, select]
+  );
+
+  const setVerdict = useCallback(
+    (value: Verdict) => {
+      if (canJudge) updateEditor({ edited: { verdict: value, reason } });
+    },
+    [canJudge, reason, updateEditor]
   );
 
   const cancel = useCallback(() => {
@@ -270,20 +285,33 @@ function Workspace({
       .finally(() => updateEditor({ saving: false }));
   }, [run, canSave, verdict, reason, onPatch, updateEditor]);
 
-  const nextPending = useCallback(() => {
-    const pairs = sampleRuns(samples);
-    const index = pairs.findIndex((pair) => pair.run.id === run?.id);
-    const next = [...pairs.slice(index + 1), ...pairs.slice(0, index + 1)].find((pair) =>
-      isPending(pair.sample, pair.run)
-    );
-    if (next) select(next.sample.stem, next.run.id);
-  }, [samples, run, select]);
+  const seekPending = useCallback(
+    (step: 1 | -1) => {
+      const pairs = sampleRuns(samples);
+      const index = pairs.findIndex((pair) => pair.run.id === run?.id);
+      const rotate = (at: number) => [...pairs.slice(at), ...pairs.slice(0, at)];
+      const order = step === 1 ? rotate(index + 1) : rotate(Math.max(index, 0)).reverse();
+      const next = order.find((pair) => isPending(pair.sample, pair.run));
+      if (next) select(next.sample.stem, next.run.id);
+    },
+    [samples, run, select]
+  );
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
-      if (target?.closest("input, textarea, [role=dialog]")) return;
+      if (target?.closest("[role=dialog]")) return;
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.altKey) {
+        event.preventDefault();
+        judge();
+        return;
+      }
+      if (target?.closest("input, textarea")) {
+        // Escape leaves the reason field; pressing it again then discards the edit.
+        if (event.key === "Escape") target.blur();
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       const group = target?.closest("[role=radiogroup]");
       if (group && claimedByGroup(group, event.key)) return;
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -304,14 +332,44 @@ function Workspace({
         }
         return;
       }
-      if (mode === "judge" && (event.key === "n" || event.key === "N")) {
+      if (mode !== "judge") return;
+      if (event.key === " ") {
         event.preventDefault();
-        nextPending();
+        seekPending(event.shiftKey ? -1 : 1);
+        return;
+      }
+      const keyed = VERDICT_KEYS[event.key.toLowerCase()];
+      if (keyed) {
+        event.preventDefault();
+        setVerdict(keyed);
+        return;
+      }
+      if (event.key === "Enter") {
+        if (target?.closest("a, button, [role=radio]")) return;
+        event.preventDefault();
+        judge();
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancel();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [samples, sample, run, runs, mode, select, selectSample, nextPending]);
+  }, [
+    samples,
+    sample,
+    run,
+    runs,
+    mode,
+    select,
+    selectSample,
+    seekPending,
+    setVerdict,
+    judge,
+    cancel
+  ]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -364,7 +422,7 @@ function Workspace({
             busy={saving}
             canSave={canSave}
             viewingSubmission={viewingSubmission}
-            onVerdict={(value) => updateEditor({ edited: { verdict: value, reason } })}
+            onVerdict={setVerdict}
             onReason={(value) => updateEditor({ edited: { verdict, reason: value } })}
             onSave={judge}
             onCancel={cancel}

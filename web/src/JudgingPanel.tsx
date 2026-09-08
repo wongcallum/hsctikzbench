@@ -3,9 +3,9 @@ import { hasSubmission, isJudgeable } from "./sample.ts";
 import type { Run, SampleSummary, Verdict } from "./types.ts";
 
 const VERDICTS = [
-  ["pass", "Pass", "green"],
-  ["fail", "Fail", "red"],
-  ["needs_review", "Needs review", "orange"]
+  ["pass", "Pass", "green", "p"],
+  ["fail", "Fail", "red", "f"],
+  ["needs_review", "Needs review", "orange", "n"]
 ] as const;
 
 interface Props {
@@ -57,7 +57,7 @@ export function JudgingPanel({
       </ol>
       <Blocker sample={sample} run={run} viewingSubmission={viewingSubmission} />
       <Flex gap="2" wrap="wrap">
-        {VERDICTS.map(([value, label, color]) => (
+        {VERDICTS.map(([value, label, color, key]) => (
           <Button
             key={value}
             size="2"
@@ -67,6 +67,7 @@ export function JudgingPanel({
             onClick={() => onVerdict(value)}
           >
             {label}
+            <Kbd size="1">{key}</Kbd>
           </Button>
         ))}
       </Flex>
@@ -83,9 +84,11 @@ export function JudgingPanel({
       <Flex gap="2">
         <Button onClick={onSave} disabled={!canSave}>
           {busy ? "Saving…" : "Save judgement"}
+          <Kbd size="1">↵</Kbd>
         </Button>
         <Button variant="soft" onClick={onCancel} disabled={busy || !dirty}>
           Cancel
+          <Kbd size="1">esc</Kbd>
         </Button>
       </Flex>
       {run?.judgement && !dirty && (
@@ -94,7 +97,8 @@ export function JudgingPanel({
         </Text>
       )}
       <Text size="1" color="gray">
-        <Kbd>n</Kbd> next pending <Kbd>↑</Kbd>/<Kbd>↓</Kbd> samples <Kbd>←</Kbd>/<Kbd>→</Kbd> runs
+        <Kbd>space</Kbd>/<Kbd>shift space</Kbd> next/previous pending <Kbd>↑</Kbd>/<Kbd>↓</Kbd>{" "}
+        samples <Kbd>←</Kbd>/<Kbd>→</Kbd> runs <Kbd>ctrl ↵</Kbd> saves while writing a reason
       </Text>
     </Flex>
   );
