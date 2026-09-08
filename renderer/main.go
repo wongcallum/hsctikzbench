@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -48,6 +51,7 @@ func fail(code int, format string, args ...any) error {
 var (
 	pagesRe    = regexp.MustCompile(`Output written on doc\.pdf \((\d+) page`)
 	mediaBoxRe = regexp.MustCompile(`Page 1 MediaBox: \[([^\]]*)\]`)
+	fitRe      = regexp.MustCompile(`^(\d+)x(\d+)$`)
 )
 
 func main() {
@@ -59,7 +63,7 @@ func main() {
 	var err error
 	switch name {
 	case "render":
-		err = render(os.Stdin, os.Stdout, os.Stderr)
+		err = render(args, os.Stdin, os.Stdout, os.Stderr)
 	case "crop":
 		err = crop(args, os.Stdin, os.Stdout, os.Stderr)
 	}
@@ -120,10 +124,10 @@ func (w *workspace) pdfInfo(pdf string) ([]byte, error) {
 		"-q", "-dNODISPLAY", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-dPDFINFO", pdf)
 }
 
-func (w *workspace) rasterize(pdf string, page int) ([]byte, error) {
+func (w *workspace) rasterize(pdf string, page int, resolution float64) ([]byte, error) {
 	if _, err := w.step(exitRaster, gsPath,
 		"-q", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-sDEVICE=png16m",
-		fmt.Sprintf("-r%d", dpi), "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+		fmt.Sprintf("-r%g", resolution), "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 		fmt.Sprintf("-dFirstPage=%d", page), fmt.Sprintf("-dLastPage=%d", page),
 		"-sOutputFile=page.png", pdf); err != nil {
 		return nil, err
@@ -135,7 +139,37 @@ func (w *workspace) rasterize(pdf string, page int) ([]byte, error) {
 	return png, nil
 }
 
-func render(stdin io.Reader, stdout, stderr io.Writer) error {
+func parseFit(s string) (float64, float64, error) {
+	if s == "" {
+		return 0, 0, nil
+	}
+	m := fitRe.FindStringSubmatch(s)
+	if m == nil {
+		return 0, 0, fmt.Errorf("want WxH in pixels, got %q", s)
+	}
+	fw, _ := strconv.Atoi(m[1])
+	fh, _ := strconv.Atoi(m[2])
+	if fw < 1 || fh < 1 {
+		return 0, 0, fmt.Errorf("both sides must be at least 1, got %q", s)
+	}
+	return float64(fw), float64(fh), nil
+}
+
+func render(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("render", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	fitArg := fs.String("fit", "", "scale the raster down to fit within WxH pixels")
+	if err := fs.Parse(args); err != nil {
+		return fail(exitSpec, "%v", err)
+	}
+	if fs.NArg() > 0 {
+		return fail(exitSpec, "unexpected argument %q", fs.Arg(0))
+	}
+	fitW, fitH, err := parseFit(*fitArg)
+	if err != nil {
+		return fail(exitSpec, "--fit: %v", err)
+	}
+
 	w, err := newWorkspace("render-", stderr)
 	if err != nil {
 		return err
@@ -179,10 +213,17 @@ func render(stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	pw, ph := (x1-x0)*dpi/72, (y1-y0)*dpi/72
 	if pw > maxPixels || ph > maxPixels {
-		return fail(exitTooLarge, "page would be %.0fx%.0fpx, limit is %dpx per side; the page is rasterised at 300 dpi, use smaller coordinates or a smaller unit", pw, ph, maxPixels)
+		return fail(exitTooLarge, "page would be %.0fx%.0fpx, limit is %dpx per side; the page is measured at 300 dpi, use smaller coordinates or a smaller unit", pw, ph, maxPixels)
 	}
 
-	png, err := w.rasterize("doc.pdf", 1)
+	scale := 1.0
+	if fitW > 0 {
+		scale = math.Min(1, math.Min(fitW/pw, fitH/ph))
+		// gs cannot write a raster with a zero-length side
+		scale = math.Max(scale, math.Max(1/pw, 1/ph))
+	}
+
+	png, err := w.rasterize("doc.pdf", 1, dpi*scale)
 	if err != nil {
 		return err
 	}

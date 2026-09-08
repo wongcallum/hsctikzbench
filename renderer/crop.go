@@ -119,7 +119,7 @@ func crop(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		return fail(exitSpec, "--page %d is beyond the last page (%d)", *page, pages)
 	}
 
-	raw, err := w.rasterize("doc.pdf", *page)
+	raw, err := w.rasterize("doc.pdf", *page, dpi)
 	if err != nil {
 		return err
 	}
