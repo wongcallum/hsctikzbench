@@ -6,7 +6,7 @@
 dockerTools.buildLayeredImage {
   name = "ghcr.io/wongcallum/hsctikzbench-renderer";
   # keep in sync with DEFAULT_IMAGE in cli/src/renderer.ts
-  tag = "0.1.0";
+  tag = "0.2.0";
   contents = [
     renderer
     tini

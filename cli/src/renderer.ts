@@ -7,7 +7,7 @@ import { execa } from "execa";
 // slightly above the renderer's 60s timeout
 const EXEC_TIMEOUT_MS = 90_000;
 
-export const DEFAULT_IMAGE = "ghcr.io/wongcallum/hsctikzbench-renderer:0.1.0";
+export const DEFAULT_IMAGE = "ghcr.io/wongcallum/hsctikzbench-renderer:0.2.0";
 export const DEFAULT_RENDER_BIN = "render";
 export const CONTAINER_RUNTIMES = ["podman", "docker", "nerdctl"] as const;
 

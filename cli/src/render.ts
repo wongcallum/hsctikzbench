@@ -12,9 +12,54 @@ const MAX_ERROR_LINES = 40;
 
 export type RenderResult = { ok: true; png: Buffer } | { ok: false; message: string };
 
-export async function render(renderer: Renderer, source: string): Promise<RenderResult> {
-  const response = await renderer.exec(["render"], source);
-  if (response.code === 0) return { ok: true, png: response.stdout };
+export interface PngSize {
+  readonly width: number;
+  readonly height: number;
+}
+
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const IHDR_WIDTH_OFFSET = 16;
+const IHDR_HEIGHT_OFFSET = 20;
+
+/** Reads the dimensions out of a PNG's IHDR, which is always its first chunk. */
+export function pngSize(png: Buffer): PngSize {
+  if (png.length < IHDR_HEIGHT_OFFSET + 4 || !png.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
+    throw new RendererError("expected a PNG");
+  }
+  return {
+    width: png.readUInt32BE(IHDR_WIDTH_OFFSET),
+    height: png.readUInt32BE(IHDR_HEIGHT_OFFSET)
+  };
+}
+
+// gs rounds the raster up to whole pixels, so a fitted render may exceed the box by one.
+const FIT_TOLERANCE_PX = 2;
+
+// Renders are only ever scaled down, so anything above the box means --fit did not take.
+function checkFitted(png: Buffer, fit: PngSize): void {
+  const size = pngSize(png);
+  if (size.width <= fit.width + FIT_TOLERANCE_PX && size.height <= fit.height + FIT_TOLERANCE_PX) {
+    return;
+  }
+  throw new RendererError(
+    `renderer returned a ${size.width}x${size.height} render for --fit ${fit.width}x${fit.height}, ` +
+      "so it predates --fit and ignored it. Update the renderer: `nix build .#image` for a " +
+      "container backend, or `nix profile upgrade renderer` for --renderer local."
+  );
+}
+
+export async function render(
+  renderer: Renderer,
+  source: string,
+  fit?: PngSize
+): Promise<RenderResult> {
+  const args = ["render"];
+  if (fit) args.push("--fit", `${fit.width}x${fit.height}`);
+  const response = await renderer.exec(args, source);
+  if (response.code === 0) {
+    if (fit) checkFitted(response.stdout, fit);
+    return { ok: true, png: response.stdout };
+  }
   return interpretFailure(response, {
     [EXIT_COMPILE]: extractLatexError,
     [EXIT_TIMEOUT]: (log) => rendererMessage(log, "render"),

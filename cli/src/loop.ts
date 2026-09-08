@@ -11,7 +11,7 @@ import {
   type ToolCall,
   type ToolResultMessage
 } from "@earendil-works/pi-ai";
-import { render, type RenderResult } from "./render.ts";
+import { pngSize, render, type RenderResult } from "./render.ts";
 import type { Renderer } from "./renderer.ts";
 import {
   OutputDir,
@@ -58,6 +58,7 @@ export interface RunOptions {
 export async function runAgent(opts: RunOptions): Promise<RunResult> {
   const { models, model, out, log, maxTurns } = opts;
   const startedAt = new Date();
+  const fit = pngSize(opts.referencePng);
   const imageNames = new Map<string, string>();
   const referenceB64 = opts.referencePng.toString("base64");
   imageNames.set(referenceB64, REFERENCE_FILE);
@@ -183,7 +184,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       if (call.name === "render") {
         const source = String(call.arguments["source"]);
         renders++;
-        const result: RenderResult = await render(opts.renderer, source);
+        const result: RenderResult = await render(opts.renderer, source, fit);
         if (result.ok) {
           successfulRenders++;
           const name = await out.saveRender(renders, result.png);
