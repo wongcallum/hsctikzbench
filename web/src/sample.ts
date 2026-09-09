@@ -1,6 +1,7 @@
-import { hasSubmission, type Run, type SampleSummary } from "../shared/types.ts";
+import { hasSubmission, type Run, type SampleSummary, type UserRole } from "../shared/types.ts";
 import type { Mode } from "./location.ts";
 
+/** Where one user's judging of a run stands. */
 export type JudgingState =
   | "running"
   | "unjudgeable"
@@ -8,6 +9,9 @@ export type JudgingState =
   | "needs_review"
   | "pass"
   | "fail";
+
+/** Where the run stands once every judge's verdict is combined. */
+export type ResolvedState = "running" | "unjudgeable" | "pending" | "disputed" | "pass" | "fail";
 
 /** Whether the run has both a submitted image and a reference crop to judge it against. */
 export const isJudgeable = (sample: SampleSummary, run: Run) =>
@@ -20,18 +24,38 @@ export function judgingState(sample: SampleSummary, run: Run): JudgingState {
   return run.judgement?.verdict ?? "unjudged";
 }
 
+/**
+ * The run's settled state. Only the owner is told how the judges' verdicts combine; for a judge
+ * this is their own judgement, which is all they may know.
+ */
+export function resolvedState(sample: SampleSummary, run: Run): ResolvedState {
+  const own = judgingState(sample, run);
+  if (own === "running" || own === "unjudgeable") return own;
+  if (!hasSubmission(run)) return "fail";
+  if (run.resolution) return run.resolution.verdict;
+  return own === "pass" || own === "fail" ? own : "pending";
+}
+
 export function isPending(sample: SampleSummary, run: Run): boolean {
   const state = judgingState(sample, run);
   return state === "unjudged" || state === "needs_review";
 }
 
+export const isDisputed = (sample: SampleSummary, run: Run) =>
+  resolvedState(sample, run) === "disputed";
+
 /** Whether any of the sample's runs is still waiting on a verdict. */
 export const hasPending = (sample: SampleSummary): boolean =>
   sample.runs.some((run) => isPending(sample, run));
 
+const listable: Record<Exclude<Mode, "view">, (sample: SampleSummary, run: Run) => boolean> = {
+  judge: isPending,
+  resolve: isDisputed
+};
+
 /**
- * Samples the sidebar lists: judging drops the ones with nothing left to judge, but keeps the
- * selected sample with a judgeable run so it never vanishes from under the judge mid-sample.
+ * Samples the sidebar lists: judging and resolving drop the ones with nothing left to do, but
+ * keep the selected sample with a judgeable run so it never vanishes from under the judge.
  */
 export const listedSamples = (
   samples: SampleSummary[],
@@ -41,18 +65,20 @@ export const listedSamples = (
   mode === "view"
     ? samples
     : samples.filter(
-        (s) => hasPending(s) || (s.stem === selected && s.runs.some((run) => isJudgeable(s, run)))
+        (s) =>
+          s.runs.some((run) => listable[mode](s, run)) ||
+          (s.stem === selected && s.runs.some((run) => isJudgeable(s, run)))
       );
 
 /**
- * Runs the selector lists: judging drops unjudgeable and resolved runs, but keeps the selected
- * judgeable run so it does not vanish from under the judge the moment its verdict is saved.
+ * Runs the selector lists: judging and resolving drop the ones with nothing to do, but keep
+ * the selected judgeable run so it does not vanish the moment its verdict is saved.
  */
 export const listedRuns = (sample: SampleSummary, mode: Mode, selected: string | null): Run[] =>
   mode === "view"
     ? sample.runs
     : sample.runs.filter(
-        (run) => isPending(sample, run) || (run.id === selected && isJudgeable(sample, run))
+        (run) => listable[mode](sample, run) || (run.id === selected && isJudgeable(sample, run))
       );
 
 export interface SampleRun {
@@ -65,6 +91,7 @@ export interface JudgingCounts {
   running: number;
   unjudgeable: number;
   pending: number;
+  disputed: number;
   resolved: number;
   passed: number;
 }
@@ -73,17 +100,19 @@ export interface JudgingCounts {
 export const sampleRuns = (samples: SampleSummary[]): SampleRun[] =>
   samples.flatMap((sample) => sample.runs.map((run) => ({ sample, run })));
 
-export function judgingCounts(pairs: readonly SampleRun[]): JudgingCounts {
+/** Counts by settled state, or by the viewer's own judging when `own` is set. */
+export function judgingCounts(pairs: readonly SampleRun[], own: boolean): JudgingCounts {
   const counts: JudgingCounts = {
     total: pairs.length,
     running: 0,
     unjudgeable: 0,
     pending: 0,
+    disputed: 0,
     resolved: 0,
     passed: 0
   };
   for (const { sample, run } of pairs) {
-    switch (judgingState(sample, run)) {
+    switch (own ? judgingState(sample, run) : resolvedState(sample, run)) {
       case "running":
         counts.running++;
         break;
@@ -92,7 +121,11 @@ export function judgingCounts(pairs: readonly SampleRun[]): JudgingCounts {
         break;
       case "unjudged":
       case "needs_review":
+      case "pending":
         counts.pending++;
+        break;
+      case "disputed":
+        counts.disputed++;
         break;
       case "pass":
         counts.passed++;
@@ -107,11 +140,20 @@ export function judgingCounts(pairs: readonly SampleRun[]): JudgingCounts {
 }
 
 export function scoreSummary(pairs: SampleRun[]): string {
-  const { total, running, resolved, passed } = judgingCounts(pairs);
+  const { total, running, disputed, resolved, passed } = judgingCounts(pairs, false);
   const considered = total - running;
-  const progress = `${resolved}/${considered} resolved · ${passed} pass`;
+  const parts = [`${resolved}/${considered} resolved`, `${passed} pass`];
+  if (disputed > 0) parts.push(`${disputed} disputed`);
+  const progress = parts.join(" · ");
   if (considered === 0 || resolved !== considered) return `${progress} · score pending`;
   return `${progress} · faithful reproduction ${((passed / considered) * 100).toFixed(1)}%`;
+}
+
+/** A judge's own progress through what is assigned to them. */
+export function assignedSummary(pairs: SampleRun[]): string {
+  const { total, running, unjudgeable, pending } = judgingCounts(pairs, true);
+  const assigned = total - running - unjudgeable;
+  return `assigned to you: ${assigned} · ${pending} left`;
 }
 
 export interface ScoreLine {
@@ -120,10 +162,14 @@ export interface ScoreLine {
   summary: string;
 }
 
-/** One score line per batch on the view page; a single line over all runs when blind. */
-export function scoreLines(samples: SampleSummary[], mode: Mode): ScoreLine[] {
+/**
+ * One score line per batch when the listing names batches; a single line over every run when
+ * blind. A judge sees only how far through their assignment they are.
+ */
+export function scoreLines(samples: SampleSummary[], mode: Mode, role: UserRole): ScoreLine[] {
   const pairs = sampleRuns(samples);
   if (pairs.length === 0) return [{ batch: null, summary: "no runs" }];
+  if (role !== "owner") return [{ batch: null, summary: assignedSummary(pairs) }];
   if (mode === "judge") return [{ batch: null, summary: scoreSummary(pairs) }];
   const batches = [...new Set(pairs.map(({ run }) => run.source?.batch ?? ""))].sort();
   return batches.map((batch) => ({

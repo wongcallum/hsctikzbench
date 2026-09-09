@@ -1,5 +1,7 @@
 import type { Judgement } from "../shared/judge.ts";
 import type {
+  Assignments,
+  AssignmentsView,
   BatchDetail,
   BatchSummary,
   Info,
@@ -7,10 +9,11 @@ import type {
   JobProgress,
   LaunchParams,
   Me,
+  Run,
   SampleSummary,
   SseEvent
 } from "../shared/types.ts";
-import { json, request, requestEmpty } from "./http.ts";
+import { json, request } from "./http.ts";
 
 export async function fetchMe(): Promise<Me | null> {
   const res = await fetch("/api/me");
@@ -34,15 +37,27 @@ export const launchJob = (params: LaunchParams) => request<Job>("/api/jobs", jso
 export const cancelJob = (id: string) =>
   request<Job>(`/api/jobs/${encodeURIComponent(id)}/cancel`, json("POST"));
 
+const blinded = (url: string, blind: boolean) => (blind ? `${url}?blind` : url);
+
 export const fetchSamples = (blind: boolean) =>
-  request<SampleSummary[]>(blind ? "/api/samples?blind" : "/api/samples");
+  request<SampleSummary[]>(blinded("/api/samples", blind));
 export const fetchSample = (stem: string) =>
   request<SampleSummary>(`/api/samples/${encodeURIComponent(stem)}`);
 
-export const saveJudgement = (runId: string, judgement: Judgement) =>
-  request<Judgement>(`/api/runs/${encodeURIComponent(runId)}/judgement`, json("PUT", judgement));
-export const clearJudgement = (runId: string) =>
-  requestEmpty(`/api/runs/${encodeURIComponent(runId)}/judgement`, { method: "DELETE" });
+// Both answer with the run as the caller may see it, so the page can patch it in.
+export const saveJudgement = (runId: string, judgement: Judgement, blind: boolean) =>
+  request<Run>(
+    blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind),
+    json("PUT", judgement)
+  );
+export const clearJudgement = (runId: string, blind: boolean) =>
+  request<Run>(blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind), {
+    method: "DELETE"
+  });
+
+export const fetchAssignments = () => request<AssignmentsView>("/api/assignments");
+export const saveAssignments = (assignments: Assignments) =>
+  request<AssignmentsView>("/api/assignments", json("PUT", assignments));
 
 export const cropUrl = (stem: string) => `/files/crops/${encodeURIComponent(stem)}.png`;
 export const runFileUrl = (runId: string, file: string) =>

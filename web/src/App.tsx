@@ -2,6 +2,7 @@ import { Badge, Box, Button, Flex, Grid, Heading, Separator, TabNav, Text } from
 import { useCallback, useEffect, useState } from "react";
 import type { BatchSummary, Info, Me } from "../shared/types.ts";
 import { fetchBatches, fetchInfo, fetchMe, signOut } from "./api.ts";
+import { Assignments } from "./Assignments.tsx";
 import { BatchView } from "./BatchView.tsx";
 import { SIGNED_OUT_EVENT } from "./http.ts";
 import { BatchSidebar } from "./BatchSidebar.tsx";
@@ -40,7 +41,13 @@ export function App() {
       <Separator size="4" />
       <Box flexGrow="1" minHeight="0">
         {route.page === "judge" ? (
-          <JudgeApp location={route} setLocation={(next) => navigate({ page: "judge", ...next })} />
+          <JudgeApp
+            location={route}
+            setLocation={(next) => navigate({ page: "judge", ...next })}
+            role={me.role}
+          />
+        ) : route.page === "assign" ? (
+          <Assignments />
         ) : (
           <Runs route={route} />
         )}
@@ -51,11 +58,18 @@ export function App() {
 
 function TopNav({ route, me, onSignOut }: { route: Route; me: Me; onSignOut: () => void }) {
   const owner = me.role === "owner";
+  const judging = (mode: string) => route.page === "judge" && route.mode === mode;
   const tabs: [string, string, boolean][] = owner
     ? [
-        ["Runs", hrefFor({ page: "launch", from: null }), route.page !== "judge"],
-        ["Judge", "#/judge", route.page === "judge" && route.mode === "judge"],
-        ["View", "#/view", route.page === "judge" && route.mode === "view"]
+        [
+          "Runs",
+          hrefFor({ page: "launch", from: null }),
+          route.page === "launch" || route.page === "batch"
+        ],
+        ["Judge", "#/judge", judging("judge")],
+        ["Resolve", "#/resolve", judging("resolve")],
+        ["View", "#/view", judging("view")],
+        ["Judges", "#/assign", route.page === "assign"]
       ]
     : [["Judge", "#/judge", true]];
   const [signingOut, setSigningOut] = useState(false);
@@ -101,7 +115,7 @@ function TopNav({ route, me, onSignOut }: { route: Route; me: Me; onSignOut: () 
   );
 }
 
-function Runs({ route }: { route: Exclude<Route, { page: "judge" }> }) {
+function Runs({ route }: { route: Exclude<Route, { page: "judge" | "assign" }> }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [infoError, setInfoError] = useState<string | null>(null);
   const [batches, setBatches] = useState<BatchSummary[]>([]);

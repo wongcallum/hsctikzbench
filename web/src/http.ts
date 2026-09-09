@@ -11,10 +11,6 @@ export async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return (await (await send(url, init)).json()) as T;
 }
 
-export async function requestEmpty(url: string, init?: RequestInit): Promise<void> {
-  await send(url, init);
-}
-
 export const json = (method: string, body?: unknown): RequestInit => ({
   method,
   headers: { "Content-Type": "application/json" },

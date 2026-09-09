@@ -1,12 +1,13 @@
-import { Callout, Flex, Grid, Separator, Text } from "@radix-ui/themes";
+import { Callout, DataList, Flex, Grid, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { RUBRIC_VERSION, type Verdict } from "../shared/judge.ts";
-import type { Run, SampleSummary } from "../shared/types.ts";
+import type { Run, SampleSummary, UserRole } from "../shared/types.ts";
 import { clearJudgement, fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel, type LiveJudgement } from "./JudgingPanel.tsx";
 import { setLeaveGuard, type JudgeLocation, type Mode } from "./location.ts";
 import {
+  isDisputed,
   isJudgeable,
   isPending,
   listedRuns,
@@ -17,6 +18,7 @@ import {
 } from "./sample.ts";
 import { SampleSidebar } from "./SampleSidebar.tsx";
 import { SampleView } from "./SampleView.tsx";
+import { JudgeVerdicts, ResolutionItem } from "./Verdicts.tsx";
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -36,9 +38,13 @@ const VERDICT_KEYS: Record<string, Verdict> = {
 interface AppProps {
   location: JudgeLocation;
   setLocation: (next: JudgeLocation) => void;
+  role: UserRole;
 }
 
-export function JudgeApp({ location, setLocation }: AppProps) {
+/** Whether the mode hides where runs came from. Judges are blind whatever the mode. */
+const isBlind = (mode: Mode) => mode === "judge";
+
+export function JudgeApp({ location, setLocation, role }: AppProps) {
   const [samples, setSamples] = useState<SampleSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +55,7 @@ export function JudgeApp({ location, setLocation }: AppProps) {
     const id = ++refreshId.current;
     setLoading(true);
     try {
-      const next = await fetchSamples(mode === "judge");
+      const next = await fetchSamples(isBlind(mode));
       if (id !== refreshId.current) return;
       setSamples(next);
       setError(null);
@@ -73,8 +79,13 @@ export function JudgeApp({ location, setLocation }: AppProps) {
     [samples, mode, location.stem]
   );
   // Sidebar is memoised on its props, so this must stay referentially stable.
-  const scores = useMemo(() => scoreLines(samples, mode), [samples, mode]);
-  const empty = samples.length === 0 ? "The manifest has no samples." : "Nothing left to judge.";
+  const scores = useMemo(() => scoreLines(samples, mode, role), [samples, mode, role]);
+  const empty =
+    samples.length === 0
+      ? "The manifest has no samples."
+      : mode === "resolve"
+        ? "No disputes to settle."
+        : "Nothing left to judge.";
   const sample = listed.find((s) => s.stem === location.stem) ?? listed[0] ?? null;
   const runs = useMemo(
     () => (sample ? listedRuns(sample, mode, location.run) : []),
@@ -230,6 +241,7 @@ function Workspace({
   const reason = edited?.reason ?? savedReason;
   const viewingSubmission = selectedRender === null || selectedRender === run?.renders.at(-1);
   const canJudge = !saving && run !== null && isJudgeable(sample, run) && viewingSubmission;
+  const blind = isBlind(mode);
 
   const onLive = useCallback((next: LiveJudgement) => {
     live.current = next;
@@ -286,47 +298,54 @@ function Workspace({
     // Blocks a second save keyed before the saving flag has made it back down to the panel.
     live.current = { ...live.current, canSave: false };
     updateEditor({ saving: true, actionError: null });
-    saveJudgement(run.id, {
-      rubricVersion: RUBRIC_VERSION,
-      verdict: chosen,
-      reason: typed.trim(),
-      judgedAt: new Date().toISOString()
-    })
+    saveJudgement(
+      run.id,
+      {
+        rubricVersion: RUBRIC_VERSION,
+        verdict: chosen,
+        reason: typed.trim(),
+        judgedAt: new Date().toISOString()
+      },
+      blind
+    )
       .then(
-        (judgement) => {
-          onPatch(run.id, { judgement });
+        (saved) => {
+          onPatch(run.id, saved);
           updateEditor({ edited: null });
         },
         (e: unknown) => updateEditor({ actionError: errorMessage(e) })
       )
       .finally(() => updateEditor({ saving: false }));
-  }, [run, onPatch, updateEditor]);
+  }, [run, blind, onPatch, updateEditor]);
 
   const reset = useCallback(() => {
     if (saving || !run?.judgement) return;
     if (!window.confirm("Reset the saved judgement for this run?")) return;
     updateEditor({ saving: true, actionError: null });
-    clearJudgement(run.id)
+    clearJudgement(run.id, blind)
       .then(
-        () => {
-          onPatch(run.id, { judgement: null });
+        (cleared) => {
+          onPatch(run.id, cleared);
           updateEditor({ edited: null });
         },
         (e: unknown) => updateEditor({ actionError: errorMessage(e) })
       )
       .finally(() => updateEditor({ saving: false }));
-  }, [run, saving, onPatch, updateEditor]);
+  }, [run, saving, blind, onPatch, updateEditor]);
 
+  // Space seeks the next run needing this mode's attention: unjudged when judging, disputed
+  // when resolving.
   const seekPending = useCallback(
     (step: 1 | -1) => {
       const pairs = sampleRuns(samples);
       const index = pairs.findIndex((pair) => pair.run.id === run?.id);
       const rotate = (at: number) => [...pairs.slice(at), ...pairs.slice(0, at)];
       const order = step === 1 ? rotate(index + 1) : rotate(Math.max(index, 0)).reverse();
-      const next = order.find((pair) => isPending(pair.sample, pair.run));
+      const wanted = mode === "resolve" ? isDisputed : isPending;
+      const next = order.find((pair) => wanted(pair.sample, pair.run));
       if (next) select(next.sample.stem, next.run.id);
     },
-    [samples, run, select]
+    [samples, run, mode, select]
   );
 
   useEffect(() => {
@@ -364,7 +383,7 @@ function Workspace({
         }
         return;
       }
-      if (mode !== "judge") return;
+      if (mode === "view") return;
       if (event.key === " ") {
         event.preventDefault();
         seekPending(event.shiftKey ? -1 : 1);
@@ -453,30 +472,64 @@ function Workspace({
         onSelectRun={(id) => select(sample.stem, id)}
         onSelectRender={(selectedRender) => updateEditor({ selectedRender })}
         error={actionError}
+        own={mode === "judge"}
         panelWidth={mode === "judge" ? "360px" : "clamp(360px, 30%, 480px)"}
       >
-        {mode === "judge" ? (
-          <JudgingPanel
-            sample={sample}
-            run={run}
-            verdict={verdict}
-            reason={reason}
-            savedVerdict={savedVerdict}
-            savedReason={savedReason}
-            busy={saving}
-            viewingSubmission={viewingSubmission}
-            onVerdict={setVerdict}
-            onReason={commitReason}
-            onLive={onLive}
-            onSave={judge}
-            onCancel={cancel}
-            onReset={reset}
-          />
-        ) : (
+        {mode === "view" ? (
           <DetailsPanel run={run} busy={saving} onReset={reset} />
+        ) : (
+          <Flex direction="column" gap="4">
+            {mode === "resolve" && run && <Dispute run={run} />}
+            <JudgingPanel
+              sample={sample}
+              run={run}
+              verdict={verdict}
+              reason={reason}
+              savedVerdict={savedVerdict}
+              savedReason={savedReason}
+              busy={saving}
+              viewingSubmission={viewingSubmission}
+              onVerdict={setVerdict}
+              onReason={commitReason}
+              onLive={onLive}
+              onSave={judge}
+              onCancel={cancel}
+              onReset={reset}
+            />
+          </Flex>
         )}
       </SampleView>
     </Frame>
+  );
+}
+
+/** What the owner needs to settle a run: where it came from and what each judge said. */
+function Dispute({ run }: { run: Run }) {
+  const model = run.source?.model;
+  return (
+    <Flex direction="column" gap="3">
+      <DataList.Root size="2">
+        {run.source && (
+          <DataList.Item>
+            <DataList.Label minWidth="80px">Batch</DataList.Label>
+            <DataList.Value>{run.source.batch}</DataList.Value>
+          </DataList.Item>
+        )}
+        {model && (
+          <DataList.Item>
+            <DataList.Label minWidth="80px">Model</DataList.Label>
+            <DataList.Value>
+              {model.provider}/{model.model} · {model.reasoning}
+            </DataList.Value>
+          </DataList.Item>
+        )}
+        <ResolutionItem run={run} />
+      </DataList.Root>
+      <JudgeVerdicts run={run} />
+      <Text size="2" color="gray">
+        Your verdict settles the run. Judges are not shown each other's verdicts or yours.
+      </Text>
+    </Flex>
   );
 }
 

@@ -26,6 +26,8 @@ interface Props {
   onSelectRun: (id: string) => void;
   onSelectRender: (name: string | null) => void;
   error: string | null;
+  /** Badge the viewer's own judging rather than the settled verdict. */
+  own: boolean;
   /** Width of the right-hand panel column. */
   panelWidth?: string;
   /** The panel shown in the right column. */
@@ -41,6 +43,7 @@ export function SampleView({
   onSelectRun,
   onSelectRender,
   error,
+  own,
   panelWidth = "360px",
   children
 }: Props) {
@@ -98,7 +101,7 @@ export function SampleView({
                       </Text>
                     )}
                     <Flex align="center" gap="2" wrap="wrap">
-                      <RunBadges sample={sample} run={candidate} />
+                      <RunBadges sample={sample} run={candidate} own={own} />
                     </Flex>
                   </Flex>
                 </RadioCards.Item>

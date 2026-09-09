@@ -5,8 +5,14 @@ import { config } from "./env.ts";
 
 export type User = Me;
 
+/** GitHub logins: letters, digits and dashes. Dots and underscores are tolerated for dev users. */
+export const LOGIN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/** Logins are case-insensitive; this is the form used for file names and lookups. */
+export const loginKey = (login: string) => login.toLowerCase();
+
 const UsersSchema = z.record(
-  z.string().min(1),
+  z.string().regex(LOGIN),
   z.strictObject({ role: z.enum(["owner", "judge"]) })
 );
 
@@ -24,7 +30,7 @@ export async function loadUsers(): Promise<Map<string, UserRole>> {
   const users = new Map<string, UserRole>();
   try {
     const parsed = UsersSchema.parse(JSON.parse(await readFile(config.usersFile, "utf8")));
-    for (const [login, { role }] of Object.entries(parsed)) users.set(login.toLowerCase(), role);
+    for (const [login, { role }] of Object.entries(parsed)) users.set(loginKey(login), role);
   } catch (e) {
     console.error(`ignoring ${config.usersFile}: ${e instanceof Error ? e.message : String(e)}`);
   }
@@ -33,7 +39,7 @@ export async function loadUsers(): Promise<Map<string, UserRole>> {
 }
 
 export async function findUser(login: string): Promise<User | null> {
-  const role = (await loadUsers()).get(login.toLowerCase());
+  const role = (await loadUsers()).get(loginKey(login));
   return role ? { login, role } : null;
 }
 

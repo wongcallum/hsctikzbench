@@ -5,12 +5,21 @@ import { bodyLimit } from "hono/body-limit";
 import { streamSSE } from "hono/streaming";
 import * as z from "zod";
 import { BATCH_NAME, type LaunchParams } from "../shared/types.ts";
+import { saveAssignments } from "./assignments.ts";
 import { authRoutes, requireOwner, requireUser, type AuthEnv } from "./auth.ts";
-import { batchDetail, listBatches } from "./batches.ts";
+import { batchDetail, listBatches, type RunView } from "./batches.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
-import { clearJudgement, getSample, listSamples, locateRun, saveJudgement } from "./judge.ts";
+import {
+  assignmentsView,
+  clearJudgement,
+  getSample,
+  listSamples,
+  locateRun,
+  saveJudgement
+} from "./judge.ts";
+import { judgingContext } from "./judgements.ts";
 import { collectInfo, loadManifest } from "./repo.ts";
 
 const RENDERERS = ["auto", "local", "podman", "docker", "nerdctl"] as const;
@@ -21,6 +30,10 @@ const FILE_TYPES: Record<string, string> = {
   ".tex": "text/plain; charset=utf-8"
 };
 const STEM = /^[A-Za-z0-9._-]+$/;
+const RENDER = /^[A-Za-z0-9._-]+\.png$/;
+
+/** What a judge may fetch from a run directory: the images they judge and the source. */
+const JUDGE_FILES = new Set(["reference.png", "submission.png", "submission.tex"]);
 
 const LaunchSchema = z.strictObject({
   batch: z.string().regex(BATCH_NAME, "use letters, digits, dots, dashes and underscores"),
@@ -63,7 +76,8 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     "/api/jobs/*",
     "/api/info",
     "/api/batches",
-    "/api/batches/*"
+    "/api/batches/*",
+    "/api/assignments"
   ]) {
     app.use(prefix, requireOwner);
   }
@@ -174,31 +188,45 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
   app.get("/api/batches/:name", async (c) => {
     const name = c.req.param("name");
     if (!BATCH_NAME.test(name)) throw new HttpError(400, "bad batch name");
-    const detail = await batchDetail(name, jobs, await loadManifest());
+    const detail = await batchDetail(
+      name,
+      jobs,
+      await loadManifest(),
+      await judgingContext(c.get("user"))
+    );
     if (!detail) throw new HttpError(404, "no such batch");
     return c.json(detail);
   });
 
-  // Runs are addressed by id, so a blind listing never reveals the batch.
-  const blindFor = (c: Context<AuthEnv>) =>
-    c.req.query("blind") !== undefined || c.get("user").role !== "owner";
+  app.get("/api/assignments", async (c) => c.json(await assignmentsView()));
 
-  app.get("/api/samples", async (c) => c.json(await listSamples(jobs, blindFor(c))));
+  app.put("/api/assignments", async (c) => {
+    await saveAssignments(await jsonBody(c));
+    return c.json(await assignmentsView());
+  });
+
+  // Runs are addressed by id, so a blind listing never reveals the batch. Judges are blind
+  // whatever they ask for; the owner asks for it on the judging page.
+  const viewFor = async (c: Context<AuthEnv>): Promise<RunView> => ({
+    blind: c.req.query("blind") !== undefined,
+    judging: await judgingContext(c.get("user"))
+  });
+
+  app.get("/api/samples", async (c) => c.json(await listSamples(jobs, await viewFor(c))));
 
   app.get("/api/samples/:stem", async (c) => {
     const stem = c.req.param("stem");
     if (!STEM.test(stem)) throw new HttpError(400, "bad sample stem");
-    return c.json(await getSample(stem, jobs, blindFor(c)));
+    return c.json(await getSample(stem, jobs, await viewFor(c)));
   });
 
   app.put("/api/runs/:id/judgement", async (c) =>
-    c.json(await saveJudgement(c.req.param("id"), await jsonBody(c)))
+    c.json(await saveJudgement(c.req.param("id"), await jsonBody(c), await viewFor(c)))
   );
 
-  app.delete("/api/runs/:id/judgement", async (c) => {
-    await clearJudgement(c.req.param("id"));
-    return c.body(null, 204);
-  });
+  app.delete("/api/runs/:id/judgement", async (c) =>
+    c.json(await clearJudgement(c.req.param("id"), await viewFor(c)))
+  );
 
   app.get("/files/crops/:file", async (c) => {
     const file = c.req.param("file");
@@ -206,10 +234,14 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     return sendFile(c, path.join(config.cropsDir, file));
   });
 
+  // The owner may read anything in a run directory. A judge gets the images and the source
+  // only: result.json and transcript.json name the model.
   app.get("/runs/:id/*", async (c) => {
     const rest = pathSegments(c.req.path, 3);
     if (!rest) return c.notFound();
-    const run = await locateRun(c.req.param("id"));
+    const user = c.get("user");
+    if (user.role !== "owner" && !judgeMayRead(rest)) return c.notFound();
+    const run = await locateRun(c.req.param("id"), await judgingContext(user));
     return sendFile(c, path.join(run.dir, ...rest));
   });
 
@@ -220,6 +252,11 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
   });
 
   return app;
+}
+
+function judgeMayRead(segments: string[]): boolean {
+  if (segments.length === 1) return JUDGE_FILES.has(segments[0]!);
+  return segments.length === 2 && segments[0] === "renders" && RENDER.test(segments[1]!);
 }
 
 function pathSegments(requestPath: string, skip: number): string[] | null {

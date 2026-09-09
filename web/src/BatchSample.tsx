@@ -65,7 +65,7 @@ export function BatchSample({ batch, sample: live, lines, backHref, onChanged }:
     if (!window.confirm("Reset the saved judgement for this run?")) return;
     setBusy(true);
     setError(null);
-    clearJudgement(live.run.id)
+    clearJudgement(live.run.id, false)
       .then(onChanged, (e: unknown) => setError(errorMessage(e)))
       .finally(() => setBusy(false));
   }, [busy, live.run, onChanged]);
@@ -87,6 +87,7 @@ export function BatchSample({ batch, sample: live, lines, backHref, onChanged }:
         onSelectRun={selectRun}
         onSelectRender={setSelectedRender}
         error={error}
+        own={false}
         panelWidth="clamp(360px, 30%, 480px)"
       >
         <DetailsPanel run={live.run} busy={busy} onReset={reset} lines={lines} />

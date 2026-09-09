@@ -20,6 +20,7 @@ export const env = createEnv({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     SESSION_SECRET: z.string().min(32).optional(),
     USERS_FILE: z.string().min(1).default(local("../users.json")),
+    ASSIGNMENTS_FILE: z.string().min(1).optional(),
     GITHUB_CLIENT_ID: z.string().min(1).optional(),
     GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
     PUBLIC_URL: z.url().optional(),
@@ -54,6 +55,11 @@ export const config = {
   production,
   benchCommand: env.RUNNER_BENCH_COMMAND,
   usersFile: path.resolve(env.USERS_FILE),
+  assignmentsFile: path.resolve(
+    env.ASSIGNMENTS_FILE ?? path.join(env.RUNNER_STATE_DIR, "assignments.json")
+  ),
+  // Keys run ids. Fixed in development so ids survive restarts; production requires the secret.
+  runIdSecret: env.SESSION_SECRET ?? "development",
   // Without a configured secret, sessions last only as long as the process.
   sessionSecret: env.SESSION_SECRET ?? randomBytes(32).toString("hex"),
   publicUrl,

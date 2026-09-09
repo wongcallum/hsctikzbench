@@ -1,6 +1,6 @@
 import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult, RunStatus } from "hsctikzbench-cli/output";
-import type { Judgement } from "./judge.ts";
+import type { Judgement, StoredJudgement } from "./judge.ts";
 
 export type { RunResult, RunStatus };
 
@@ -9,6 +9,24 @@ export type UserRole = "owner" | "judge";
 export interface Me {
   login: string;
   role: UserRole;
+}
+
+/** Which judges may see which batches. The owner sees every batch without an entry. */
+export type Assignments = Record<string, string[]>;
+
+export interface JudgeProgress {
+  judged: number;
+  total: number;
+}
+
+export interface AssignmentsView {
+  assignments: Assignments;
+  /** Logins with the judge role in the users file. */
+  judges: string[];
+  /** Batches on disk. */
+  batches: string[];
+  /** Per judge, per assigned batch: judgeable runs and how many they have judged. */
+  progress: Record<string, Record<string, JudgeProgress>>;
 }
 
 export type JobStatus = "running" | "succeeded" | "failed" | "cancelled" | "interrupted";
@@ -93,6 +111,17 @@ export interface RunSource {
   model: RunModel | null;
 }
 
+export type ResolvedVerdict = "pass" | "fail" | "disputed" | "pending";
+
+/** How the judges' verdicts on a run combine. */
+export interface Resolution {
+  verdict: ResolvedVerdict;
+  /** Whose verdicts settled it: the owner's, or the judges' unanimous one. */
+  by: "owner" | "judges" | null;
+  /** Assigned judges who have not given a verdict. */
+  missing: string[];
+}
+
 /** One sample's run in one batch. */
 export interface Run {
   id: string;
@@ -101,7 +130,12 @@ export interface Run {
   hasSubmission: boolean;
   /** Render file names under `renders/`, in order. */
   renders: string[];
+  /** The requesting user's own judgement. */
   judgement: Judgement | null;
+  /** Every judge's judgement. Owner only; judges never see each other's. */
+  judgements: StoredJudgement[] | null;
+  /** The run's settled verdict across judges. Owner only. */
+  resolution: Resolution | null;
   source: RunSource | null;
   /** Live progress while the job runs. Absent from blind listings. */
   progress: SampleProgress | null;

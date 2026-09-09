@@ -17,6 +17,12 @@ interface Props {
   onRefresh: () => void;
 }
 
+const HEADINGS: Record<Mode, string> = {
+  judge: "To judge",
+  resolve: "To resolve",
+  view: "Samples"
+};
+
 // Memoised because rebuilding a few hundred RadioCards rows costs upwards of 150ms; callers
 // must keep onSelect and onRefresh stable for that to hold.
 export const SampleSidebar = memo(function SampleSidebar({
@@ -59,7 +65,7 @@ export const SampleSidebar = memo(function SampleSidebar({
   return (
     <Flex direction="column" minHeight="0">
       <Flex align="center" justify="between" p="3" gap="2">
-        <Heading size="3">{mode === "judge" ? "To judge" : "Samples"}</Heading>
+        <Heading size="3">{HEADINGS[mode]}</Heading>
         <Button size="1" variant="soft" onClick={onRefresh} disabled={loading}>
           Refresh
         </Button>
@@ -126,7 +132,7 @@ export const SampleSidebar = memo(function SampleSidebar({
                               <Badge color="gray" variant="outline" size="1">
                                 {words(sample.category)}
                               </Badge>
-                              <SampleBadges sample={sample} />
+                              <SampleBadges sample={sample} own={mode === "judge"} />
                             </Flex>
                           </Flex>
                         </RadioCards.Item>

@@ -5,6 +5,7 @@ import { runFileUrl } from "./api.ts";
 import { duration, money, words } from "./format.ts";
 import { LogLines } from "./LogPane.tsx";
 import { pre, Transcript, type TranscriptFile } from "./Transcript.tsx";
+import { JudgeVerdicts, ResolutionItem } from "./Verdicts.tsx";
 
 interface Props {
   run: Run | null;
@@ -96,10 +97,12 @@ function Details({ run, busy, onReset }: { run: Run; busy: boolean; onReset: () 
         {!result && run.progress?.lastLine && (
           <Item label="Last line">{run.progress.lastLine}</Item>
         )}
-        <Item label="Judgement">{judgement ? words(judgement.verdict) : "none"}</Item>
+        <ResolutionItem run={run} />
+        <Item label="Your verdict">{judgement ? words(judgement.verdict) : "none"}</Item>
         {judgement?.reason && <Item label="Reason">{judgement.reason}</Item>}
         {judgement && <Item label="Judged">{new Date(judgement.judgedAt).toLocaleString()}</Item>}
       </DataList.Root>
+      <JudgeVerdicts run={run} />
       <Flex gap="3" wrap="wrap">
         {run.hasSubmission && (
           <Link size="2" href={runFileUrl(run.id, "submission.tex")} target="_blank">
@@ -115,7 +118,7 @@ function Details({ run, busy, onReset }: { run: Run; busy: boolean; onReset: () 
       {judgement && (
         <Flex>
           <Button size="2" variant="soft" color="gray" onClick={onReset} disabled={busy}>
-            Reset judgement
+            Reset your judgement
           </Button>
         </Flex>
       )}

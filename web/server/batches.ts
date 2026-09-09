@@ -1,8 +1,6 @@
-import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { RESULT_FILE, type RunResult, type RunStatus } from "hsctikzbench-cli/output";
-import { JudgementSchema, type Judgement } from "../shared/judge.ts";
 import type {
   BatchDetail,
   BatchSample,
@@ -17,6 +15,7 @@ import type {
 } from "../shared/types.ts";
 import { config } from "./env.ts";
 import type { JobManager } from "./jobs.ts";
+import { ownJudgement, readJudgements, resolve, runId, type JudgingContext } from "./judgements.ts";
 import type { LoadedManifest } from "./repo.ts";
 
 interface CachedResult {
@@ -97,20 +96,11 @@ function count(counts: StatusCounts, phase: SamplePhase, result: { status: RunSt
   else if (phase !== "done") counts[phase]++;
 }
 
-export const JUDGEMENT_FILE = "judgement.json";
-
-export const runId = (batch: string, stem: string) =>
-  createHash("sha256").update(`${batch}/${stem}`).digest("hex").slice(0, 12);
-
-async function readJudgement(dir: string): Promise<Judgement | null> {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(await readFile(path.join(dir, JUDGEMENT_FILE), "utf8"));
-  } catch {
-    return null;
-  }
-  const parsed = JudgementSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+/** Who is asking for a run, and whether they may learn where it came from. */
+export interface RunView {
+  /** Drops everything that could say which model made the run. Always set for judges. */
+  blind: boolean;
+  judging: JudgingContext;
 }
 
 export interface RunContext {
@@ -119,20 +109,22 @@ export interface RunContext {
   /** Whether the batch's job is still running, which makes an unfinished run live. */
   running: boolean;
   progress: SampleProgress | null;
-  /** Drops everything that could say which model made the run. */
-  blind: boolean;
+  view: RunView;
 }
 
 export async function readRun(batch: string, stem: string, ctx: RunContext): Promise<Run> {
   const dir = path.join(config.runsDir, batch, stem);
-  const [{ result }, hasSubmission, renders, judgement] = ctx.exists
+  const { judging } = ctx.view;
+  const blind = ctx.view.blind || judging.role !== "owner";
+  const [{ result }, hasSubmission, renders, judgements] = ctx.exists
     ? await Promise.all([
         readResult(dir),
         isFile(path.join(dir, "submission.png")),
         listRenders(dir),
-        readJudgement(dir)
+        readJudgements(dir)
       ])
-    : [{ result: null }, false, [], null];
+    : [{ result: null }, false, [], []];
+  const owner = judging.role === "owner";
   return {
     id: runId(batch, stem),
     phase: phaseOf(result, ctx.exists, ctx.running),
@@ -142,12 +134,15 @@ export async function readRun(batch: string, stem: string, ctx: RunContext): Pro
       renders: result.renders,
       successfulRenders: result.successfulRenders,
       // Error text may name the provider, so a blind listing drops it.
-      ...(ctx.blind || result.error === undefined ? {} : { error: result.error })
+      ...(blind || result.error === undefined ? {} : { error: result.error })
     },
     hasSubmission,
     renders,
-    judgement,
-    source: ctx.blind
+    judgement: ownJudgement(judgements, judging.login),
+    // Judges never learn what the others said, or how far a run is from settled.
+    judgements: owner ? judgements : null,
+    resolution: owner ? resolve(judgements, judging.judges.get(batch) ?? [], judging.roles) : null,
+    source: blind
       ? null
       : {
           batch,
@@ -162,7 +157,7 @@ export async function readRun(batch: string, stem: string, ctx: RunContext): Pro
           }
         },
     // Progress lines quote the bench's output, which may name the model.
-    progress: ctx.blind ? null : ctx.progress
+    progress: blind ? null : ctx.progress
   };
 }
 
@@ -242,7 +237,8 @@ export async function listBatches(jobs: JobManager): Promise<BatchSummary[]> {
 export async function batchDetail(
   name: string,
   jobs: JobManager,
-  manifest: LoadedManifest
+  manifest: LoadedManifest,
+  judging: JudgingContext
 ): Promise<BatchDetail | null> {
   const dir = path.join(config.runsDir, name);
   const job = jobs.forOutDir(dir) ?? null;
@@ -273,7 +269,7 @@ export async function batchDetail(
           exists: existing.has(stem),
           running,
           progress: progress?.samples[stem] ?? null,
-          blind: false
+          view: { blind: false, judging }
         })
       ]);
       return { ...info, run };
