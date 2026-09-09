@@ -11,20 +11,44 @@ const RESOLUTION = {
 
 const VERDICT = { pass: "green", fail: "red", needs_review: "orange" } as const;
 
+const list = (logins: string[]) => logins.join(", ");
+
+/** Why the run needs the owner, naming the judges involved. */
+function disputeNote(run: Run): string {
+  const resolution = run.resolution!;
+  const own = run.judgement;
+  const judges = (run.judgements ?? []).filter((j) => j.verdict !== own?.verdict);
+  const disagreeing = list(judges.map((j) => j.judge));
+  switch (resolution.cause) {
+    case "split":
+      return "judges differ";
+    case "needs_review":
+      return `${list((run.judgements ?? []).filter((j) => j.verdict === "needs_review").map((j) => j.judge))} asked for review`;
+    case "held":
+      return "you asked to look again";
+    case "contested":
+      return `${disagreeing} disagree${judges.length === 1 ? "s" : ""} with your blind verdict`;
+    case "reopened":
+      return `${disagreeing} disagreed after you settled it`;
+    default:
+      return "";
+  }
+}
+
 /** How the run stands across judges. Rendered only for the owner, who is told. */
 export function ResolutionItem({ run }: { run: Run }) {
   const resolution = run.resolution;
   if (!resolution) return null;
   const note =
-    resolution.by === "owner"
-      ? "settled by you"
-      : resolution.by === "judges"
-        ? resolution.verdict === "disputed"
-          ? "judges differ"
-          : "judges agree"
-        : resolution.missing.length > 0
-          ? `waiting on ${resolution.missing.join(", ")}`
-          : "no verdicts yet";
+    resolution.verdict === "disputed"
+      ? disputeNote(run)
+      : resolution.by === "owner"
+        ? "settled by you"
+        : resolution.by === "judges"
+          ? "judges agree"
+          : resolution.missing.length > 0
+            ? `waiting on ${resolution.missing.join(", ")}`
+            : "no verdicts yet";
   return (
     <DataList.Item>
       <DataList.Label minWidth="80px">Verdict</DataList.Label>
@@ -36,7 +60,7 @@ export function ResolutionItem({ run }: { run: Run }) {
           <Text size="1" color="gray">
             {note}
           </Text>
-          {resolution.by === "judges" && resolution.missing.length > 0 && (
+          {resolution.verdict === "disputed" && resolution.missing.length > 0 && (
             <Text size="1" color="gray">
               · waiting on {resolution.missing.join(", ")}
             </Text>
@@ -73,6 +97,7 @@ export function JudgeVerdicts({ run, title = "Judges" }: { run: Run; title?: str
                 <Table.RowHeaderCell>
                   <Text size="1" title={new Date(judgement.judgedAt).toLocaleString()}>
                     {judgement.judge}
+                    {judgement.blind && <Text color="gray"> (blind)</Text>}
                   </Text>
                 </Table.RowHeaderCell>
                 <Table.Cell>

@@ -1,4 +1,4 @@
-import type { Judgement } from "../shared/judge.ts";
+import type { JudgementInput } from "../shared/judge.ts";
 import type {
   Assignments,
   AssignmentsView,
@@ -45,7 +45,7 @@ export const fetchSample = (stem: string) =>
   request<SampleSummary>(`/api/samples/${encodeURIComponent(stem)}`);
 
 // Both answer with the run as the caller may see it, so the page can patch it in.
-export const saveJudgement = (runId: string, judgement: Judgement, blind: boolean) =>
+export const saveJudgement = (runId: string, judgement: JudgementInput, blind: boolean) =>
   request<Run>(
     blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind),
     json("PUT", judgement)

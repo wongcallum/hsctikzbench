@@ -73,10 +73,14 @@ once. Create the OAuth app at github.com/settings/developers, one per callback U
   single-file `judgement.json` verdicts move over with
   `pnpm exec tsx scripts/migrate-judgements.ts`.)
 - **Assignments** (the Judges page) say which batches each judge sees; the owner sees all.
-  The owner's pass or fail settles a run. Otherwise the assigned judges must agree: a split,
-  or any _needs review_, is **disputed** and listed on the Resolve page with every judge's
-  verdict and reason side by side, unblinded; a run is **pending** until every assigned judge
-  has spoken. Score lines count settled runs only.
+  The owner's pass or fail settles a run when no judge disagrees. Against disagreement, a
+  verdict the owner gave blind on the Judge tab is only one opinion (**contested**), and one
+  saved on the Resolve page holds until a judge disagrees after it (**reopened**); the owner's
+  _needs review_ holds the run. Without an owner verdict the assigned judges must agree: a
+  split, or any _needs review_, is **disputed**, and a run is **pending** until every assigned
+  judge has spoken. Every disputed run is listed on the Resolve page with each judge's verdict
+  and reason side by side, unblinded, and saving there settles it. The server stamps each
+  verdict's time. Score lines count settled runs only.
 - **Run options** (provider, model, reasoning, turns, parallelism, renderer, resume and
   the sample selection) are remembered in the browser's local storage; the batch name is
   not. _New run like this_ on a batch opens the form with that batch's options instead,

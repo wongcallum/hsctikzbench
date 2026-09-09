@@ -4,8 +4,8 @@ import path from "node:path";
 import {
   StoredJudgementSchema,
   type Judgement,
-  type StoredJudgement,
-  type Verdict
+  type JudgementInput,
+  type StoredJudgement
 } from "../shared/judge.ts";
 import type { Resolution, UserRole } from "../shared/types.ts";
 import { judgesByBatch, loadAssignments } from "./assignments.ts";
@@ -71,12 +71,19 @@ export async function readJudgements(runDir: string): Promise<StoredJudgement[]>
   return judgements.filter((j) => j !== null);
 }
 
+/** Stamps the verdict with the server's clock, so the order of verdicts cannot be spoofed. */
 export async function writeJudgement(
   runDir: string,
   login: string,
-  judgement: Judgement
+  judgement: JudgementInput,
+  blind: boolean
 ): Promise<StoredJudgement> {
-  const stored: StoredJudgement = { ...judgement, judge: login };
+  const stored: StoredJudgement = {
+    ...judgement,
+    judgedAt: new Date().toISOString(),
+    judge: login,
+    ...(blind ? { blind: true } : {})
+  };
   await mkdir(path.join(runDir, JUDGEMENTS_DIR), { recursive: true });
   await writeFile(judgementFile(runDir, login), `${JSON.stringify(stored, null, 2)}\n`);
   return stored;
@@ -91,14 +98,16 @@ const own = (judgements: StoredJudgement[], login: string) =>
 export function ownJudgement(judgements: StoredJudgement[], login: string): Judgement | null {
   const found = own(judgements, login);
   if (!found) return null;
-  const { judge: _judge, ...judgement } = found;
+  const { judge: _judge, blind: _blind, ...judgement } = found;
   return judgement;
 }
 
 /**
- * The owner's pass or fail settles a run. Otherwise the judges must agree: a split, or any
- * `needs_review`, is disputed for the owner to settle, and a run is pending until every
- * assigned judge has spoken.
+ * The owner's pass or fail settles a run when no judge disagrees. Against disagreement, a
+ * verdict given blind on the Judge tab is only an opinion (contested), and one given in
+ * Resolve holds until a judge disagrees after it (reopened); the owner's `needs_review`
+ * holds the run. Without an owner verdict the judges must agree: a split, or any
+ * `needs_review`, is disputed, and a run is pending until every assigned judge has spoken.
  */
 export function resolve(
   judgements: StoredJudgement[],
@@ -106,17 +115,33 @@ export function resolve(
   roles: ReadonlyMap<string, UserRole>
 ): Resolution {
   const isOwner = (j: StoredJudgement) => roles.get(loginKey(j.judge)) === "owner";
-  const owner = judgements.find((j) => isOwner(j) && j.verdict !== "needs_review");
-  if (owner)
-    return { verdict: owner.verdict as Exclude<Verdict, "needs_review">, by: "owner", missing: [] };
   const judges = judgements.filter((j) => !isOwner(j));
   const missing = required.filter((login) => !own(judges, login));
-  const verdicts = new Set(judges.map((j) => j.verdict));
-  if (verdicts.has("needs_review") || verdicts.size > 1) {
-    return { verdict: "disputed", by: "judges", missing };
+  const disputed = (cause: Resolution["cause"]): Resolution => ({
+    verdict: "disputed",
+    by: null,
+    missing,
+    cause
+  });
+
+  const owner = judgements.find(isOwner);
+  if (owner) {
+    if (owner.verdict === "needs_review") return disputed("held");
+    const disagreeing = judges.filter((j) => j.verdict !== owner.verdict);
+    if (disagreeing.length > 0) {
+      if (owner.blind) return disputed("contested");
+      if (disagreeing.some((j) => j.judgedAt > owner.judgedAt)) return disputed("reopened");
+    }
+    return { verdict: owner.verdict, by: "owner", missing: [], cause: null };
   }
-  if (judges.length === 0 || missing.length > 0) return { verdict: "pending", by: null, missing };
-  return { verdict: [...verdicts][0] as "pass" | "fail", by: "judges", missing: [] };
+
+  const verdicts = new Set(judges.map((j) => j.verdict));
+  if (verdicts.has("needs_review")) return disputed("needs_review");
+  if (verdicts.size > 1) return disputed("split");
+  if (judges.length === 0 || missing.length > 0) {
+    return { verdict: "pending", by: null, missing, cause: null };
+  }
+  return { verdict: [...verdicts][0] as "pass" | "fail", by: "judges", missing: [], cause: null };
 }
 
 /**

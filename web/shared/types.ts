@@ -113,6 +113,13 @@ export interface RunSource {
 
 export type ResolvedVerdict = "pass" | "fail" | "disputed" | "pending";
 
+/**
+ * Why a disputed run needs the owner: the judges split; a judge asked for review; the owner
+ * asked to look again (held); a judge disagrees with the owner's blind verdict (contested); a
+ * judge disagreed after the owner settled it in Resolve (reopened).
+ */
+export type DisputeCause = "split" | "needs_review" | "held" | "contested" | "reopened";
+
 /** How the judges' verdicts on a run combine. */
 export interface Resolution {
   verdict: ResolvedVerdict;
@@ -120,6 +127,7 @@ export interface Resolution {
   by: "owner" | "judges" | null;
   /** Assigned judges who have not given a verdict. */
   missing: string[];
+  cause: DisputeCause | null;
 }
 
 /** One sample's run in one batch. */

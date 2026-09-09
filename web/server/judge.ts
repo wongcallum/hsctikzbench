@@ -1,5 +1,5 @@
 import path from "node:path";
-import { JudgementSchema } from "../shared/judge.ts";
+import { JudgementInputSchema } from "../shared/judge.ts";
 import {
   hasSubmission,
   type AssignmentsView,
@@ -156,7 +156,7 @@ const readFinishedRun = (location: RunLocation, view: RunView) =>
 
 /** Writes the requesting user's judgement and returns the run as they may see it. */
 export async function saveJudgement(id: string, body: unknown, view: RunView): Promise<Run> {
-  const parsed = JudgementSchema.safeParse(body);
+  const parsed = JudgementInputSchema.safeParse(body);
   if (!parsed.success) throw new HttpError(400, `judgement: ${parsed.error.issues[0]!.message}`);
   const location = await locateRun(id, view.judging);
   const run = await readFinishedRun(location, view);
@@ -165,7 +165,9 @@ export async function saveJudgement(id: string, body: unknown, view: RunView): P
   if (!(await hasCrop(location.stem))) {
     throw new HttpError(409, "a reference crop is required to judge this submission");
   }
-  await writeJudgement(location.dir, view.judging.login, parsed.data);
+  // Only the owner's verdicts distinguish blind from considered; judges are always blind.
+  const blind = view.judging.role === "owner" && view.blind;
+  await writeJudgement(location.dir, view.judging.login, parsed.data, blind);
   return readFinishedRun(location, view);
 }
 

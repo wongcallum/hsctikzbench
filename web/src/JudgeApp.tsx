@@ -300,12 +300,7 @@ function Workspace({
     updateEditor({ saving: true, actionError: null });
     saveJudgement(
       run.id,
-      {
-        rubricVersion: RUBRIC_VERSION,
-        verdict: chosen,
-        reason: typed.trim(),
-        judgedAt: new Date().toISOString()
-      },
+      { rubricVersion: RUBRIC_VERSION, verdict: chosen, reason: typed.trim() },
       blind
     )
       .then(
@@ -489,6 +484,7 @@ function Workspace({
               savedReason={savedReason}
               busy={saving}
               viewingSubmission={viewingSubmission}
+              confirmable={mode === "resolve" && run?.resolution?.verdict === "disputed"}
               onVerdict={setVerdict}
               onReason={commitReason}
               onLive={onLive}
@@ -527,7 +523,8 @@ function Dispute({ run }: { run: Run }) {
       </DataList.Root>
       <JudgeVerdicts run={run} />
       <Text size="2" color="gray">
-        Your verdict settles the run. Judges are not shown each other's verdicts or yours.
+        Saving here settles the run, until a judge disagrees after you. Judges are not shown each
+        other's verdicts or yours.
       </Text>
     </Flex>
   );

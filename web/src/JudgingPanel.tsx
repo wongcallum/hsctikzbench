@@ -26,6 +26,8 @@ interface Props {
   savedReason: string;
   busy: boolean;
   viewingSubmission: boolean;
+  /** Let the saved verdict be saved again unchanged: in Resolve, that is what settles a run. */
+  confirmable: boolean;
   onVerdict: (verdict: Verdict) => void;
   onReason: (reason: string) => void;
   onLive: (live: LiveJudgement) => void;
@@ -43,6 +45,7 @@ export function JudgingPanel({
   savedReason,
   busy,
   viewingSubmission,
+  confirmable,
   onVerdict,
   onReason,
   onLive,
@@ -68,7 +71,11 @@ export function JudgingPanel({
       verdict: chosen,
       dirty,
       canSave:
-        !busy && !blocked && dirty && chosen !== null && (chosen !== "fail" || text.trim() !== "")
+        !busy &&
+        !blocked &&
+        (dirty || confirmable) &&
+        chosen !== null &&
+        (chosen !== "fail" || text.trim() !== "")
     };
   };
   const live = measure(draft, verdict);
@@ -132,7 +139,7 @@ export function JudgingPanel({
       />
       <Flex gap="2">
         <Button onClick={onSave} disabled={!canSave}>
-          {busy ? "Saving…" : "Save judgement"}
+          {busy ? "Saving…" : dirty || !confirmable ? "Save judgement" : "Confirm judgement"}
           <Kbd size="1">↵</Kbd>
         </Button>
         <Button variant="soft" onClick={onCancel} disabled={busy || !dirty}>

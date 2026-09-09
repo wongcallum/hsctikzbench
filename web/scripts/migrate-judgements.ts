@@ -1,5 +1,6 @@
 // One-off: moves each run's judgement.json to judgements/<owner>.json, stamping the owner's
-// login into it. Usage: tsx scripts/migrate-judgements.ts [owner-login]
+// login into it. The old judge page was blind, so the verdicts are marked blind: a judge
+// who disagrees sends the run to Resolve rather than being overridden. Usage: tsx scripts/migrate-judgements.ts [owner-login]
 // The login defaults to the owner named in the users file. Runs directory from RUNS_DIR.
 import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -50,7 +51,8 @@ for (const batch of await dirs(config.runsDir)) {
     }
     await mkdir(path.join(runDir, JUDGEMENTS_DIR), { recursive: true });
     const target = judgementFile(runDir, login);
-    await writeFile(target, `${JSON.stringify({ ...parsed.data, judge: login }, null, 2)}\n`);
+    const stored = { ...parsed.data, judge: login, blind: true };
+    await writeFile(target, `${JSON.stringify(stored, null, 2)}\n`);
     await rename(legacy, `${legacy}.migrated`);
     moved++;
     console.log(`${batch}/${stem}: ${LEGACY} -> ${path.relative(runDir, target)}`);
