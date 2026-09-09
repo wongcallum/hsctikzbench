@@ -381,7 +381,8 @@ function Workspace({
         return;
       }
       if (event.key === "Enter") {
-        if (target?.closest("a, button, [role=radio]")) return;
+        const pressable = target?.closest("a[href], button:not([role=radio])");
+        if (pressable?.matches(":focus-visible")) return;
         event.preventDefault();
         judge();
         return;
