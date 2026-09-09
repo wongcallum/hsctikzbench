@@ -288,7 +288,9 @@ function buildCommand(params: LaunchParams, outDir: string): { command: string[]
     return { command: [...override, ...args], cwd: config.root };
   }
   return {
-    command: [path.join(config.cliDir, "node_modules", ".bin", "tsx"), "src/cli.ts", ...args],
+    // The tsx bin re-execs node as a child and only forwards stdio 0-2, so fd 3 would reach
+    // the bench as tsx's IPC channel instead of the progress pipe. Load tsx in-process.
+    command: [process.execPath, "--import", "tsx", "src/cli.ts", ...args],
     cwd: config.cliDir
   };
 }

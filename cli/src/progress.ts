@@ -17,15 +17,24 @@ export type ProgressEvent =
       message: string | null;
     };
 
-export type ProgressSink = (event: ProgressEvent) => void;
+export interface ProgressSink {
+  (event: ProgressEvent): void;
+  /** Flushes pending events. The descriptor stays open; the supervisor owns it. */
+  close(): Promise<void>;
+}
 
 export function openProgress(fd: number | undefined): ProgressSink {
-  if (fd === undefined) return () => {};
+  if (fd === undefined) return Object.assign(() => {}, { close: async () => {} });
   if (!Number.isInteger(fd) || fd < 0) throw new Error("--progress-fd must be a descriptor number");
-  const stream = createWriteStream("", { fd });
+  // autoClose would close the descriptor on exit, but it belongs to the supervisor that
+  // passed it in. Closing it from under the event loop aborts libuv during teardown.
+  const stream = createWriteStream("", { fd, autoClose: false });
   // A supervisor that went away must not take the bench down with it.
   stream.on("error", () => {});
-  return (event) => {
+  const emit = (event: ProgressEvent) => {
     stream.write(`${JSON.stringify(event)}\n`);
   };
+  return Object.assign(emit, {
+    close: () => new Promise<void>((resolve) => stream.end(resolve))
+  });
 }

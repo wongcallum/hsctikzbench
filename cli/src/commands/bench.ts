@@ -130,6 +130,7 @@ export const benchCommand = buildCommand({
         `${retried} retried after an earlier error; cost $${cost.toFixed(4)}`
     );
     if (counts.error > 0 || counts.failed > 0) this.process.exitCode = 1;
+    await progress.close();
   },
   parameters: {
     flags: {
