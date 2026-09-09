@@ -1,5 +1,5 @@
 import { Badge, Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { SampleBadges } from "./badges.tsx";
 import { label, type ScoreLine } from "./sample.ts";
 import type { SampleSummary } from "../../shared/judge.ts";
@@ -16,7 +16,9 @@ interface Props {
   onRefresh: () => void;
 }
 
-export function Sidebar({
+// Memoised because rebuilding a few hundred RadioCards rows costs upwards of 150ms; callers
+// must keep onSelect and onRefresh stable for that to hold.
+export const Sidebar = memo(function Sidebar({
   samples,
   scores,
   empty,
@@ -138,4 +140,4 @@ export function Sidebar({
       </Box>
     </Flex>
   );
-}
+});

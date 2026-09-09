@@ -1,4 +1,5 @@
 import { Button, Flex, Kbd, Text, TextArea, Heading } from "@radix-ui/themes";
+import { useEffect, useState } from "react";
 import { hasSubmission, isJudgeable } from "./sample.ts";
 import type { Run, SampleSummary, Verdict } from "../../shared/judge.ts";
 
@@ -8,17 +9,25 @@ const VERDICTS = [
   ["needs_review", "Needs review", "orange", "n"]
 ] as const;
 
+export interface LiveJudgement {
+  reason: string;
+  verdict: Verdict | null;
+  dirty: boolean;
+  canSave: boolean;
+}
+
 interface Props {
   sample: SampleSummary;
   run: Run | null;
   verdict: Verdict | null;
   reason: string;
-  dirty: boolean;
+  savedVerdict: Verdict | null;
+  savedReason: string;
   busy: boolean;
-  canSave: boolean;
   viewingSubmission: boolean;
   onVerdict: (verdict: Verdict) => void;
   onReason: (reason: string) => void;
+  onLive: (live: LiveJudgement) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -28,16 +37,45 @@ export function JudgingPanel({
   run,
   verdict,
   reason,
-  dirty,
+  savedVerdict,
+  savedReason,
   busy,
-  canSave,
   viewingSubmission,
   onVerdict,
   onReason,
+  onLive,
   onSave,
   onCancel
 }: Props) {
   const blocked = !run || !isJudgeable(sample, run) || !viewingSubmission;
+
+  // Committing every keystroke to the parent re-renders the sidebar, upwards of 150ms a
+  // character once a few hundred samples are listed; onLive only writes a ref.
+  const [draft, setDraft] = useState(reason);
+  const [committed, setCommitted] = useState(reason);
+  if (committed !== reason) {
+    setCommitted(reason);
+    setDraft(reason);
+  }
+
+  const measure = (text: string, chosen: Verdict | null): LiveJudgement => {
+    const dirty = chosen !== savedVerdict || text !== savedReason;
+    return {
+      reason: text,
+      verdict: chosen,
+      dirty,
+      canSave:
+        !busy && !blocked && dirty && chosen !== null && (chosen !== "fail" || text.trim() !== "")
+    };
+  };
+  const live = measure(draft, verdict);
+  const { dirty, canSave } = live;
+
+  // No dependencies: the parent's ref has to track every render.
+  useEffect(() => {
+    onLive(live);
+  });
+
   return (
     <Flex direction="column" gap="3">
       <Heading size="3">Judgement</Heading>
@@ -76,8 +114,16 @@ export function JudgingPanel({
       </Text>
       <TextArea
         id="judgement-reason"
-        value={reason}
-        onChange={(event) => onReason(event.target.value)}
+        value={draft}
+        onChange={(event) => {
+          const next = event.target.value;
+          // Written before the state update so a save keyed immediately after a keystroke sees it.
+          onLive(measure(next, verdict));
+          setDraft(next);
+        }}
+        onBlur={() => {
+          if (draft !== reason) onReason(draft);
+        }}
         disabled={busy || blocked}
         rows={3}
       />

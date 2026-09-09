@@ -2,7 +2,7 @@ import { Callout, Flex, Grid, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
-import { JudgingPanel } from "./JudgingPanel.tsx";
+import { JudgingPanel, type LiveJudgement } from "./JudgingPanel.tsx";
 import { setLeaveGuard, type JudgeLocation, type Mode } from "../location.ts";
 import {
   isJudgeable,
@@ -71,7 +71,8 @@ export function JudgeApp({ location, setLocation }: AppProps) {
     () => listedSamples(samples, mode, location.stem),
     [samples, mode, location.stem]
   );
-  const scores = scoreLines(samples, mode);
+  // Sidebar is memoised on its props, so this must stay referentially stable.
+  const scores = useMemo(() => scoreLines(samples, mode), [samples, mode]);
   const empty = samples.length === 0 ? "The manifest has no samples." : "Nothing left to judge.";
   const sample = listed.find((s) => s.stem === location.stem) ?? listed[0] ?? null;
   const runs = useMemo(
@@ -100,6 +101,8 @@ export function JudgeApp({ location, setLocation }: AppProps) {
       ),
     []
   );
+  const selectStem = useCallback((stem: string) => select(stem, null), [select]);
+  const refreshFrame = useCallback(() => void refresh(), [refresh]);
 
   const content = error ? (
     <Flex p="4">
@@ -136,8 +139,8 @@ export function JudgeApp({ location, setLocation }: AppProps) {
       selected={sample?.stem ?? null}
       mode={mode}
       loading={loading}
-      onSelect={(stem) => select(stem, null)}
-      onRefresh={() => void refresh()}
+      onSelect={selectStem}
+      onRefresh={refreshFrame}
     >
       {content}
     </Frame>
@@ -190,9 +193,30 @@ function Workspace({
   onPatch
 }: WorkspaceProps) {
   const selection = `${mode}/${run?.id ?? sample.stem}`;
+  const saved = run?.judgement ?? null;
+  const savedVerdict = saved?.verdict ?? null;
+  const savedReason = saved?.reason ?? "";
+  const restingLive = (): LiveJudgement => ({
+    reason: savedReason,
+    verdict: savedVerdict,
+    dirty: false,
+    canSave: false
+  });
+
   const [editor, setEditor] = useState(() => freshEditor(selection));
+  // The reason reaches here through a ref rather than state, so a keystroke never re-renders
+  // the sidebar. Saving and the leave guard read the ref.
+  const live = useRef<LiveJudgement>(restingLive());
+  const dirtyRef = useRef(false);
+  const [dirty, setDirty] = useState(false);
+
   // Reset before rendering children while keeping the frame and sidebar mounted.
-  if (editor.selection !== selection) setEditor(freshEditor(selection));
+  if (editor.selection !== selection) {
+    setEditor(freshEditor(selection));
+    live.current = restingLive();
+    dirtyRef.current = false;
+    setDirty(false);
+  }
   const { session, selectedRender, saving, actionError, edited } = editor;
   // Ignore saves that finish after navigating away, even if this sample is revisited.
   const updateEditor = useCallback(
@@ -201,25 +225,25 @@ function Workspace({
     [session]
   );
 
-  const saved = run?.judgement ?? null;
-  const verdict = edited?.verdict ?? saved?.verdict ?? null;
-  const reason = edited?.reason ?? saved?.reason ?? "";
-  const dirty = verdict !== (saved?.verdict ?? null) || reason !== (saved?.reason ?? "");
+  const verdict = edited?.verdict ?? savedVerdict;
+  const reason = edited?.reason ?? savedReason;
   const viewingSubmission = selectedRender === null || selectedRender === run?.renders.at(-1);
-  const canSave =
-    !saving &&
-    dirty &&
-    verdict !== null &&
-    (verdict !== "fail" || reason.trim() !== "") &&
-    run !== null &&
-    isJudgeable(sample, run) &&
-    viewingSubmission;
-
   const canJudge = !saving && run !== null && isJudgeable(sample, run) && viewingSubmission;
 
+  const onLive = useCallback((next: LiveJudgement) => {
+    live.current = next;
+    dirtyRef.current = next.dirty;
+    setDirty(next.dirty);
+  }, []);
+
+  const commitReason = useCallback(
+    (value: string) => updateEditor({ edited: { verdict: live.current.verdict, reason: value } }),
+    [updateEditor]
+  );
+
   const confirmDiscard = useCallback(
-    () => !dirty || window.confirm("Discard the unsaved judgement?"),
-    [dirty]
+    () => !dirtyRef.current || window.confirm("Discard the unsaved judgement?"),
+    []
   );
   useEffect(() => {
     setLeaveGuard(confirmDiscard);
@@ -246,9 +270,9 @@ function Workspace({
 
   const setVerdict = useCallback(
     (value: Verdict) => {
-      if (canJudge) updateEditor({ edited: { verdict: value, reason } });
+      if (canJudge) updateEditor({ edited: { verdict: value, reason: live.current.reason } });
     },
-    [canJudge, reason, updateEditor]
+    [canJudge, updateEditor]
   );
 
   const cancel = useCallback(() => {
@@ -256,12 +280,15 @@ function Workspace({
   }, [updateEditor]);
 
   const judge = useCallback(() => {
-    if (!canSave || !run || !verdict) return;
+    const { reason: typed, verdict: chosen, canSave } = live.current;
+    if (!canSave || !run || !chosen) return;
+    // Blocks a second save keyed before the saving flag has made it back down to the panel.
+    live.current = { ...live.current, canSave: false };
     updateEditor({ saving: true, actionError: null });
     saveJudgement(run.id, {
       rubricVersion: RUBRIC_VERSION,
-      verdict,
-      reason: reason.trim(),
+      verdict: chosen,
+      reason: typed.trim(),
       judgedAt: new Date().toISOString()
     })
       .then(
@@ -272,7 +299,7 @@ function Workspace({
         (e: unknown) => updateEditor({ actionError: errorMessage(e) })
       )
       .finally(() => updateEditor({ saving: false }));
-  }, [run, canSave, verdict, reason, onPatch, updateEditor]);
+  }, [run, onPatch, updateEditor]);
 
   const seekPending = useCallback(
     (step: 1 | -1) => {
@@ -367,6 +394,21 @@ function Workspace({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
 
+  const selectFromSidebar = useCallback(
+    (stem: string) => {
+      const next = samples.find((s) => s.stem === stem);
+      if (next) selectSample(next);
+    },
+    [samples, selectSample]
+  );
+
+  const refreshFromSidebar = useCallback(() => {
+    if (!saving && confirmDiscard()) {
+      cancel();
+      void onRefresh();
+    }
+  }, [saving, confirmDiscard, cancel, onRefresh]);
+
   return (
     <Frame
       samples={samples}
@@ -375,16 +417,8 @@ function Workspace({
       selected={sample.stem}
       mode={mode}
       loading={loading || saving}
-      onSelect={(stem) => {
-        const next = samples.find((s) => s.stem === stem);
-        if (next) selectSample(next);
-      }}
-      onRefresh={() => {
-        if (!saving && confirmDiscard()) {
-          cancel();
-          void onRefresh();
-        }
-      }}
+      onSelect={selectFromSidebar}
+      onRefresh={refreshFromSidebar}
     >
       <SampleView
         key={selection}
@@ -404,12 +438,13 @@ function Workspace({
             run={run}
             verdict={verdict}
             reason={reason}
-            dirty={dirty}
+            savedVerdict={savedVerdict}
+            savedReason={savedReason}
             busy={saving}
-            canSave={canSave}
             viewingSubmission={viewingSubmission}
             onVerdict={setVerdict}
-            onReason={(value) => updateEditor({ edited: { verdict, reason: value } })}
+            onReason={commitReason}
+            onLive={onLive}
             onSave={judge}
             onCancel={cancel}
           />
