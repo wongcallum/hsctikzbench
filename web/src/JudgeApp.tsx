@@ -1,9 +1,11 @@
 import { Callout, Flex, Grid, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { RUBRIC_VERSION, type Verdict } from "../shared/judge.ts";
+import type { Run, SampleSummary } from "../shared/types.ts";
 import { clearJudgement, fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel, type LiveJudgement } from "./JudgingPanel.tsx";
-import { setLeaveGuard, type JudgeLocation, type Mode } from "../location.ts";
+import { setLeaveGuard, type JudgeLocation, type Mode } from "./location.ts";
 import {
   isJudgeable,
   isPending,
@@ -13,9 +15,8 @@ import {
   scoreLines,
   type ScoreLine
 } from "./sample.ts";
+import { SampleSidebar } from "./SampleSidebar.tsx";
 import { SampleView } from "./SampleView.tsx";
-import { Sidebar } from "./Sidebar.tsx";
-import { RUBRIC_VERSION, type Run, type SampleSummary, type Verdict } from "../../shared/judge.ts";
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -447,12 +448,12 @@ function Workspace({
         sample={sample}
         run={run}
         runs={runs}
-        mode={mode}
         dirty={dirty}
         selectedRender={selectedRender}
         onSelectRun={(id) => select(sample.stem, id)}
         onSelectRender={(selectedRender) => updateEditor({ selectedRender })}
         error={actionError}
+        panelWidth={mode === "judge" ? "360px" : "clamp(360px, 30%, 480px)"}
       >
         {mode === "judge" ? (
           <JudgingPanel
@@ -504,7 +505,7 @@ function Frame({
 }: FrameProps) {
   return (
     <Grid columns="280px auto 1fr" height="100%">
-      <Sidebar
+      <SampleSidebar
         samples={samples}
         scores={scores}
         empty={empty}

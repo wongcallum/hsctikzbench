@@ -12,12 +12,13 @@ import {
   Text
 } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { BatchDetail, Job, JobProgress, LogLine, SampleState } from "../shared/types.ts";
+import type { BatchDetail, BatchSample, Job, JobProgress, LogLine } from "../shared/types.ts";
 import { cancelJob, fetchBatch, subscribeJob } from "./api.ts";
-import { duration, jobTone, money, sampleLabel, sampleStatus, timeOf } from "./format.ts";
+import { StatusBadge } from "./badges.tsx";
+import { BatchSample as BatchSampleView } from "./BatchSample.tsx";
+import { duration, jobTone, money, sampleLabel, timeOf } from "./format.ts";
 import { hrefFor, navigate } from "./location.ts";
 import { isShown, LogPane } from "./LogPane.tsx";
-import { SampleDetail } from "./SampleDetail.tsx";
 import { Thumb } from "./Thumb.tsx";
 
 const POLL_RUNNING_MS = 2500;
@@ -132,14 +133,14 @@ export function BatchView({ name, stem, onChanged }: Props) {
   }, [jobId, load, onChanged]);
 
   // Progress from the stream is fresher than the polled detail; merge it in.
-  const samples = useMemo<SampleState[]>(() => {
+  const samples = useMemo<BatchSample[]>(() => {
     if (!detail) return [];
     if (!progress) return detail.samples;
     return detail.samples.map((s) => {
       const p = progress.samples[s.stem];
       if (!p) return s;
-      const phase = s.phase === "pending" && p.turn ? "running" : s.phase;
-      return { ...s, phase, progress: p };
+      const phase = s.run.phase === "pending" && p.turn ? "running" : s.run.phase;
+      return { ...s, run: { ...s.run, phase, progress: p } };
     });
   }, [detail, progress]);
 
@@ -153,21 +154,27 @@ export function BatchView({ name, stem, onChanged }: Props) {
       pending: 0,
       interrupted: 0
     };
-    for (const s of samples) {
-      if (s.phase === "done" && s.result) c[s.result.status]++;
-      else if (s.phase !== "done") c[s.phase]++;
+    for (const { run } of samples) {
+      if (run.phase === "done" && run.result) c[run.result.status]++;
+      else if (run.phase !== "done") c[run.phase]++;
     }
     return c;
   }, [samples]);
 
-  const visible = samples.filter((s) =>
-    filter === "all" ? true : s.phase === "done" ? s.result?.status === filter : s.phase === filter
+  const visible = samples.filter(({ run }) =>
+    filter === "all"
+      ? true
+      : run.phase === "done"
+        ? run.result?.status === filter
+        : run.phase === filter
   );
   const selected = stem ? (samples.find((s) => s.stem === stem) ?? null) : null;
   const liveCost = useMemo(() => {
     if (!detail) return 0;
     let cost = detail.cost;
-    for (const s of samples) if (s.phase !== "done" && s.progress?.cost) cost += s.progress.cost;
+    for (const { run } of samples) {
+      if (run.phase !== "done" && run.progress?.cost) cost += run.progress.cost;
+    }
     return cost;
   }, [detail, samples]);
 
@@ -205,10 +212,11 @@ export function BatchView({ name, stem, onChanged }: Props) {
 
   const started = job?.startedAt ? Date.parse(job.startedAt) : null;
   const ended = job?.finishedAt ? Date.parse(job.finishedAt) : Date.now();
+  const first = samples.find((s) => s.run.source?.model)?.run.source?.model;
   const model = job
     ? `${job.params.provider}/${job.params.model} · ${job.params.reasoning}`
-    : samples[0]?.result
-      ? `${samples[0].result.provider}/${samples[0].result.model} · ${samples[0].result.reasoning}`
+    : first
+      ? `${first.provider}/${first.model} · ${first.reasoning}`
       : null;
 
   return (
@@ -281,16 +289,17 @@ export function BatchView({ name, stem, onChanged }: Props) {
       </Flex>
 
       <Box flexGrow="1" minHeight="0">
-        <ScrollArea type="auto" scrollbars="vertical">
-          <Box px="4" pb="4">
-            {selected ? (
-              <SampleDetail
-                batch={name}
-                sample={selected}
-                lines={lines.filter((l) => isShown(l) && l.text.includes(selected.stem))}
-                backHref={hrefFor({ page: "batch", name, stem: null })}
-              />
-            ) : (
+        {selected ? (
+          <BatchSampleView
+            batch={name}
+            sample={selected}
+            lines={lines.filter((l) => isShown(l) && l.text.includes(selected.stem))}
+            backHref={hrefFor({ page: "batch", name, stem: null })}
+            onChanged={() => void load()}
+          />
+        ) : (
+          <ScrollArea type="auto" scrollbars="vertical">
+            <Box px="4" pb="4">
               <Flex direction="column" gap="3">
                 <Flex gap="2" wrap="wrap">
                   {FILTERS.map(([key, label]) =>
@@ -315,9 +324,9 @@ export function BatchView({ name, stem, onChanged }: Props) {
                 </Grid>
                 {visible.length === 0 && <Text color="gray">Nothing matches this filter.</Text>}
               </Flex>
-            )}
-          </Box>
-        </ScrollArea>
+            </Box>
+          </ScrollArea>
+        )}
       </Box>
       {job && (
         <LogPane
@@ -344,9 +353,10 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function SampleCard({ batch, sample }: { batch: string; sample: SampleState }) {
-  const status = sampleStatus(sample);
-  const latest = sample.hasSubmission ? "submission.png" : (sample.renders.at(-1) ?? null);
+function SampleCard({ batch, sample }: { batch: string; sample: BatchSample }) {
+  const run = sample.run;
+  const last = run.renders.at(-1);
+  const latest = run.hasSubmission ? "submission.png" : last ? `renders/${last}` : null;
   const open = () => navigate({ page: "batch", name: batch, stem: sample.stem });
   return (
     <Card asChild size="2">
@@ -360,11 +370,10 @@ function SampleCard({ batch, sample }: { batch: string; sample: SampleState }) {
             <Thumb kind="crop" stem={sample.stem} missing={!sample.hasCrop} label="reference" />
             <Thumb
               kind="run"
-              batch={batch}
-              stem={sample.stem}
+              run={run}
               file={latest}
               label={
-                latest ? (sample.hasSubmission ? "submission" : "latest render") : "no render yet"
+                latest ? (run.hasSubmission ? "submission" : "latest render") : "no render yet"
               }
             />
           </Flex>
@@ -372,30 +381,28 @@ function SampleCard({ batch, sample }: { batch: string; sample: SampleState }) {
             <Text size="2" weight="bold">
               {sampleLabel(sample)}
             </Text>
-            <Badge color={status.tone} variant="soft" size="1">
-              {status.text}
-            </Badge>
+            <StatusBadge run={run} />
           </Flex>
           <Flex justify="between" gap="2">
             <Text size="1" color="gray">
               {sample.exam}
             </Text>
             <Text size="1" color="gray">
-              {sample.result
-                ? `${sample.result.turns} turns · ${money(sample.result.usage.cost)}`
-                : sample.progress?.cost
-                  ? money(sample.progress.cost)
+              {run.result
+                ? `${run.result.turns} turns · ${money(run.source?.model?.usage.cost ?? 0)}`
+                : run.progress?.cost
+                  ? money(run.progress.cost)
                   : ""}
             </Text>
           </Flex>
-          {sample.phase === "running" && sample.progress?.lastLine && (
-            <Text size="1" color="gray" truncate title={sample.progress.lastLine}>
-              {sample.progress.lastLine}
+          {run.phase === "running" && run.progress?.lastLine && (
+            <Text size="1" color="gray" truncate title={run.progress.lastLine}>
+              {run.progress.lastLine}
             </Text>
           )}
-          {sample.result?.error && (
-            <Text size="1" color="red" truncate title={sample.result.error}>
-              {sample.result.error}
+          {run.result?.error && (
+            <Text size="1" color="red" truncate title={run.result.error}>
+              {run.result.error}
             </Text>
           )}
         </Flex>

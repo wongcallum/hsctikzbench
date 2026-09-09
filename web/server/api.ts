@@ -10,7 +10,7 @@ import { batchDetail, listBatches } from "./batches.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
-import { clearJudgement, listSamples, locateRun, saveJudgement } from "./judge.ts";
+import { clearJudgement, getSample, listSamples, locateRun, saveJudgement } from "./judge.ts";
 import { collectInfo, loadManifest } from "./repo.ts";
 
 const RENDERERS = ["auto", "local", "podman", "docker", "nerdctl"] as const;
@@ -180,9 +180,15 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
   });
 
   // Runs are addressed by id, so a blind listing never reveals the batch.
-  app.get("/api/samples", async (c) => {
-    const blind = c.req.query("blind") !== undefined || c.get("user").role !== "owner";
-    return c.json(await listSamples(blind));
+  const blindFor = (c: Context<AuthEnv>) =>
+    c.req.query("blind") !== undefined || c.get("user").role !== "owner";
+
+  app.get("/api/samples", async (c) => c.json(await listSamples(jobs, blindFor(c))));
+
+  app.get("/api/samples/:stem", async (c) => {
+    const stem = c.req.param("stem");
+    if (!STEM.test(stem)) throw new HttpError(400, "bad sample stem");
+    return c.json(await getSample(stem, jobs, blindFor(c)));
   });
 
   app.put("/api/runs/:id/judgement", async (c) =>
@@ -198,14 +204,6 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     const file = c.req.param("file");
     if (!/^[A-Za-z0-9._-]+\.png$/.test(file)) return c.notFound();
     return sendFile(c, path.join(config.cropsDir, file));
-  });
-
-  app.get("/files/runs/:batch/:stem/*", async (c) => {
-    const batch = c.req.param("batch");
-    const stem = c.req.param("stem");
-    const rest = pathSegments(c.req.path, 5);
-    if (!BATCH_NAME.test(batch) || !STEM.test(stem) || !rest) return c.notFound();
-    return sendFile(c, path.join(config.runsDir, batch, stem, ...rest));
   });
 
   app.get("/runs/:id/*", async (c) => {

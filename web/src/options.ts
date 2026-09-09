@@ -62,16 +62,16 @@ export function optionsFromBatch(detail: BatchDetail): Partial<RunOptions> {
     const { batch: _batch, ...params } = detail.job.params;
     return { ...params, pick: params.samples.length > 0 };
   }
-  const result = detail.samples.find((s) => s.result)?.result;
+  const model = detail.samples.find((s) => s.run.source?.model)?.run.source?.model;
   const stems = detail.samples.map((s) => s.stem);
   const out: Partial<RunOptions> = { exams: [], pick: true, samples: stems };
-  if (!result) return out;
-  out.provider = result.provider;
-  out.model = result.model;
-  out.reasoning = result.reasoning;
-  if (result.harness) {
-    out.maxTurns = result.harness.maxTurns;
-    out.renderer = result.harness.renderer;
+  if (!model) return out;
+  out.provider = model.provider;
+  out.model = model.model;
+  out.reasoning = model.reasoning;
+  if (model.harness) {
+    out.maxTurns = model.harness.maxTurns;
+    out.renderer = model.harness.renderer;
   }
   return out;
 }

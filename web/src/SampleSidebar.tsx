@@ -1,9 +1,10 @@
 import { Badge, Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
 import { memo, useEffect, useState } from "react";
+import type { SampleSummary } from "../shared/types.ts";
 import { SampleBadges } from "./badges.tsx";
-import { label, type ScoreLine } from "./sample.ts";
-import type { SampleSummary } from "../../shared/judge.ts";
-import type { Mode } from "../location.ts";
+import { sampleLabel, words } from "./format.ts";
+import type { Mode } from "./location.ts";
+import type { ScoreLine } from "./sample.ts";
 
 interface Props {
   samples: SampleSummary[];
@@ -18,7 +19,7 @@ interface Props {
 
 // Memoised because rebuilding a few hundred RadioCards rows costs upwards of 150ms; callers
 // must keep onSelect and onRefresh stable for that to hold.
-export const Sidebar = memo(function Sidebar({
+export const SampleSidebar = memo(function SampleSidebar({
   samples,
   scores,
   empty,
@@ -119,11 +120,11 @@ export const Sidebar = memo(function Sidebar({
                         <RadioCards.Item key={sample.stem} value={sample.stem}>
                           <Flex direction="column" gap="1" width="100%" minWidth="0">
                             <Text size="2" weight="medium" truncate>
-                              {label(sample)}
+                              {sampleLabel(sample)}
                             </Text>
                             <Flex align="center" gap="2" wrap="wrap">
                               <Badge color="gray" variant="outline" size="1">
-                                {sample.category.replaceAll("_", " ")}
+                                {words(sample.category)}
                               </Badge>
                               <SampleBadges sample={sample} />
                             </Flex>

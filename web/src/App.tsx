@@ -4,10 +4,10 @@ import type { BatchSummary, Info, Me } from "../shared/types.ts";
 import { fetchBatches, fetchInfo, fetchMe, signOut } from "./api.ts";
 import { BatchView } from "./BatchView.tsx";
 import { SIGNED_OUT_EVENT } from "./http.ts";
-import { JudgeApp } from "./judge/App.tsx";
+import { BatchSidebar } from "./BatchSidebar.tsx";
+import { JudgeApp } from "./JudgeApp.tsx";
 import { Launch } from "./Launch.tsx";
 import { confirmLeave, hrefFor, navigate, useRoute, type Route } from "./location.ts";
-import { Sidebar } from "./Sidebar.tsx";
 import { SignIn } from "./SignIn.tsx";
 
 const BATCH_POLL_MS = 3000;
@@ -132,7 +132,7 @@ function Runs({ route }: { route: Exclude<Route, { page: "judge" }> }) {
 
   return (
     <Grid columns="280px auto 1fr" height="100%">
-      <Sidebar route={route} batches={batches} error={batchesError} />
+      <BatchSidebar route={route} batches={batches} error={batchesError} />
       <Separator orientation="vertical" size="4" />
       <Box minHeight="0" minWidth="0">
         {route.page === "launch" ? (

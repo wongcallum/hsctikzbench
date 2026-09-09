@@ -19,7 +19,7 @@ interface Props {
   error: string | null;
 }
 
-export function Sidebar({ route, batches, error }: Props) {
+export function BatchSidebar({ route, batches, error }: Props) {
   const current = route.page === "batch" ? route.name : null;
   return (
     <Flex direction="column" minHeight="0">

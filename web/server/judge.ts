@@ -1,20 +1,17 @@
-import { createHash } from "node:crypto";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { JudgementSchema, type Judgement } from "../shared/judge.ts";
 import {
   hasSubmission,
-  JudgementSchema,
-  type Judgement,
-  type Run,
+  type ManifestSample,
+  type SampleProgress,
   type SampleSummary
-} from "../shared/judge.ts";
-import type { ManifestSample } from "../shared/types.ts";
-import { isDir, isFile, listDirs, listRenders, readResult } from "./batches.ts";
+} from "../shared/types.ts";
+import { hasCrop, isDir, JUDGEMENT_FILE, listDirs, readRun, runId, sampleInfo } from "./batches.ts";
 import { config } from "./env.ts";
 import { HttpError } from "./http.ts";
+import type { JobManager } from "./jobs.ts";
 import { loadManifest, type LoadedManifest } from "./repo.ts";
-
-const JUDGEMENT_FILE = "judgement.json";
 
 export interface RunLocation {
   readonly id: string;
@@ -28,9 +25,6 @@ interface RunIndex {
   readonly batches: string[];
   readonly locations: Map<string, RunLocation>;
 }
-
-export const runId = (batch: string, stem: string) =>
-  createHash("sha256").update(`${batch}/${stem}`).digest("hex").slice(0, 12);
 
 let runIndex: RunIndex | null = null;
 
@@ -53,89 +47,90 @@ export async function locateRun(id: string): Promise<RunLocation> {
   return location;
 }
 
-async function readJudgement(dir: string): Promise<Judgement | null> {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(await readFile(path.join(dir, JUDGEMENT_FILE), "utf8"));
-  } catch {
-    return null;
-  }
-  const parsed = JudgementSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+/** What each batch on disk holds, so summarising a sample costs no directory probes. */
+interface BatchState {
+  name: string;
+  stems: Set<string>;
+  running: boolean;
+  progress: Record<string, SampleProgress> | undefined;
 }
 
-async function readRun(batch: string, stem: string, blind: boolean): Promise<Run | null> {
-  const dir = path.join(config.runsDir, batch, stem);
-  if (!(await isDir(dir))) return null;
-  const [{ result }, hasSubmission, renders, judgement] = await Promise.all([
-    readResult(dir),
-    isFile(path.join(dir, "submission.png")),
-    listRenders(dir),
-    readJudgement(dir)
-  ]);
-  return {
-    id: runId(batch, stem),
-    result: result && {
-      status: result.status,
-      turns: result.turns,
-      renders: result.renders,
-      successfulRenders: result.successfulRenders,
-      // Error text may name the provider, so a blind listing drops it.
-      ...(blind || result.error === undefined ? {} : { error: result.error })
-    },
-    hasSubmission,
-    renders,
-    judgement,
-    source: blind
-      ? null
-      : {
-          batch,
-          model: result && {
-            provider: result.provider,
-            model: result.model,
-            reasoning: result.reasoning,
-            usage: result.usage,
-            durationMs: result.durationMs,
-            startedAt: result.startedAt
-          }
-        }
-  };
+async function batchStates(batches: string[], jobs: JobManager): Promise<BatchState[]> {
+  return Promise.all(
+    batches.map(async (name) => {
+      const dir = path.join(config.runsDir, name);
+      const job = jobs.forOutDir(dir);
+      return {
+        name,
+        stems: new Set(await listDirs(dir)),
+        running: job?.status === "running",
+        progress: job ? jobs.progress(job.id)?.samples : undefined
+      };
+    })
+  );
 }
 
 async function summarize(
   exam: string,
   sample: ManifestSample,
-  batches: string[],
+  batches: BatchState[],
   blind: boolean
 ): Promise<SampleSummary> {
-  const [hasCrop, found] = await Promise.all([
-    isFile(path.join(config.cropsDir, `${sample.stem}.png`)),
-    Promise.all(batches.map((batch) => readRun(batch, sample.stem, blind)))
+  const [info, runs] = await Promise.all([
+    sampleInfo(sample.stem, exam, sample),
+    Promise.all(
+      batches
+        .filter((batch) => batch.stems.has(sample.stem))
+        .map((batch) =>
+          readRun(batch.name, sample.stem, {
+            exists: true,
+            running: batch.running,
+            progress: batch.progress?.[sample.stem] ?? null,
+            blind
+          })
+        )
+    )
   ]);
-  const runs = found.filter((run) => run !== null);
   // Batches are sorted by name; a blind listing orders by id so the position says nothing.
   if (blind) runs.sort((a, b) => a.id.localeCompare(b.id));
-  return { ...sample, exam, hasCrop, runs };
+  return { ...info, runs };
 }
 
-export async function listSamples(blind: boolean): Promise<SampleSummary[]> {
+export async function listSamples(jobs: JobManager, blind: boolean): Promise<SampleSummary[]> {
   const { manifest, batches } = await refreshRunIndex();
+  const states = await batchStates(batches, jobs);
   return Promise.all(
     manifest.exams.flatMap((exam) =>
-      exam.samples.map((sample) => summarize(exam.id, sample, batches, blind))
+      exam.samples.map((sample) => summarize(exam.id, sample, states, blind))
     )
   );
+}
+
+export async function getSample(
+  stem: string,
+  jobs: JobManager,
+  blind: boolean
+): Promise<SampleSummary> {
+  const { manifest, batches } = await refreshRunIndex();
+  const exam = manifest.exams.find((e) => e.id === manifest.stems.get(stem));
+  const sample = exam?.samples.find((s) => s.stem === stem);
+  if (!exam || !sample) throw new HttpError(404, `no sample ${stem}`);
+  return summarize(exam.id, sample, await batchStates(batches, jobs), blind);
 }
 
 export async function saveJudgement(id: string, body: unknown): Promise<Judgement> {
   const parsed = JudgementSchema.safeParse(body);
   if (!parsed.success) throw new HttpError(400, `judgement: ${parsed.error.issues[0]!.message}`);
   const location = await locateRun(id);
-  const run = await readRun(location.batch, location.stem, false);
-  if (!run) throw new HttpError(404, `no run ${id}`);
+  const run = await readRun(location.batch, location.stem, {
+    exists: true,
+    running: false,
+    progress: null,
+    blind: true
+  });
   if (!run.result) throw new HttpError(409, "run has not finished");
   if (!hasSubmission(run)) throw new HttpError(409, "no submission; already counted as a failure");
-  if (!(await isFile(path.join(config.cropsDir, `${location.stem}.png`)))) {
+  if (!(await hasCrop(location.stem))) {
     throw new HttpError(409, "a reference crop is required to judge this submission");
   }
   await writeFile(

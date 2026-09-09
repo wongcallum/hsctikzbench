@@ -9,24 +9,25 @@ import {
   Text
 } from "@radix-ui/themes";
 import type { ReactNode } from "react";
+import { hasSubmission, type Run, type SampleSummary } from "../shared/types.ts";
 import { cropUrl, runFileUrl } from "./api.ts";
 import { RunBadges } from "./badges.tsx";
+import { runLabel, sampleLabel, words } from "./format.ts";
 import { ImagePane } from "./ImagePane.tsx";
-import { hasSubmission, label, runLabel } from "./sample.ts";
-import type { Run, SampleSummary } from "../../shared/judge.ts";
-import type { Mode } from "../location.ts";
+import { RenderStrip } from "./RenderStrip.tsx";
 
 interface Props {
   sample: SampleSummary;
   run: Run | null;
   /** The sample's runs to offer, in listing order. */
   runs: Run[];
-  mode: Mode;
   dirty: boolean;
   selectedRender: string | null;
   onSelectRun: (id: string) => void;
   onSelectRender: (name: string | null) => void;
   error: string | null;
+  /** Width of the right-hand panel column. */
+  panelWidth?: string;
   /** The panel shown in the right column. */
   children: ReactNode;
 }
@@ -35,31 +36,35 @@ export function SampleView({
   sample,
   run,
   runs,
-  mode,
   dirty,
   selectedRender,
   onSelectRun,
   onSelectRender,
   error,
+  panelWidth = "360px",
   children
 }: Props) {
   const submittedRender = run && hasSubmission(run) ? (run.renders.at(-1) ?? null) : null;
   const result = run ? resultImage(run, selectedRender) : null;
 
   return (
-    <Grid columns="1fr auto 360px" minHeight="0" minWidth="0">
+    <Grid columns={`1fr auto ${panelWidth}`} minHeight="0" minWidth="0">
       <Flex direction="column" minHeight="0" minWidth="0">
         <Flex align="center" gap="2" p="4" pb="2" wrap="wrap">
-          <Heading size="3">{label(sample)}</Heading>
+          <Heading size="3">{sampleLabel(sample)}</Heading>
           <Text size="1" color="gray">
             {sample.stem}
           </Text>
-          <Badge color="gray" variant="outline" size="1">
-            {sample.category.replaceAll("_", " ")}
-          </Badge>
-          <Badge color="gray" variant="outline" size="1">
-            {sample.role.replaceAll("_", " ")}
-          </Badge>
+          {sample.category && (
+            <Badge color="gray" variant="outline" size="1">
+              {words(sample.category)}
+            </Badge>
+          )}
+          {sample.role && (
+            <Badge color="gray" variant="outline" size="1">
+              {words(sample.role)}
+            </Badge>
+          )}
           {dirty && (
             <Badge color="orange" variant="soft" size="1">
               unsaved
@@ -85,9 +90,9 @@ export function SampleView({
                 <RadioCards.Item key={candidate.id} value={candidate.id}>
                   <Flex direction="column" gap="1">
                     <Text size="2" weight="medium">
-                      {runLabel(sample, candidate, mode)}
+                      {runLabel(sample.runs, candidate)}
                     </Text>
-                    {mode === "view" && candidate.source?.model && (
+                    {candidate.source?.model && (
                       <Text size="1" color="gray">
                         {candidate.source.model.model} · {candidate.source.model.reasoning}
                       </Text>
@@ -111,40 +116,20 @@ export function SampleView({
             label="Result"
             detail={result?.detail}
             src={result?.src ?? null}
-            emptyText={run ? "no renders" : "no run"}
+            emptyText={run ? (run.progress?.lastLine ?? "no renders") : "no run"}
           />
         </Grid>
-        {run && run.renders.length > 0 && (
-          <Flex overflowX="auto" px="4" py="3" flexShrink="0">
-            <RadioCards.Root
-              orientation="horizontal"
-              columns={`repeat(${run.renders.length}, max-content)`}
-              gap="2"
-              size="1"
-              value={selectedRender ?? submittedRender ?? run.renders.at(-1) ?? ""}
-              onValueChange={(name) => onSelectRender(name === submittedRender ? null : name)}
-            >
-              {run.renders.map((name) => (
-                <RadioCards.Item key={name} value={name}>
-                  <Flex direction="column" align="center" gap="1">
-                    <img
-                      src={runFileUrl(run.id, `renders/${name}`)}
-                      alt={name}
-                      style={{ height: 96, backgroundColor: "white" }}
-                    />
-                    <Text size="1" color="gray">
-                      {name.replace(/\.png$/, "")}
-                      {name === submittedRender ? " (submitted)" : ""}
-                    </Text>
-                  </Flex>
-                </RadioCards.Item>
-              ))}
-            </RadioCards.Root>
-          </Flex>
+        {run && (
+          <RenderStrip
+            run={run}
+            selected={selectedRender ?? submittedRender ?? run.renders.at(-1) ?? ""}
+            submitted={submittedRender}
+            onSelect={(name) => onSelectRender(name === submittedRender ? null : name)}
+          />
         )}
       </Flex>
       <Separator orientation="vertical" size="4" />
-      <Flex direction="column" gap="3" p="4" minHeight="0">
+      <Flex direction="column" gap="3" p="4" minHeight="0" minWidth="0">
         {error && (
           <Text size="1" color="red" style={{ whiteSpace: "pre-wrap" }}>
             {error}

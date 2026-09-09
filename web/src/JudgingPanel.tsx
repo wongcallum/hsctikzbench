@@ -1,7 +1,8 @@
 import { Button, Flex, Kbd, Text, TextArea, Heading } from "@radix-ui/themes";
 import { useEffect, useState } from "react";
-import { hasSubmission, isJudgeable } from "./sample.ts";
-import type { Run, SampleSummary, Verdict } from "../../shared/judge.ts";
+import type { Verdict } from "../shared/judge.ts";
+import { hasSubmission, type Run, type SampleSummary } from "../shared/types.ts";
+import { isJudgeable } from "./sample.ts";
 
 const VERDICTS = [
   ["pass", "Pass", "green", "p"],

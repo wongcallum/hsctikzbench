@@ -1,13 +1,18 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { RESULT_FILE, type RunResult } from "hsctikzbench-cli/output";
+import { RESULT_FILE, type RunResult, type RunStatus } from "hsctikzbench-cli/output";
+import { JudgementSchema, type Judgement } from "../shared/judge.ts";
 import type {
   BatchDetail,
+  BatchSample,
   BatchSummary,
   Job,
   ManifestSample,
+  Run,
+  SampleInfo,
   SamplePhase,
-  SampleState,
+  SampleProgress,
   StatusCounts
 } from "../shared/types.ts";
 import { config } from "./env.ts";
@@ -87,9 +92,96 @@ function phaseOf(result: RunResult | null, exists: boolean, jobRunning: boolean)
   return jobRunning ? "running" : "interrupted";
 }
 
-function count(counts: StatusCounts, phase: SamplePhase, result: RunResult | null): void {
+function count(counts: StatusCounts, phase: SamplePhase, result: { status: RunStatus } | null) {
   if (phase === "done" && result) counts[result.status]++;
   else if (phase !== "done") counts[phase]++;
+}
+
+export const JUDGEMENT_FILE = "judgement.json";
+
+export const runId = (batch: string, stem: string) =>
+  createHash("sha256").update(`${batch}/${stem}`).digest("hex").slice(0, 12);
+
+async function readJudgement(dir: string): Promise<Judgement | null> {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(await readFile(path.join(dir, JUDGEMENT_FILE), "utf8"));
+  } catch {
+    return null;
+  }
+  const parsed = JudgementSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+}
+
+export interface RunContext {
+  /** Whether the run directory exists; a missing one is pending. */
+  exists: boolean;
+  /** Whether the batch's job is still running, which makes an unfinished run live. */
+  running: boolean;
+  progress: SampleProgress | null;
+  /** Drops everything that could say which model made the run. */
+  blind: boolean;
+}
+
+export async function readRun(batch: string, stem: string, ctx: RunContext): Promise<Run> {
+  const dir = path.join(config.runsDir, batch, stem);
+  const [{ result }, hasSubmission, renders, judgement] = ctx.exists
+    ? await Promise.all([
+        readResult(dir),
+        isFile(path.join(dir, "submission.png")),
+        listRenders(dir),
+        readJudgement(dir)
+      ])
+    : [{ result: null }, false, [], null];
+  return {
+    id: runId(batch, stem),
+    phase: phaseOf(result, ctx.exists, ctx.running),
+    result: result && {
+      status: result.status,
+      turns: result.turns,
+      renders: result.renders,
+      successfulRenders: result.successfulRenders,
+      // Error text may name the provider, so a blind listing drops it.
+      ...(ctx.blind || result.error === undefined ? {} : { error: result.error })
+    },
+    hasSubmission,
+    renders,
+    judgement,
+    source: ctx.blind
+      ? null
+      : {
+          batch,
+          model: result && {
+            provider: result.provider,
+            model: result.model,
+            reasoning: result.reasoning,
+            usage: result.usage,
+            durationMs: result.durationMs,
+            startedAt: result.startedAt,
+            ...(result.harness === undefined ? {} : { harness: result.harness })
+          }
+        },
+    // Progress lines quote the bench's output, which may name the model.
+    progress: ctx.blind ? null : ctx.progress
+  };
+}
+
+export const hasCrop = (stem: string) => isFile(path.join(config.cropsDir, `${stem}.png`));
+
+export async function sampleInfo(
+  stem: string,
+  exam: string,
+  meta: ManifestSample | null
+): Promise<SampleInfo> {
+  return {
+    stem,
+    exam,
+    question: meta?.question ?? "",
+    option: meta?.option ?? null,
+    role: meta?.role ?? "",
+    category: meta?.category ?? "",
+    hasCrop: await hasCrop(stem)
+  };
 }
 
 export async function listBatches(jobs: JobManager): Promise<BatchSummary[]> {
@@ -174,36 +266,22 @@ export async function batchDetail(
   const counts = emptyCounts();
   let cost = 0;
   const samples = await Promise.all(
-    ordered.map(async ({ stem, meta, exam }): Promise<SampleState> => {
-      const runDir = path.join(dir, stem);
-      const exists = existing.has(stem);
-      const [{ result }, hasCrop, hasSubmission, names] = await Promise.all([
-        exists ? readResult(runDir) : { result: null },
-        isFile(path.join(config.cropsDir, `${stem}.png`)),
-        exists ? isFile(path.join(runDir, "submission.png")) : false,
-        exists ? listRenders(runDir) : []
+    ordered.map(async ({ stem, meta, exam }): Promise<BatchSample> => {
+      const [info, run] = await Promise.all([
+        sampleInfo(stem, exam, meta),
+        readRun(name, stem, {
+          exists: existing.has(stem),
+          running,
+          progress: progress?.samples[stem] ?? null,
+          blind: false
+        })
       ]);
-      const renders = names.map((n) => `renders/${n}`);
-      const phase = phaseOf(result, exists, running);
-      return {
-        stem,
-        exam,
-        question: meta?.question ?? "",
-        option: meta?.option ?? null,
-        role: meta?.role ?? "",
-        category: meta?.category ?? "",
-        hasCrop,
-        phase,
-        result,
-        renders,
-        hasSubmission,
-        progress: progress?.samples[stem] ?? null
-      };
+      return { ...info, run };
     })
   );
-  for (const sample of samples) {
-    count(counts, sample.phase, sample.result);
-    if (sample.result) cost += sample.result.usage.cost;
+  for (const { run } of samples) {
+    count(counts, run.phase, run.result);
+    cost += run.source?.model?.usage.cost ?? 0;
   }
   return { name, job, samples, counts, cost };
 }

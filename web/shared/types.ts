@@ -1,5 +1,6 @@
 import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult, RunStatus } from "hsctikzbench-cli/output";
+import type { Judgement } from "./judge.ts";
 
 export type { RunResult, RunStatus };
 
@@ -74,7 +75,42 @@ export type SseEvent =
 
 export type SamplePhase = "pending" | "running" | "done" | "interrupted";
 
-export interface SampleState {
+/** The part of a result that says how the run went without saying what produced it. */
+export type RunOutcome = Pick<
+  RunResult,
+  "status" | "error" | "turns" | "renders" | "successfulRenders"
+>;
+
+/** The part of a result that identifies the model and what it cost. */
+export type RunModel = Pick<
+  RunResult,
+  "provider" | "model" | "reasoning" | "usage" | "durationMs" | "startedAt" | "harness"
+>;
+
+/** Where a run came from. Absent from blind listings. */
+export interface RunSource {
+  batch: string;
+  model: RunModel | null;
+}
+
+/** One sample's run in one batch. */
+export interface Run {
+  id: string;
+  phase: SamplePhase;
+  result: RunOutcome | null;
+  hasSubmission: boolean;
+  /** Render file names under `renders/`, in order. */
+  renders: string[];
+  judgement: Judgement | null;
+  source: RunSource | null;
+  /** Live progress while the job runs. Absent from blind listings. */
+  progress: SampleProgress | null;
+}
+
+export const hasSubmission = (run: Run) => run.result?.status === "submitted" && run.hasSubmission;
+
+/** A manifest sample plus what the dataset has for it. Fields are blank for unknown stems. */
+export interface SampleInfo {
   stem: string;
   exam: string;
   question: string;
@@ -82,11 +118,16 @@ export interface SampleState {
   role: string;
   category: string;
   hasCrop: boolean;
-  phase: SamplePhase;
-  result: RunResult | null;
-  renders: string[];
-  hasSubmission: boolean;
-  progress: SampleProgress | null;
+}
+
+/** A sample with its run in every batch. */
+export interface SampleSummary extends SampleInfo {
+  runs: Run[];
+}
+
+/** A sample with its run in one batch. */
+export interface BatchSample extends SampleInfo {
+  run: Run;
 }
 
 export interface StatusCounts {
@@ -111,7 +152,7 @@ export interface BatchSummary {
 export interface BatchDetail {
   name: string;
   job: Job | null;
-  samples: SampleState[];
+  samples: BatchSample[];
   counts: StatusCounts;
   cost: number;
 }

@@ -1,3 +1,4 @@
+import type { Judgement } from "../shared/judge.ts";
 import type {
   BatchDetail,
   BatchSummary,
@@ -6,9 +7,10 @@ import type {
   JobProgress,
   LaunchParams,
   Me,
+  SampleSummary,
   SseEvent
 } from "../shared/types.ts";
-import { json, request } from "./http.ts";
+import { json, request, requestEmpty } from "./http.ts";
 
 export async function fetchMe(): Promise<Me | null> {
   const res = await fetch("/api/me");
@@ -32,10 +34,19 @@ export const launchJob = (params: LaunchParams) => request<Job>("/api/jobs", jso
 export const cancelJob = (id: string) =>
   request<Job>(`/api/jobs/${encodeURIComponent(id)}/cancel`, json("POST"));
 
+export const fetchSamples = (blind: boolean) =>
+  request<SampleSummary[]>(blind ? "/api/samples?blind" : "/api/samples");
+export const fetchSample = (stem: string) =>
+  request<SampleSummary>(`/api/samples/${encodeURIComponent(stem)}`);
+
+export const saveJudgement = (runId: string, judgement: Judgement) =>
+  request<Judgement>(`/api/runs/${encodeURIComponent(runId)}/judgement`, json("PUT", judgement));
+export const clearJudgement = (runId: string) =>
+  requestEmpty(`/api/runs/${encodeURIComponent(runId)}/judgement`, { method: "DELETE" });
+
 export const cropUrl = (stem: string) => `/files/crops/${encodeURIComponent(stem)}.png`;
-export const runFileUrl = (batch: string, stem: string, file: string) =>
-  `/files/runs/${encodeURIComponent(batch)}/${encodeURIComponent(stem)}/` +
-  file.split("/").map(encodeURIComponent).join("/");
+export const runFileUrl = (runId: string, file: string) =>
+  `/runs/${encodeURIComponent(runId)}/${file.split("/").map(encodeURIComponent).join("/")}`;
 
 export function subscribeJob(
   id: string,

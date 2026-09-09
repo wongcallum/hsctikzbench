@@ -1,4 +1,4 @@
-import type { JobStatus, RunStatus, SamplePhase, SampleState } from "../shared/types.ts";
+import type { JobStatus, Run, RunStatus, SamplePhase, SampleInfo } from "../shared/types.ts";
 
 export const money = (n: number) => `$${n.toFixed(n >= 10 ? 2 : 4)}`;
 
@@ -23,9 +23,16 @@ export const relative = (ms: number) => {
 
 export const words = (s: string) => s.replaceAll("_", " ");
 
-export function sampleLabel(sample: { question: string; option: string | null; stem: string }) {
+/** "Q12 (a)" for a manifest sample; the stem for one the manifest does not know. */
+export function sampleLabel(sample: Pick<SampleInfo, "question" | "option" | "stem">): string {
   if (!sample.question) return sample.stem;
   return sample.option ? `Q${sample.question} (${sample.option})` : `Q${sample.question}`;
+}
+
+/** How a run is named in a selector: its batch when known, otherwise its position. */
+export function runLabel(runs: readonly Run[], run: Run): string {
+  if (run.source) return run.source.batch;
+  return `Run ${runs.findIndex((r) => r.id === run.id) + 1}`;
 }
 
 export type Tone = "green" | "orange" | "red" | "blue" | "gray";
@@ -51,12 +58,12 @@ export const phaseTone: Record<SamplePhase, Tone> = {
   interrupted: "orange"
 };
 
-export function sampleStatus(sample: SampleState): { text: string; tone: Tone } {
-  if (sample.phase === "done" && sample.result) {
-    return { text: words(sample.result.status), tone: runTone[sample.result.status] };
+export function runStatus(run: Run): { text: string; tone: Tone } {
+  if (run.phase === "done" && run.result) {
+    return { text: words(run.result.status), tone: runTone[run.result.status] };
   }
-  if (sample.phase === "running" && sample.progress?.turn) {
-    return { text: `turn ${sample.progress.turn}/${sample.progress.maxTurns}`, tone: "blue" };
+  if (run.phase === "running" && run.progress?.turn) {
+    return { text: `turn ${run.progress.turn}/${run.progress.maxTurns}`, tone: "blue" };
   }
-  return { text: sample.phase, tone: phaseTone[sample.phase] };
+  return { text: run.phase, tone: phaseTone[run.phase] };
 }

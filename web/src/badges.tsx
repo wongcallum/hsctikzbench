@@ -1,13 +1,7 @@
 import { Badge } from "@radix-ui/themes";
+import type { Run, SampleSummary } from "../shared/types.ts";
+import { runStatus } from "./format.ts";
 import { judgingCounts, judgingState } from "./sample.ts";
-import type { Run, SampleSummary } from "../../shared/judge.ts";
-
-const STATUS = {
-  submitted: { color: "green", label: "submitted" },
-  max_turns: { color: "orange", label: "max turns" },
-  error: { color: "red", label: "error" },
-  running: { color: "blue", label: "running" }
-} as const;
 
 const JUDGING = {
   running: { color: "blue", label: "awaiting result" },
@@ -18,16 +12,23 @@ const JUDGING = {
   fail: { color: "red", label: "fail" }
 } as const;
 
+/** The run's status: its result, or how far along it is. */
+export function StatusBadge({ run }: { run: Run }) {
+  const status = runStatus(run);
+  return (
+    <Badge color={status.tone} variant="soft" size="1">
+      {status.text}
+    </Badge>
+  );
+}
+
 /** Run status and judging badges for one run. */
 export function RunBadges({ sample, run }: { sample: SampleSummary; run: Run }) {
   const state = judgingState(sample, run);
-  const status = STATUS[run.result?.status ?? "running"];
   const judging = JUDGING[state];
   return (
     <>
-      <Badge color={status.color} variant="soft" size="1">
-        {status.label}
-      </Badge>
+      <StatusBadge run={run} />
       <Badge color={judging.color} variant={state === "unjudged" ? "outline" : "soft"} size="1">
         {judging.label}
       </Badge>
