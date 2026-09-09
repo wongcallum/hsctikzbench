@@ -1,6 +1,6 @@
 import { Callout, Flex, Grid, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { fetchSamples, saveJudgement } from "./api.ts";
+import { clearJudgement, fetchSamples, saveJudgement } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel, type LiveJudgement } from "./JudgingPanel.tsx";
 import { setLeaveGuard, type JudgeLocation, type Mode } from "../location.ts";
@@ -301,6 +301,21 @@ function Workspace({
       .finally(() => updateEditor({ saving: false }));
   }, [run, onPatch, updateEditor]);
 
+  const reset = useCallback(() => {
+    if (saving || !run?.judgement) return;
+    if (!window.confirm("Reset the saved judgement for this run?")) return;
+    updateEditor({ saving: true, actionError: null });
+    clearJudgement(run.id)
+      .then(
+        () => {
+          onPatch(run.id, { judgement: null });
+          updateEditor({ edited: null });
+        },
+        (e: unknown) => updateEditor({ actionError: errorMessage(e) })
+      )
+      .finally(() => updateEditor({ saving: false }));
+  }, [run, saving, onPatch, updateEditor]);
+
   const seekPending = useCallback(
     (step: 1 | -1) => {
       const pairs = sampleRuns(samples);
@@ -360,6 +375,11 @@ function Workspace({
         setVerdict(keyed);
         return;
       }
+      if (event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        reset();
+        return;
+      }
       if (event.key === "Enter") {
         if (target?.closest("a, button, [role=radio]")) return;
         event.preventDefault();
@@ -384,6 +404,7 @@ function Workspace({
     seekPending,
     setVerdict,
     judge,
+    reset,
     cancel
   ]);
 
@@ -447,9 +468,10 @@ function Workspace({
             onLive={onLive}
             onSave={judge}
             onCancel={cancel}
+            onReset={reset}
           />
         ) : (
-          <DetailsPanel run={run} />
+          <DetailsPanel run={run} busy={saving} onReset={reset} />
         )}
       </SampleView>
     </Frame>

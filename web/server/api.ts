@@ -10,7 +10,7 @@ import { batchDetail, listBatches } from "./batches.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
-import { listSamples, locateRun, saveJudgement } from "./judge.ts";
+import { clearJudgement, listSamples, locateRun, saveJudgement } from "./judge.ts";
 import { collectInfo, loadManifest } from "./repo.ts";
 
 const RENDERERS = ["auto", "local", "podman", "docker", "nerdctl"] as const;
@@ -188,6 +188,11 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
   app.put("/api/runs/:id/judgement", async (c) =>
     c.json(await saveJudgement(c.req.param("id"), await jsonBody(c)))
   );
+
+  app.delete("/api/runs/:id/judgement", async (c) => {
+    await clearJudgement(c.req.param("id"));
+    return c.body(null, 204);
+  });
 
   app.get("/files/crops/:file", async (c) => {
     const file = c.req.param("file");

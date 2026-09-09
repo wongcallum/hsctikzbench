@@ -30,6 +30,7 @@ interface Props {
   onLive: (live: LiveJudgement) => void;
   onSave: () => void;
   onCancel: () => void;
+  onReset: () => void;
 }
 
 export function JudgingPanel({
@@ -45,7 +46,8 @@ export function JudgingPanel({
   onReason,
   onLive,
   onSave,
-  onCancel
+  onCancel,
+  onReset
 }: Props) {
   const blocked = !run || !isJudgeable(sample, run) || !viewingSubmission;
 
@@ -136,6 +138,12 @@ export function JudgingPanel({
           Cancel
           <Kbd size="1">esc</Kbd>
         </Button>
+        {run?.judgement && (
+          <Button variant="soft" color="gray" onClick={onReset} disabled={busy}>
+            Reset
+            <Kbd size="1">r</Kbd>
+          </Button>
+        )}
       </Flex>
       {run?.judgement && !dirty && (
         <Text size="1" color="gray">

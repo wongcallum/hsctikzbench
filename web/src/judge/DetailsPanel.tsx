@@ -1,17 +1,19 @@
-import { DataList, Flex, Heading, Kbd, Link, Text } from "@radix-ui/themes";
+import { Button, DataList, Flex, Heading, Kbd, Link, Text } from "@radix-ui/themes";
 import { runFileUrl } from "./api.ts";
 import type { Run } from "../../shared/judge.ts";
 
 interface Props {
   run: Run | null;
+  busy: boolean;
+  onReset: () => void;
 }
 
-export function DetailsPanel({ run }: Props) {
+export function DetailsPanel({ run, busy, onReset }: Props) {
   return (
     <Flex direction="column" gap="3">
       <Heading size="3">Run</Heading>
       {run ? (
-        <Details run={run} />
+        <Details run={run} busy={busy} onReset={onReset} />
       ) : (
         <Text size="2" color="gray">
           No run for this sample.
@@ -24,7 +26,7 @@ export function DetailsPanel({ run }: Props) {
   );
 }
 
-function Details({ run }: { run: Run }) {
+function Details({ run, busy, onReset }: { run: Run; busy: boolean; onReset: () => void }) {
   const source = run.source;
   const model = source?.model ?? null;
   const result = run.result;
@@ -77,6 +79,13 @@ function Details({ run }: { run: Run }) {
           </Link>
         )}
       </Flex>
+      {judgement && (
+        <Flex>
+          <Button size="2" variant="soft" color="gray" onClick={onReset} disabled={busy}>
+            Reset judgement
+          </Button>
+        </Flex>
+      )}
     </>
   );
 }

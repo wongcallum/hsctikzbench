@@ -65,7 +65,8 @@ once. Create the OAuth app at github.com/settings/developers, one per callback U
 - **Judging** lists every run of every sample under an id derived from its batch and stem.
   The judge page asks for the blind listing, which carries neither batch names nor model
   names; the view page shows everything. A verdict is written to `judgement.json` in the
-  run directory.
+  run directory; _Reset_ on either page deletes that file, putting the run back in the
+  pending queue.
 - **Run options** (provider, model, reasoning, turns, parallelism, renderer, resume and
   the sample selection) are remembered in the browser's local storage; the batch name is
   not. _New run like this_ on a batch opens the form with that batch's options instead,

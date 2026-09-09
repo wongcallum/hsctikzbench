@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   hasSubmission,
@@ -143,4 +143,11 @@ export async function saveJudgement(id: string, body: unknown): Promise<Judgemen
     `${JSON.stringify(parsed.data, null, 2)}\n`
   );
   return parsed.data;
+}
+
+// Deliberately skips the checks saving makes: a judgement left on a run that is no longer
+// judgeable is exactly the one worth clearing.
+export async function clearJudgement(id: string): Promise<void> {
+  const location = await locateRun(id);
+  await rm(path.join(location.dir, JUDGEMENT_FILE), { force: true });
 }
