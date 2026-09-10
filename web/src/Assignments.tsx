@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Callout,
@@ -24,7 +25,7 @@ const sorted = (table: Table_): Table_ =>
       .map(([login, batches]) => [login, [...batches].sort()])
   );
 
-/** The owner's editor for which judge sees which batch. Judges come from the users file. */
+/** The owner's editor for who judges which batch. Logins come from the users file. */
 export function Assignments() {
   const [view, setView] = useState<AssignmentsView | null>(null);
   const [draft, setDraft] = useState<Table_>({});
@@ -45,10 +46,10 @@ export function Assignments() {
     void load();
   }, [load]);
 
-  // Judges in the users file, plus any login the assignments file names that is no longer one.
+  // Everyone in the users file, plus any login the assignments file names that has left it.
   const logins = useMemo(() => {
     if (!view) return [];
-    return [...new Set([...view.judges, ...Object.keys(view.assignments)])].sort();
+    return [...new Set([...Object.keys(view.users), ...Object.keys(view.assignments)])].sort();
   }, [view]);
   const dirty = view !== null && !same(draft, view.assignments);
 
@@ -97,9 +98,9 @@ export function Assignments() {
             </Flex>
           </Flex>
           <Text size="2" color="gray">
-            Tick the batches each judge should see. Judges are the logins with the judge role in the
-            users file; you see every batch without an entry. Counts are judgeable runs the judge
-            has finished over the batch's total.
+            Tick the batches each login should judge. Everyone votes blind on what is assigned to
+            them, you included; resolving is separate and covers every batch. Counts are judgeable
+            runs the login has voted on over the batch's total.
           </Text>
           {error && (
             <Callout.Root color="red" size="1">
@@ -108,7 +109,7 @@ export function Assignments() {
           )}
           {view && logins.length === 0 && (
             <Text size="2" color="gray">
-              No judges yet. Add GitHub logins with role "judge" to the users file.
+              No users yet. Add GitHub logins to the users file.
             </Text>
           )}
           {view && logins.length > 0 && (
@@ -129,11 +130,19 @@ export function Assignments() {
                 {logins.map((login) => (
                   <Table.Row key={login}>
                     <Table.RowHeaderCell>
-                      <Flex direction="column">
+                      <Flex direction="column" align="start" gap="1">
                         <Text size="2">{login}</Text>
-                        {!view.judges.includes(login) && (
+                        {view.users[login] ? (
+                          <Badge
+                            color={view.users[login] === "owner" ? "blue" : "gray"}
+                            variant="soft"
+                            size="1"
+                          >
+                            {view.users[login]}
+                          </Badge>
+                        ) : (
                           <Text size="1" color="orange">
-                            not a judge in the users file
+                            not in the users file
                           </Text>
                         )}
                       </Flex>

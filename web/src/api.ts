@@ -23,8 +23,7 @@ export async function fetchMe(): Promise<Me | null> {
   return (await res.json()) as Me;
 }
 
-export const fetchAuthMode = async () =>
-  (await request<{ mode: AuthMode }>("/api/auth")).mode;
+export const fetchAuthMode = async () => (await request<{ mode: AuthMode }>("/api/auth")).mode;
 
 export async function signOut(): Promise<void> {
   const res = await fetch("/auth/logout", { method: "POST" });
@@ -58,6 +57,12 @@ export const clearJudgement = (runId: string, blind: boolean) =>
   request<Run>(blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind), {
     method: "DELETE"
   });
+
+// The owner's resolution of a run, edited in Resolve with every vote in view.
+export const saveResolution = (runId: string, judgement: JudgementInput) =>
+  request<Run>(`/api/runs/${encodeURIComponent(runId)}/resolution`, json("PUT", judgement));
+export const clearResolution = (runId: string) =>
+  request<Run>(`/api/runs/${encodeURIComponent(runId)}/resolution`, { method: "DELETE" });
 
 export const fetchAssignments = () => request<AssignmentsView>("/api/assignments");
 export const saveAssignments = (assignments: Assignments) =>

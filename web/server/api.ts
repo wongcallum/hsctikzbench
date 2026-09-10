@@ -7,19 +7,21 @@ import * as z from "zod";
 import { BATCH_NAME, type LaunchParams } from "../shared/types.ts";
 import { saveAssignments } from "./assignments.ts";
 import { authRoutes, requireOwner, requireUser, type AuthEnv } from "./auth.ts";
-import { batchDetail, listBatches, type RunView } from "./batches.ts";
+import { batchDetail, listBatches } from "./batches.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
 import {
   assignmentsView,
   clearJudgement,
+  clearResolution,
   getSample,
   listSamples,
   locateRun,
-  saveJudgement
+  saveJudgement,
+  saveResolution
 } from "./judge.ts";
-import { judgingContext } from "./judgements.ts";
+import { judgingContext, type RunView } from "./judgements.ts";
 import { collectInfo, loadManifest } from "./repo.ts";
 
 const RENDERERS = ["auto", "local", "podman", "docker", "nerdctl"] as const;
@@ -77,7 +79,8 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     "/api/info",
     "/api/batches",
     "/api/batches/*",
-    "/api/assignments"
+    "/api/assignments",
+    "/api/runs/:id/resolution"
   ]) {
     app.use(prefix, requireOwner);
   }
@@ -206,9 +209,9 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
   });
 
   // Runs are addressed by id, so a blind listing never reveals the batch. Judges are blind
-  // whatever they ask for; the owner asks for it on the judging page.
-  const viewFor = async (c: Context<AuthEnv>): Promise<RunView> => ({
-    blind: c.req.query("blind") !== undefined,
+  // whatever they ask for; the owner asks for it on the Judge tab.
+  const viewFor = async (c: Context<AuthEnv>, blind?: boolean): Promise<RunView> => ({
+    blind: blind ?? c.req.query("blind") !== undefined,
     judging: await judgingContext(c.get("user"))
   });
 
@@ -228,6 +231,15 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     c.json(await clearJudgement(c.req.param("id"), await viewFor(c)))
   );
 
+  // Resolving is done with every vote in view, so these never answer blind.
+  app.put("/api/runs/:id/resolution", async (c) =>
+    c.json(await saveResolution(c.req.param("id"), await jsonBody(c), await viewFor(c, false)))
+  );
+
+  app.delete("/api/runs/:id/resolution", async (c) =>
+    c.json(await clearResolution(c.req.param("id"), await viewFor(c, false)))
+  );
+
   app.get("/files/crops/:file", async (c) => {
     const file = c.req.param("file");
     if (!/^[A-Za-z0-9._-]+\.png$/.test(file)) return c.notFound();
@@ -241,7 +253,7 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     if (!rest) return c.notFound();
     const user = c.get("user");
     if (user.role !== "owner" && !judgeMayRead(rest)) return c.notFound();
-    const run = await locateRun(c.req.param("id"), await judgingContext(user));
+    const run = await locateRun(c.req.param("id"), await viewFor(c, false));
     return sendFile(c, path.join(run.dir, ...rest));
   });
 

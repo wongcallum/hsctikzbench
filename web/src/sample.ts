@@ -25,14 +25,14 @@ export function judgingState(sample: SampleSummary, run: Run): JudgingState {
 }
 
 /**
- * The run's settled state. Only the owner is told how the judges' verdicts combine; for a judge
- * this is their own judgement, which is all they may know.
+ * The run's settled state. Only the owner, unblinded, is told how the votes combine; in a
+ * blind listing this is the viewer's own vote, which is all they may know.
  */
 export function resolvedState(sample: SampleSummary, run: Run): ResolvedState {
   const own = judgingState(sample, run);
   if (own === "running" || own === "unjudgeable") return own;
   if (!hasSubmission(run)) return "fail";
-  if (run.resolution) return run.resolution.verdict;
+  if (run.standing) return run.standing.verdict;
   return own === "pass" || own === "fail" ? own : "pending";
 }
 
@@ -163,14 +163,15 @@ export interface ScoreLine {
 }
 
 /**
- * One score line per batch when the listing names batches; a single line over every run when
- * blind. A judge sees only how far through their assignment they are.
+ * One score line per batch when the listing names batches. A blind listing holds only the
+ * viewer's assignment, so it gets a single line on how far through it they are.
  */
 export function scoreLines(samples: SampleSummary[], mode: Mode, role: UserRole): ScoreLine[] {
   const pairs = sampleRuns(samples);
   if (pairs.length === 0) return [{ batch: null, summary: "no runs" }];
-  if (role !== "owner") return [{ batch: null, summary: assignedSummary(pairs) }];
-  if (mode === "judge") return [{ batch: null, summary: scoreSummary(pairs) }];
+  if (role !== "owner" || mode === "judge") {
+    return [{ batch: null, summary: assignedSummary(pairs) }];
+  }
   const batches = [...new Set(pairs.map(({ run }) => run.source?.batch ?? ""))].sort();
   return batches.map((batch) => ({
     batch,

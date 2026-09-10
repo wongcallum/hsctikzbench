@@ -15,7 +15,15 @@ import type {
 } from "../shared/types.ts";
 import { config } from "./env.ts";
 import type { JobManager } from "./jobs.ts";
-import { ownJudgement, readJudgements, resolve, runId, type JudgingContext } from "./judgements.ts";
+import {
+  ownJudgement,
+  readJudgements,
+  readResolution,
+  runId,
+  standing,
+  type JudgingContext,
+  type RunView
+} from "./judgements.ts";
 import type { LoadedManifest } from "./repo.ts";
 
 interface CachedResult {
@@ -96,12 +104,7 @@ function count(counts: StatusCounts, phase: SamplePhase, result: { status: RunSt
   else if (phase !== "done") counts[phase]++;
 }
 
-/** Who is asking for a run, and whether they may learn where it came from. */
-export interface RunView {
-  /** Drops everything that could say which model made the run. Always set for judges. */
-  blind: boolean;
-  judging: JudgingContext;
-}
+export type { RunView };
 
 export interface RunContext {
   /** Whether the run directory exists; a missing one is pending. */
@@ -116,15 +119,17 @@ export async function readRun(batch: string, stem: string, ctx: RunContext): Pro
   const dir = path.join(config.runsDir, batch, stem);
   const { judging } = ctx.view;
   const blind = ctx.view.blind || judging.role !== "owner";
-  const [{ result }, hasSubmission, renders, judgements] = ctx.exists
+  const [{ result }, hasSubmission, renders, judgements, resolution] = ctx.exists
     ? await Promise.all([
         readResult(dir),
         isFile(path.join(dir, "submission.png")),
         listRenders(dir),
-        readJudgements(dir)
+        readJudgements(dir),
+        readResolution(dir)
       ])
-    : [{ result: null }, false, [], []];
-  const owner = judging.role === "owner";
+    : [{ result: null }, false, [], [], null];
+  // Only the owner, and only unblinded, learns what the others said or how a run stands.
+  const unblinded = !blind;
   return {
     id: runId(batch, stem),
     phase: phaseOf(result, ctx.exists, ctx.running),
@@ -139,9 +144,9 @@ export async function readRun(batch: string, stem: string, ctx: RunContext): Pro
     hasSubmission,
     renders,
     judgement: ownJudgement(judgements, judging.login),
-    // Judges never learn what the others said, or how far a run is from settled.
-    judgements: owner ? judgements : null,
-    resolution: owner ? resolve(judgements, judging.judges.get(batch) ?? [], judging.roles) : null,
+    judgements: unblinded ? judgements : null,
+    resolution: unblinded ? resolution : null,
+    standing: unblinded ? standing(judgements, resolution, judging.judges.get(batch) ?? []) : null,
     source: blind
       ? null
       : {

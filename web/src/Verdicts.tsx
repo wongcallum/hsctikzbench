@@ -2,7 +2,7 @@ import { Badge, DataList, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import type { Run } from "../shared/types.ts";
 import { words } from "./format.ts";
 
-const RESOLUTION = {
+const STANDING = {
   pass: "green",
   fail: "red",
   disputed: "purple",
@@ -15,54 +15,55 @@ const list = (logins: string[]) => logins.join(", ");
 
 /** Why the run needs the owner, naming the judges involved. */
 function disputeNote(run: Run): string {
-  const resolution = run.resolution!;
-  const own = run.judgement;
-  const judges = (run.judgements ?? []).filter((j) => j.verdict !== own?.verdict);
-  const disagreeing = list(judges.map((j) => j.judge));
-  switch (resolution.cause) {
+  const standing = run.standing!;
+  const votes = run.judgements ?? [];
+  switch (standing.cause) {
     case "split":
-      return "judges differ";
+      return "votes differ";
     case "needs_review":
-      return `${list((run.judgements ?? []).filter((j) => j.verdict === "needs_review").map((j) => j.judge))} asked for review`;
+      return `${list(votes.filter((j) => j.verdict === "needs_review").map((j) => j.judge))} asked for review`;
     case "held":
       return "you asked to look again";
-    case "contested":
-      return `${disagreeing} disagree${judges.length === 1 ? "s" : ""} with your blind verdict`;
-    case "reopened":
-      return `${disagreeing} disagreed after you settled it`;
+    case "reopened": {
+      const resolution = run.resolution!;
+      const disagreeing = votes.filter(
+        (j) => j.verdict !== resolution.verdict && j.judgedAt > resolution.judgedAt
+      );
+      return `${list(disagreeing.map((j) => j.judge))} voted against the resolution after it was given`;
+    }
     default:
       return "";
   }
 }
 
-/** How the run stands across judges. Rendered only for the owner, who is told. */
-export function ResolutionItem({ run }: { run: Run }) {
-  const resolution = run.resolution;
-  if (!resolution) return null;
+/** Where the run stands across the votes. Rendered only for the owner, who is told. */
+export function StandingItem({ run }: { run: Run }) {
+  const standing = run.standing;
+  if (!standing) return null;
   const note =
-    resolution.verdict === "disputed"
+    standing.verdict === "disputed"
       ? disputeNote(run)
-      : resolution.by === "owner"
-        ? "settled by you"
-        : resolution.by === "judges"
-          ? "judges agree"
-          : resolution.missing.length > 0
-            ? `waiting on ${resolution.missing.join(", ")}`
-            : "no verdicts yet";
+      : standing.by === "owner"
+        ? "settled by resolution"
+        : standing.by === "judges"
+          ? "votes agree"
+          : standing.missing.length > 0
+            ? `waiting on ${standing.missing.join(", ")}`
+            : "no votes yet";
   return (
     <DataList.Item>
-      <DataList.Label minWidth="80px">Verdict</DataList.Label>
+      <DataList.Label minWidth="80px">Standing</DataList.Label>
       <DataList.Value>
         <Flex align="center" gap="2" wrap="wrap">
-          <Badge color={RESOLUTION[resolution.verdict]} variant="soft" size="1">
-            {resolution.verdict}
+          <Badge color={STANDING[standing.verdict]} variant="soft" size="1">
+            {standing.verdict}
           </Badge>
           <Text size="1" color="gray">
             {note}
           </Text>
-          {resolution.verdict === "disputed" && resolution.missing.length > 0 && (
+          {standing.verdict === "disputed" && standing.missing.length > 0 && (
             <Text size="1" color="gray">
-              · waiting on {resolution.missing.join(", ")}
+              · waiting on {standing.missing.join(", ")}
             </Text>
           )}
         </Flex>
@@ -71,8 +72,30 @@ export function ResolutionItem({ run }: { run: Run }) {
   );
 }
 
-/** Every judge's verdict and reason side by side. Owner only. */
-export function JudgeVerdicts({ run, title = "Judges" }: { run: Run; title?: string }) {
+/** The owner's resolution of the run, when one has been given. Owner only. */
+export function ResolutionItem({ run }: { run: Run }) {
+  const resolution = run.resolution;
+  if (!resolution) return null;
+  return (
+    <DataList.Item>
+      <DataList.Label minWidth="80px">Resolution</DataList.Label>
+      <DataList.Value>
+        <Flex align="center" gap="2" wrap="wrap">
+          <Badge color={VERDICT[resolution.verdict]} variant="soft" size="1">
+            {words(resolution.verdict)}
+          </Badge>
+          <Text size="1" color="gray" title={new Date(resolution.judgedAt).toLocaleString()}>
+            by {resolution.by}
+            {resolution.reason && ` · ${resolution.reason}`}
+          </Text>
+        </Flex>
+      </DataList.Value>
+    </DataList.Item>
+  );
+}
+
+/** Every judge's vote and reason side by side. Owner only. */
+export function JudgeVerdicts({ run, title = "Votes" }: { run: Run; title?: string }) {
   const judgements = run.judgements;
   if (!judgements) return null;
   return (
@@ -80,7 +103,7 @@ export function JudgeVerdicts({ run, title = "Judges" }: { run: Run; title?: str
       <Heading size="2">{title}</Heading>
       {judgements.length === 0 ? (
         <Text size="2" color="gray">
-          No judgements yet.
+          No votes yet.
         </Text>
       ) : (
         <Table.Root size="1" variant="surface">
@@ -97,7 +120,6 @@ export function JudgeVerdicts({ run, title = "Judges" }: { run: Run; title?: str
                 <Table.RowHeaderCell>
                   <Text size="1" title={new Date(judgement.judgedAt).toLocaleString()}>
                     {judgement.judge}
-                    {judgement.blind && <Text color="gray"> (blind)</Text>}
                   </Text>
                 </Table.RowHeaderCell>
                 <Table.Cell>

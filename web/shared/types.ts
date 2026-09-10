@@ -1,6 +1,6 @@
 import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult, RunStatus } from "hsctikzbench-cli/output";
-import type { Judgement, StoredJudgement } from "./judge.ts";
+import type { Judgement, StoredJudgement, StoredResolution } from "./judge.ts";
 
 export type { RunResult, RunStatus };
 
@@ -14,7 +14,7 @@ export interface Me {
   role: UserRole;
 }
 
-/** Which judges may see which batches. The owner sees every batch without an entry. */
+/** Which batches each login judges. The owner judges by assignment like anyone else. */
 export type Assignments = Record<string, string[]>;
 
 export interface JudgeProgress {
@@ -24,8 +24,8 @@ export interface JudgeProgress {
 
 export interface AssignmentsView {
   assignments: Assignments;
-  /** Logins with the judge role in the users file. */
-  judges: string[];
+  /** Every login in the users file with its role; all of them can be assigned. */
+  users: Record<string, UserRole>;
   /** Batches on disk. */
   batches: string[];
   /** Per judge, per assigned batch: judgeable runs and how many they have judged. */
@@ -117,18 +117,18 @@ export interface RunSource {
 export type ResolvedVerdict = "pass" | "fail" | "disputed" | "pending";
 
 /**
- * Why a disputed run needs the owner: the judges split; a judge asked for review; the owner
- * asked to look again (held); a judge disagrees with the owner's blind verdict (contested); a
- * judge disagreed after the owner settled it in Resolve (reopened).
+ * Why a disputed run needs the owner: the votes split; a judge asked for review; the owner
+ * asked to look again (held); a judge voted against the resolution after it was given
+ * (reopened).
  */
-export type DisputeCause = "split" | "needs_review" | "held" | "contested" | "reopened";
+export type DisputeCause = "split" | "needs_review" | "held" | "reopened";
 
-/** How the judges' verdicts on a run combine. */
-export interface Resolution {
+/** Where a run stands once the votes and any resolution combine. */
+export interface Standing {
   verdict: ResolvedVerdict;
-  /** Whose verdicts settled it: the owner's, or the judges' unanimous one. */
+  /** What settled it: the owner's resolution, or the judges' unanimous votes. */
   by: "owner" | "judges" | null;
-  /** Assigned judges who have not given a verdict. */
+  /** Assigned judges who have not voted. */
   missing: string[];
   cause: DisputeCause | null;
 }
@@ -141,12 +141,14 @@ export interface Run {
   hasSubmission: boolean;
   /** Render file names under `renders/`, in order. */
   renders: string[];
-  /** The requesting user's own judgement. */
+  /** The requesting user's own vote. */
   judgement: Judgement | null;
-  /** Every judge's judgement. Owner only; judges never see each other's. */
+  /** Every judge's vote. Owner only, and never in a blind listing. */
   judgements: StoredJudgement[] | null;
-  /** The run's settled verdict across judges. Owner only. */
-  resolution: Resolution | null;
+  /** The owner's settling verdict, if given. Owner only, and never in a blind listing. */
+  resolution: StoredResolution | null;
+  /** Where the run stands across the votes. Owner only, and never in a blind listing. */
+  standing: Standing | null;
   source: RunSource | null;
   /** Live progress while the job runs. Absent from blind listings. */
   progress: SampleProgress | null;

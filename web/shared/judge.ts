@@ -22,17 +22,24 @@ const Stamped = Fields.extend({ judgedAt: z.iso.datetime() });
 /** A verdict as the judge who gave it sees it back. */
 export const JudgementSchema = Stamped.refine(needsReason.check, needsReason.params);
 
+/** What is written to `judgements/<login>.json`: a judge's vote, and who gave it. */
+export const StoredJudgementSchema = Stamped.extend({ judge: z.string().min(1) }).refine(
+  needsReason.check,
+  needsReason.params
+);
+
 /**
- * What is written to `judgements/<login>.json`: the verdict, who gave it and, for the owner,
- * whether it was given blind on the Judge tab rather than in Resolve with the judges' verdicts
- * in view. A blind owner verdict is one opinion among the judges; a Resolve one settles.
+ * What is written to a run's `resolution.json`: the owner's settling verdict, given in Resolve
+ * with every vote in view, and which owner gave it. Kept apart from the owner's own vote, which
+ * is one file among the judges' like any other.
  */
-export const StoredJudgementSchema = Stamped.extend({
-  judge: z.string().min(1),
-  blind: z.boolean().optional()
-}).refine(needsReason.check, needsReason.params);
+export const StoredResolutionSchema = Stamped.extend({ by: z.string().min(1) }).refine(
+  needsReason.check,
+  needsReason.params
+);
 
 export type JudgementInput = z.infer<typeof JudgementInputSchema>;
 export type Judgement = z.infer<typeof JudgementSchema>;
 export type StoredJudgement = z.infer<typeof StoredJudgementSchema>;
+export type StoredResolution = z.infer<typeof StoredResolutionSchema>;
 export type Verdict = Judgement["verdict"];

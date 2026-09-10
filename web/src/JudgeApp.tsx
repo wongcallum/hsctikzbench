@@ -1,8 +1,14 @@
 import { Callout, DataList, Flex, Grid, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { RUBRIC_VERSION, type Verdict } from "../shared/judge.ts";
+import { RUBRIC_VERSION, type JudgementInput, type Verdict } from "../shared/judge.ts";
 import type { Run, SampleSummary, UserRole } from "../shared/types.ts";
-import { clearJudgement, fetchSamples, saveJudgement } from "./api.ts";
+import {
+  clearJudgement,
+  clearResolution,
+  fetchSamples,
+  saveJudgement,
+  saveResolution
+} from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { JudgingPanel, type LiveJudgement } from "./JudgingPanel.tsx";
 import { setLeaveGuard, type JudgeLocation, type Mode } from "./location.ts";
@@ -18,7 +24,7 @@ import {
 } from "./sample.ts";
 import { SampleSidebar } from "./SampleSidebar.tsx";
 import { SampleView } from "./SampleView.tsx";
-import { JudgeVerdicts, ResolutionItem } from "./Verdicts.tsx";
+import { JudgeVerdicts, ResolutionItem, StandingItem } from "./Verdicts.tsx";
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -80,12 +86,17 @@ export function JudgeApp({ location, setLocation, role }: AppProps) {
   );
   // Sidebar is memoised on its props, so this must stay referentially stable.
   const scores = useMemo(() => scoreLines(samples, mode, role), [samples, mode, role]);
+  const unassigned = !loading && samples.every((s) => s.runs.length === 0);
   const empty =
     samples.length === 0
       ? "The manifest has no samples."
       : mode === "resolve"
         ? "No disputes to settle."
-        : "Nothing left to judge.";
+        : unassigned
+          ? role === "owner"
+            ? "No batches are assigned to you. Assign yourself some on the Judges tab."
+            : "No batches are assigned to you yet."
+          : "Nothing left to judge.";
   const sample = listed.find((s) => s.stem === location.stem) ?? listed[0] ?? null;
   const runs = useMemo(
     () => (sample ? listedRuns(sample, mode, location.run) : []),
@@ -205,7 +216,9 @@ function Workspace({
   onPatch
 }: WorkspaceProps) {
   const selection = `${mode}/${run?.id ?? sample.stem}`;
-  const saved = run?.judgement ?? null;
+  // Judge edits the viewer's own vote; Resolve edits the owner's separate resolution.
+  const resolving = mode === "resolve";
+  const saved = (resolving ? run?.resolution : run?.judgement) ?? null;
   const savedVerdict = saved?.verdict ?? null;
   const savedReason = saved?.reason ?? "";
   const restingLive = (): LiveJudgement => ({
@@ -298,11 +311,12 @@ function Workspace({
     // Blocks a second save keyed before the saving flag has made it back down to the panel.
     live.current = { ...live.current, canSave: false };
     updateEditor({ saving: true, actionError: null });
-    saveJudgement(
-      run.id,
-      { rubricVersion: RUBRIC_VERSION, verdict: chosen, reason: typed.trim() },
-      blind
-    )
+    const judgement: JudgementInput = {
+      rubricVersion: RUBRIC_VERSION,
+      verdict: chosen,
+      reason: typed.trim()
+    };
+    (resolving ? saveResolution(run.id, judgement) : saveJudgement(run.id, judgement, blind))
       .then(
         (saved) => {
           onPatch(run.id, saved);
@@ -311,13 +325,14 @@ function Workspace({
         (e: unknown) => updateEditor({ actionError: errorMessage(e) })
       )
       .finally(() => updateEditor({ saving: false }));
-  }, [run, blind, onPatch, updateEditor]);
+  }, [run, blind, resolving, onPatch, updateEditor]);
 
   const reset = useCallback(() => {
-    if (saving || !run?.judgement) return;
-    if (!window.confirm("Reset the saved judgement for this run?")) return;
+    if (saving || !run || !saved) return;
+    const what = resolving ? "resolution" : "vote";
+    if (!window.confirm(`Reset the saved ${what} for this run?`)) return;
     updateEditor({ saving: true, actionError: null });
-    clearJudgement(run.id, blind)
+    (resolving ? clearResolution(run.id) : clearJudgement(run.id, blind))
       .then(
         (cleared) => {
           onPatch(run.id, cleared);
@@ -326,7 +341,7 @@ function Workspace({
         (e: unknown) => updateEditor({ actionError: errorMessage(e) })
       )
       .finally(() => updateEditor({ saving: false }));
-  }, [run, saving, blind, onPatch, updateEditor]);
+  }, [run, saved, saving, blind, resolving, onPatch, updateEditor]);
 
   // Space seeks the next run needing this mode's attention: unjudged when judging, disputed
   // when resolving.
@@ -474,7 +489,7 @@ function Workspace({
           <DetailsPanel run={run} busy={saving} onReset={reset} />
         ) : (
           <Flex direction="column" gap="4">
-            {mode === "resolve" && run && <Dispute run={run} />}
+            {resolving && run && <Dispute run={run} />}
             <JudgingPanel
               sample={sample}
               run={run}
@@ -484,7 +499,7 @@ function Workspace({
               savedReason={savedReason}
               busy={saving}
               viewingSubmission={viewingSubmission}
-              confirmable={mode === "resolve" && run?.resolution?.verdict === "disputed"}
+              confirmable={resolving && run?.standing?.verdict === "disputed"}
               onVerdict={setVerdict}
               onReason={commitReason}
               onLive={onLive}
@@ -499,7 +514,7 @@ function Workspace({
   );
 }
 
-/** What the owner needs to settle a run: where it came from and what each judge said. */
+/** What the owner needs to settle a run: where it came from and what each judge voted. */
 function Dispute({ run }: { run: Run }) {
   const model = run.source?.model;
   return (
@@ -519,12 +534,13 @@ function Dispute({ run }: { run: Run }) {
             </DataList.Value>
           </DataList.Item>
         )}
+        <StandingItem run={run} />
         <ResolutionItem run={run} />
       </DataList.Root>
       <JudgeVerdicts run={run} />
       <Text size="2" color="gray">
-        Saving here settles the run, until a judge disagrees after you. Judges are not shown each
-        other's verdicts or yours.
+        Saving here writes a resolution apart from your own vote. It settles the run until a judge
+        votes against it afterwards. Judges are not shown each other's votes, or this.
       </Text>
     </Flex>
   );

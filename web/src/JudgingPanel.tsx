@@ -146,16 +146,16 @@ export function JudgingPanel({
           Cancel
           <Kbd size="1">esc</Kbd>
         </Button>
-        {run?.judgement && (
+        {savedVerdict && (
           <Button variant="soft" color="gray" onClick={onReset} disabled={busy}>
             Reset
             <Kbd size="1">r</Kbd>
           </Button>
         )}
       </Flex>
-      {run?.judgement && !dirty && (
+      {savedVerdict && !dirty && (
         <Text size="1" color="gray">
-          Saved: {run.judgement.verdict.replaceAll("_", " ")}
+          Saved: {savedVerdict.replaceAll("_", " ")}
         </Text>
       )}
       <Text size="1" color="gray">

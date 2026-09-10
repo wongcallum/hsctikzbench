@@ -59,7 +59,7 @@ pnpm build && pnpm start
 
 ### Judgement
 
-This repository is built around a multi-judge model, where judges can individually pass, fail or flag for review each run assigned to them, and conflicts are resolved by the owner. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `web/users.json`:
+This repository is built around a multi-judge model, where judges (including the owner) can individually pass, fail or flag for review each run assigned to them, and conflicts are resolved in a separate interface by the owner. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `web/users.json`:
 
 ```json
 { "owner": { "role": "owner" }, "judge": { "role": "judge" } }

@@ -10,27 +10,20 @@ import {
   type SampleSummary
 } from "../shared/types.ts";
 import { loadAssignments } from "./assignments.ts";
-import {
-  hasCrop,
-  isDir,
-  isFile,
-  listDirs,
-  readResult,
-  readRun,
-  sampleInfo,
-  type RunView
-} from "./batches.ts";
+import { hasCrop, isDir, isFile, listDirs, readResult, readRun, sampleInfo } from "./batches.ts";
 import { config } from "./env.ts";
 import { HttpError } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
 import {
   blindOrder,
   judgementFile,
-  mayJudge,
+  maySee,
   removeJudgement,
+  removeResolution,
   runId,
   writeJudgement,
-  type JudgingContext
+  writeResolution,
+  type RunView
 } from "./judgements.ts";
 import { loadManifest, type LoadedManifest } from "./repo.ts";
 import { loadUsers } from "./users.ts";
@@ -62,11 +55,11 @@ async function refreshRunIndex(): Promise<RunIndex> {
   return (runIndex = { manifest, batches, locations });
 }
 
-/** Finds a run by id. A judge is told nothing about runs outside their assigned batches. */
-export async function locateRun(id: string, judging: JudgingContext): Promise<RunLocation> {
+/** Finds a run by id. The viewer is told nothing about runs in batches they may not see. */
+export async function locateRun(id: string, view: RunView): Promise<RunLocation> {
   let location = (runIndex ?? (await refreshRunIndex())).locations.get(id);
   if (!location) location = (await refreshRunIndex()).locations.get(id);
-  if (!location || !mayJudge(judging, location.batch) || !(await isDir(location.dir))) {
+  if (!location || !maySee(view, location.batch) || !(await isDir(location.dir))) {
     throw new HttpError(404, `no run ${id}`);
   }
   return location;
@@ -95,8 +88,8 @@ async function batchStates(batches: string[], jobs: JobManager): Promise<BatchSt
   );
 }
 
-const visibleBatches = (batches: string[], judging: JudgingContext) =>
-  batches.filter((batch) => mayJudge(judging, batch));
+const visibleBatches = (batches: string[], view: RunView) =>
+  batches.filter((batch) => maySee(view, batch));
 
 async function summarize(
   exam: string,
@@ -130,7 +123,7 @@ async function summarize(
 
 export async function listSamples(jobs: JobManager, view: RunView): Promise<SampleSummary[]> {
   const { manifest, batches } = await refreshRunIndex();
-  const states = await batchStates(visibleBatches(batches, view.judging), jobs);
+  const states = await batchStates(visibleBatches(batches, view), jobs);
   return Promise.all(
     manifest.exams.flatMap((exam) =>
       exam.samples.map((sample) => summarize(exam.id, sample, states, view))
@@ -147,35 +140,63 @@ export async function getSample(
   const exam = manifest.exams.find((e) => e.id === manifest.stems.get(stem));
   const sample = exam?.samples.find((s) => s.stem === stem);
   if (!exam || !sample) throw new HttpError(404, `no sample ${stem}`);
-  const states = await batchStates(visibleBatches(batches, view.judging), jobs);
+  const states = await batchStates(visibleBatches(batches, view), jobs);
   return summarize(exam.id, sample, states, view);
 }
 
 const readFinishedRun = (location: RunLocation, view: RunView) =>
   readRun(location.batch, location.stem, { exists: true, running: false, progress: null, view });
 
-/** Writes the requesting user's judgement and returns the run as they may see it. */
-export async function saveJudgement(id: string, body: unknown, view: RunView): Promise<Run> {
+function parseJudgement(body: unknown) {
   const parsed = JudgementInputSchema.safeParse(body);
   if (!parsed.success) throw new HttpError(400, `judgement: ${parsed.error.issues[0]!.message}`);
-  const location = await locateRun(id, view.judging);
+  return parsed.data;
+}
+
+/** A run with a submission and a reference crop, or the reason it cannot be judged. */
+async function judgeableRun(location: RunLocation, view: RunView): Promise<Run> {
   const run = await readFinishedRun(location, view);
   if (!run.result) throw new HttpError(409, "run has not finished");
   if (!hasSubmission(run)) throw new HttpError(409, "no submission; already counted as a failure");
   if (!(await hasCrop(location.stem))) {
     throw new HttpError(409, "a reference crop is required to judge this submission");
   }
-  // Only the owner's verdicts distinguish blind from considered; judges are always blind.
-  const blind = view.judging.role === "owner" && view.blind;
-  await writeJudgement(location.dir, view.judging.login, parsed.data, blind);
+  return run;
+}
+
+/**
+ * Writes the requesting user's vote and returns the run as they may see it. Voting takes an
+ * assignment, whoever votes: the run is located as if blind, so the owner cannot vote on a
+ * batch they are not assigned to.
+ */
+export async function saveJudgement(id: string, body: unknown, view: RunView): Promise<Run> {
+  const judgement = parseJudgement(body);
+  const location = await locateRun(id, { ...view, blind: true });
+  await judgeableRun(location, view);
+  await writeJudgement(location.dir, view.judging.login, judgement);
   return readFinishedRun(location, view);
 }
 
-// Deliberately skips the checks saving makes: a judgement left on a run that is no longer
-// judgeable is exactly the one worth clearing. Only the user's own judgement is touched.
+// Deliberately skips the checks saving makes: a vote left on a run that is no longer
+// judgeable is exactly the one worth clearing. Only the user's own vote is touched.
 export async function clearJudgement(id: string, view: RunView): Promise<Run> {
-  const location = await locateRun(id, view.judging);
+  const location = await locateRun(id, view);
   await removeJudgement(location.dir, view.judging.login);
+  return readFinishedRun(location, view);
+}
+
+/** Writes the owner's resolution. The route admits only owners; any batch is theirs to settle. */
+export async function saveResolution(id: string, body: unknown, view: RunView): Promise<Run> {
+  const judgement = parseJudgement(body);
+  const location = await locateRun(id, view);
+  await judgeableRun(location, view);
+  await writeResolution(location.dir, view.judging.login, judgement);
+  return readFinishedRun(location, view);
+}
+
+export async function clearResolution(id: string, view: RunView): Promise<Run> {
+  const location = await locateRun(id, view);
+  await removeResolution(location.dir);
   return readFinishedRun(location, view);
 }
 
@@ -186,7 +207,6 @@ export async function assignmentsView(): Promise<AssignmentsView> {
     loadUsers(),
     listDirs(config.runsDir)
   ]);
-  const judges = [...users].filter(([, role]) => role === "judge").map(([login]) => login);
   const judgeable = new Map<string, Promise<string[]>>();
   const judgeableStems = (batch: string) => {
     let pending = judgeable.get(batch);
@@ -214,7 +234,7 @@ export async function assignmentsView(): Promise<AssignmentsView> {
       progress[login] = byBatch;
     })
   );
-  return { assignments, judges, batches, progress };
+  return { assignments, users: Object.fromEntries(users), batches, progress };
 }
 
 /** Stems in a batch with a submission and a reference crop, i.e. runs a judge can act on. */
