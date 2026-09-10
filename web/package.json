@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n server,vite -c blue,magenta \"tsx watch --clear-screen=false server/main.ts\" \"vite\"",
+    "dev:fake": "RUNNER_BENCH_COMMAND='node scripts/fake-bench.mjs' pnpm dev",
     "server": "tsx server/main.ts",
     "build": "vite build",
     "start": "NODE_ENV=production tsx server/main.ts",
