@@ -41,7 +41,8 @@ export const loginCommand = buildCommand({
       parameters: [
         {
           brief: "pi-ai provider id",
-          parse: String
+          parse: String,
+          placeholder: "provider"
         }
       ]
     },
