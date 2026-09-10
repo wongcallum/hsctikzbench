@@ -2,6 +2,7 @@ import type { JudgementInput } from "../shared/judge.ts";
 import type {
   Assignments,
   AssignmentsView,
+  AuthMode,
   BatchDetail,
   BatchSummary,
   Info,
@@ -21,6 +22,9 @@ export async function fetchMe(): Promise<Me | null> {
   if (!res.ok) throw new Error(await res.text());
   return (await res.json()) as Me;
 }
+
+export const fetchAuthMode = async () =>
+  (await request<{ mode: AuthMode }>("/api/auth")).mode;
 
 export async function signOut(): Promise<void> {
   const res = await fetch("/auth/logout", { method: "POST" });

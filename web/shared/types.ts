@@ -6,6 +6,9 @@ export type { RunResult, RunStatus };
 
 export type UserRole = "owner" | "judge";
 
+/** How the server signs people in: GitHub OAuth, or everyone as the single local owner. */
+export type AuthMode = "github" | "single";
+
 export interface Me {
   login: string;
   role: UserRole;

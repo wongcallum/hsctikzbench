@@ -1,11 +1,11 @@
 import { readFile, stat } from "node:fs/promises";
 import * as z from "zod";
 import type { Me, UserRole } from "../shared/types.ts";
-import { config } from "./env.ts";
+import { config, SINGLE_USER_LOGIN } from "./env.ts";
 
 export type User = Me;
 
-/** GitHub logins: letters, digits and dashes. Dots and underscores are tolerated for dev users. */
+/** GitHub logins: letters, digits and dashes. Dots and underscores are tolerated. */
 export const LOGIN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
 /** Logins are case-insensitive; this is the form used for file names and lookups. */
@@ -16,6 +16,10 @@ const UsersSchema = z.record(
   z.strictObject({ role: z.enum(["owner", "judge"]) })
 );
 
+/** Users that exist without a users file: the single-user owner, when that mode is on. */
+const builtinUsers = () =>
+  new Map<string, UserRole>(config.singleUser ? [[loginKey(SINGLE_USER_LOGIN), "owner"]] : []);
+
 let cached: { mtimeMs: number; size: number; users: Map<string, UserRole> } | null = null;
 
 export async function loadUsers(): Promise<Map<string, UserRole>> {
@@ -24,10 +28,10 @@ export async function loadUsers(): Promise<Map<string, UserRole>> {
     info = await stat(config.usersFile);
   } catch {
     cached = null;
-    return new Map();
+    return builtinUsers();
   }
   if (cached && cached.mtimeMs === info.mtimeMs && cached.size === info.size) return cached.users;
-  const users = new Map<string, UserRole>();
+  const users = builtinUsers();
   try {
     const parsed = UsersSchema.parse(JSON.parse(await readFile(config.usersFile, "utf8")));
     for (const [login, { role }] of Object.entries(parsed)) users.set(loginKey(login), role);

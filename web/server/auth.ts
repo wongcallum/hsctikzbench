@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { Hono, type MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { sign, verify } from "hono/jwt";
-import { config } from "./env.ts";
+import { config, SINGLE_USER_LOGIN } from "./env.ts";
 import { HttpError } from "./http.ts";
 import { findUser, type User } from "./users.ts";
 
@@ -104,10 +104,8 @@ export function authRoutes(): Hono<AuthEnv> {
   const app = new Hono<AuthEnv>();
 
   app.get("/auth/login", async (c) => {
-    if (config.devUser !== null) {
-      const user = await findUser(config.devUser);
-      if (!user) return c.redirect(denied("unknown", config.devUser));
-      await setSession(c, user.login);
+    if (config.singleUser) {
+      await setSession(c, SINGLE_USER_LOGIN);
       return c.redirect("/");
     }
     if (!config.github) throw new HttpError(503, "GitHub sign-in is not configured");
@@ -146,6 +144,10 @@ export function authRoutes(): Hono<AuthEnv> {
     deleteCookie(c, SESSION_COOKIE, cookieOptions());
     return c.body(null, 204);
   });
+
+  app.get("/api/auth", (c) =>
+    c.json({ mode: config.singleUser ? "single" : "github" })
+  );
 
   app.get("/api/me", requireUser, (c) => c.json(c.get("user")));
 

@@ -23,8 +23,7 @@ export const env = createEnv({
     ASSIGNMENTS_FILE: z.string().min(1).optional(),
     GITHUB_CLIENT_ID: z.string().min(1).optional(),
     GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
-    PUBLIC_URL: z.url().optional(),
-    AUTH_DEV_USER: z.string().min(1).optional()
+    PUBLIC_URL: z.url().optional()
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true
@@ -32,8 +31,6 @@ export const env = createEnv({
 
 const production = env.NODE_ENV === "production";
 if (production) {
-  if (env.AUTH_DEV_USER !== undefined)
-    throw new Error("AUTH_DEV_USER must not be set in production");
   if (env.SESSION_SECRET === undefined) throw new Error("SESSION_SECRET is required in production");
   if (env.GITHUB_CLIENT_ID === undefined || env.GITHUB_CLIENT_SECRET === undefined) {
     throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required in production");
@@ -41,6 +38,14 @@ if (production) {
 }
 
 const publicUrl = (env.PUBLIC_URL ?? `http://localhost:${env.PORT}`).replace(/\/$/, "");
+
+const github =
+  env.GITHUB_CLIENT_ID !== undefined && env.GITHUB_CLIENT_SECRET !== undefined
+    ? { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET }
+    : null;
+
+export const SINGLE_USER_LOGIN = "local";
+const singleUser = !production && github === null;
 
 export const config = {
   root: local("../"),
@@ -64,11 +69,8 @@ export const config = {
   sessionSecret: env.SESSION_SECRET ?? randomBytes(32).toString("hex"),
   publicUrl,
   secureCookies: publicUrl.startsWith("https:"),
-  github:
-    env.GITHUB_CLIENT_ID !== undefined && env.GITHUB_CLIENT_SECRET !== undefined
-      ? { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET }
-      : null,
-  devUser: env.AUTH_DEV_USER ?? null
+  github,
+  singleUser
 };
 
 export function repoProblems(): string[] {
