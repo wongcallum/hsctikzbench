@@ -1,17 +1,45 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommand, buildRouteMap, numberParser } from "@stricli/core";
 import pMap from "p-map";
 import type { LocalContext } from "../context.ts";
-import { examId, parseManifest, sampleStem, serializeManifest, type Sample } from "../manifest.ts";
+import {
+  examId,
+  parseManifest,
+  sampleStem,
+  serializeManifest,
+  type Exam,
+  type Sample
+} from "../manifest.ts";
 import { crop } from "../render.ts";
 import { createRenderer, rendererFlags, type Renderer, type RendererFlags } from "../renderer.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const DATASET_DIR = join(REPO_ROOT, "dataset");
 const DATA_DIR = join(REPO_ROOT, "data");
+
+const manifestFlag = {
+  kind: "parsed",
+  parse: String,
+  brief: "Path to the dataset manifest",
+  default: join(DATASET_DIR, "manifest.json")
+} as const;
+
+const pdfsFlag = {
+  kind: "parsed",
+  parse: String,
+  brief: "Directory holding <year>-<course>.pdf for each exam",
+  default: join(DATA_DIR, "pdfs")
+} as const;
+
+const onlyFlag = {
+  kind: "parsed",
+  parse: String,
+  brief: "Restrict to a single exam, given as <year>-<course>",
+  optional: true
+} as const;
 
 interface BuildFlags extends RendererFlags {
   readonly manifest: string;
@@ -23,7 +51,7 @@ interface BuildFlags extends RendererFlags {
 }
 
 type Outcome =
-  | { kind: "ok" }
+  | { kind: "ok"; message?: string }
   | { kind: "mismatch"; message: string }
   | { kind: "failed"; message: string };
 
@@ -38,17 +66,9 @@ const buildCommandDef = buildCommand({
     const log = (line: string) => this.process.stderr.write(`${line}\n`);
     const out = (line: string) => this.process.stdout.write(`${line}\n`);
 
-    const manifest = parseManifest(JSON.parse(await readFile(flags.manifest, "utf8")));
-    const exams =
-      flags.only === undefined ? manifest : manifest.filter((e) => examId(e) === flags.only);
-    if (exams.length === 0) {
-      throw new Error(
-        `no exam ${flags.only} in manifest. Known exams: ${manifest.map(examId).join(", ")}`
-      );
-    }
-    if (!Number.isInteger(flags.jobs) || flags.jobs < 1) {
-      throw new Error("--jobs must be a positive integer");
-    }
+    const manifest = await readManifest(flags.manifest);
+    const exams = selectExams(manifest, flags.only);
+    checkJobs(flags.jobs);
 
     const renderer = await createRenderer(flags);
     await renderer.prepare();
@@ -65,7 +85,9 @@ const buildCommandDef = buildCommand({
       try {
         pdf = await readFile(pdfPath);
       } catch (err) {
-        const message = `missing PDF ${pdfPath} (${err instanceof Error ? err.message : String(err)})`;
+        const message =
+          `missing PDF ${pdfPath} (${err instanceof Error ? err.message : String(err)}); ` +
+          "run `dataset fetch` to download it";
         for (const s of exam.samples)
           outcomes.set(sampleStem(exam, s), { kind: "failed", message });
         continue;
@@ -120,30 +142,15 @@ const buildCommandDef = buildCommand({
   parameters: {
     flags: {
       ...rendererFlags,
-      manifest: {
-        kind: "parsed",
-        parse: String,
-        brief: "Path to the dataset manifest",
-        default: join(DATASET_DIR, "manifest.json")
-      },
-      pdfs: {
-        kind: "parsed",
-        parse: String,
-        brief: "Directory holding <year>-<course>.pdf for each exam",
-        default: join(DATA_DIR, "pdfs")
-      },
+      manifest: manifestFlag,
+      pdfs: pdfsFlag,
       out: {
         kind: "parsed",
         parse: String,
         brief: "Directory to write crops into",
         default: join(DATA_DIR, "crops")
       },
-      only: {
-        kind: "parsed",
-        parse: String,
-        brief: "Build a single exam, given as <year>-<course>",
-        optional: true
-      },
+      only: onlyFlag,
       jobs: {
         kind: "parsed",
         parse: numberParser,
@@ -208,6 +215,125 @@ async function buildOne(
   return { kind: "ok" };
 }
 
+interface FetchFlags {
+  readonly manifest: string;
+  readonly pdfs: string;
+  readonly only?: string;
+  readonly jobs: number;
+  readonly force: boolean;
+}
+
+const fetchCommandDef = buildCommand({
+  async func(this: LocalContext, flags: FetchFlags): Promise<void> {
+    const log = (line: string) => this.process.stderr.write(`${line}\n`);
+    const out = (line: string) => this.process.stdout.write(`${line}\n`);
+
+    const exams = selectExams(await readManifest(flags.manifest), flags.only);
+    checkJobs(flags.jobs);
+    await mkdir(flags.pdfs, { recursive: true });
+    log(`${exams.length} exams into ${flags.pdfs}, ${flags.jobs} jobs`);
+
+    const outcomes = new Map<string, Outcome>();
+    await pMap(
+      exams,
+      async (exam) => {
+        const id = examId(exam);
+        let outcome: Outcome;
+        try {
+          outcome = await fetchOne(exam, flags);
+        } catch (error) {
+          outcome = {
+            kind: "failed",
+            message: `GET ${exam.url} failed: ${error instanceof Error ? error.message : String(error)}`
+          };
+        }
+        outcomes.set(id, outcome);
+        log(`${outcome.kind}: ${id}${outcome.message === undefined ? "" : `: ${outcome.message}`}`);
+      },
+      { concurrency: flags.jobs }
+    );
+
+    const counts = { ok: 0, mismatch: 0, failed: 0 };
+    for (const id of [...outcomes.keys()].sort()) {
+      const outcome = outcomes.get(id)!;
+      counts[outcome.kind]++;
+      if (outcome.kind !== "ok") out(`${outcome.kind}: ${id}: ${outcome.message}`);
+    }
+    out(`${counts.ok} ok, ${counts.mismatch} mismatched, ${counts.failed} failed`);
+    if (counts.mismatch > 0 || counts.failed > 0) this.process.exitCode = 1;
+  },
+  parameters: {
+    flags: {
+      manifest: manifestFlag,
+      pdfs: pdfsFlag,
+      only: onlyFlag,
+      jobs: {
+        kind: "parsed",
+        parse: numberParser,
+        brief: "Number of PDFs downloaded concurrently",
+        default: "4"
+      },
+      force: {
+        kind: "boolean",
+        brief: "Download every exam again, even if the local PDF already matches the manifest",
+        default: false
+      }
+    }
+  },
+  docs: {
+    brief: "Download the official exam PDFs listed in the manifest and check their digests."
+  }
+});
+
+async function fetchOne(exam: Exam, flags: FetchFlags): Promise<Outcome> {
+  const path = join(flags.pdfs, `${examId(exam)}.pdf`);
+  if (!flags.force) {
+    const existing = await readFile(path).catch(() => undefined);
+    if (existing !== undefined && sha256(existing) === exam.sha256) {
+      return { kind: "ok", message: "already downloaded" };
+    }
+  }
+
+  const response = await fetch(exam.url);
+  if (!response.ok) {
+    return {
+      kind: "failed",
+      message: `GET ${exam.url} returned ${response.status} ${response.statusText}`
+    };
+  }
+  const pdf = Buffer.from(await response.arrayBuffer());
+  const digest = sha256(pdf);
+  if (digest !== exam.sha256) {
+    return {
+      kind: "mismatch",
+      message: `${exam.url} has sha256 ${digest}, manifest expects ${exam.sha256}; kept ${path} as it was`
+    };
+  }
+
+  const partial = `${path}.part`;
+  await writeFile(partial, pdf);
+  await rename(partial, path);
+  return { kind: "ok", message: `downloaded ${(pdf.length / 1e6).toFixed(1)} MB` };
+}
+
+async function readManifest(path: string): Promise<Exam[]> {
+  return parseManifest(JSON.parse(await readFile(path, "utf8")));
+}
+
+function selectExams(manifest: readonly Exam[], only: string | undefined): Exam[] {
+  const exams = only === undefined ? [...manifest] : manifest.filter((e) => examId(e) === only);
+  if (exams.length === 0) {
+    throw new Error(`no exam ${only} in manifest. Known exams: ${manifest.map(examId).join(", ")}`);
+  }
+  return exams;
+}
+
+function checkJobs(jobs: number): void {
+  if (!Number.isInteger(jobs) || jobs < 1) {
+    throw new Error("--jobs must be a positive integer");
+  }
+}
+
 function sha256(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -219,6 +345,6 @@ function pngSize(png: Buffer): { width: number; height: number } {
 }
 
 export const datasetRoutes = buildRouteMap({
-  routes: { build: buildCommandDef },
+  routes: { fetch: fetchCommandDef, build: buildCommandDef },
   docs: { brief: "Manage the benchmark dataset" }
 });
