@@ -14,25 +14,20 @@ const needsReason = {
   params: { path: ["reason"], message: "a failure needs a concrete reason" }
 };
 
-/** What a judge submits: their verdict on one run. The server stamps the time. */
 export const JudgementInputSchema = Fields.refine(needsReason.check, needsReason.params);
 
 const Stamped = Fields.extend({ judgedAt: z.iso.datetime() });
 
-/** A verdict as the judge who gave it sees it back. */
 export const JudgementSchema = Stamped.refine(needsReason.check, needsReason.params);
 
-/** What is written to `judgements/<login>.json`: a judge's vote, and who gave it. */
+/** Written to `judgements/<login>.json`. */
 export const StoredJudgementSchema = Stamped.extend({ judge: z.string().min(1) }).refine(
   needsReason.check,
   needsReason.params
 );
 
-/**
- * What is written to a run's `resolution.json`: the owner's settling verdict, given in Resolve
- * with every vote in view, and which owner gave it. Kept apart from the owner's own vote, which
- * is one file among the judges' like any other.
- */
+/** Written to a run's `resolution.json`, apart from the owner's own vote, which is one
+ * judgements file like any other. */
 export const StoredResolutionSchema = Stamped.extend({ by: z.string().min(1) }).refine(
   needsReason.check,
   needsReason.params

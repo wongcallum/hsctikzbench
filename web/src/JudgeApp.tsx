@@ -47,7 +47,7 @@ interface AppProps {
   role: UserRole;
 }
 
-/** Whether the mode hides where runs came from. Judges are blind whatever the mode. */
+/** Only asks; judges are blind whatever the mode, and the server settles that. */
 const isBlind = (mode: Mode) => mode === "judge";
 
 export function JudgeApp({ location, setLocation, role }: AppProps) {
@@ -343,8 +343,6 @@ function Workspace({
       .finally(() => updateEditor({ saving: false }));
   }, [run, saved, saving, blind, resolving, onPatch, updateEditor]);
 
-  // Space seeks the next run needing this mode's attention: unjudged when judging, disputed
-  // when resolving.
   const seekPending = useCallback(
     (step: 1 | -1) => {
       const pairs = sampleRuns(samples);
@@ -514,7 +512,6 @@ function Workspace({
   );
 }
 
-/** What the owner needs to settle a run: where it came from and what each judge voted. */
 function Dispute({ run }: { run: Run }) {
   const model = run.source?.model;
   return (

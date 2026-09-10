@@ -25,7 +25,6 @@ const sorted = (table: Table_): Table_ =>
       .map(([login, batches]) => [login, [...batches].sort()])
   );
 
-/** The owner's editor for who judges which batch. Logins come from the users file. */
 export function Assignments() {
   const [view, setView] = useState<AssignmentsView | null>(null);
   const [draft, setDraft] = useState<Table_>({});

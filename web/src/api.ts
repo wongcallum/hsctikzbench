@@ -47,7 +47,6 @@ export const fetchSamples = (blind: boolean) =>
 export const fetchSample = (stem: string) =>
   request<SampleSummary>(`/api/samples/${encodeURIComponent(stem)}`);
 
-// Both answer with the run as the caller may see it, so the page can patch it in.
 export const saveJudgement = (runId: string, judgement: JudgementInput, blind: boolean) =>
   request<Run>(
     blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind),
@@ -58,7 +57,6 @@ export const clearJudgement = (runId: string, blind: boolean) =>
     method: "DELETE"
   });
 
-// The owner's resolution of a run, edited in Resolve with every vote in view.
 export const saveResolution = (runId: string, judgement: JudgementInput) =>
   request<Run>(`/api/runs/${encodeURIComponent(runId)}/resolution`, json("PUT", judgement));
 export const clearResolution = (runId: string) =>

@@ -8,20 +8,16 @@ import { SampleView } from "./SampleView.tsx";
 
 interface Props {
   batch: string;
-  /** The batch page's copy of the sample, kept live by its polling and job stream. */
+  /** Kept live by the batch page's polling and job stream. */
   sample: BatchSampleData;
   lines: LogLine[];
   backHref: string;
-  /** Called after a change the batch page should reload for. */
   onChanged: () => void;
 }
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/**
- * One sample on the batch page. The batch's own run comes from the page and stays live; the
- * sample's runs in other batches are fetched so the selector can hop between them.
- */
+/** The batch's own run comes live from the page; its runs in other batches are fetched here. */
 export function BatchSample({ batch, sample: live, lines, backHref, onChanged }: Props) {
   const [summary, setSummary] = useState<SampleSummary | null>(null);
   const [selectedRender, setSelectedRender] = useState<string | null>(null);

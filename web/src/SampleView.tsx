@@ -19,7 +19,7 @@ import { RenderStrip } from "./RenderStrip.tsx";
 interface Props {
   sample: SampleSummary;
   run: Run | null;
-  /** The sample's runs to offer, in listing order. */
+  /** The listed subset to offer, which may be narrower than `sample.runs`. */
   runs: Run[];
   dirty: boolean;
   selectedRender: string | null;
@@ -28,9 +28,7 @@ interface Props {
   error: string | null;
   /** Badge the viewer's own judging rather than the settled verdict. */
   own: boolean;
-  /** Width of the right-hand panel column. */
   panelWidth?: string;
-  /** The panel shown in the right column. */
   children: ReactNode;
 }
 
@@ -146,7 +144,6 @@ export function SampleView({
   );
 }
 
-/** Picks the image for the result pane: an explicitly selected render, else the submission. */
 function resultImage(run: Run, selected: string | null) {
   const last = run.renders.at(-1) ?? null;
   const submitted = hasSubmission(run);

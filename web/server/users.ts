@@ -16,7 +16,6 @@ const UsersSchema = z.record(
   z.strictObject({ role: z.enum(["owner", "judge"]) })
 );
 
-/** Users that exist without a users file: the single-user owner, when that mode is on. */
 const builtinUsers = () =>
   new Map<string, UserRole>(config.singleUser ? [[loginKey(SINGLE_USER_LOGIN), "owner"]] : []);
 

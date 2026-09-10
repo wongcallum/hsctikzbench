@@ -77,7 +77,6 @@ func main() {
 	}
 }
 
-// a temporary directory in which external tools run under a shared deadline
 type workspace struct {
 	dir    string
 	ctx    context.Context

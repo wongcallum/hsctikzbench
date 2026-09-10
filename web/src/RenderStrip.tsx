@@ -4,14 +4,11 @@ import { runFileUrl } from "./api.ts";
 
 interface Props {
   run: Run;
-  /** The render shown in the result pane. */
   selected: string;
-  /** The render that became the submission, if any. */
   submitted: string | null;
   onSelect: (name: string) => void;
 }
 
-/** Thumbnails of every render the run produced, in order. */
 export function RenderStrip({ run, selected, submitted, onSelect }: Props) {
   if (run.renders.length === 0) return null;
   return (

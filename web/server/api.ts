@@ -34,7 +34,6 @@ const FILE_TYPES: Record<string, string> = {
 const STEM = /^[A-Za-z0-9._-]+$/;
 const RENDER = /^[A-Za-z0-9._-]+\.png$/;
 
-/** What a judge may fetch from a run directory: the images they judge and the source. */
 const JUDGE_FILES = new Set(["reference.png", "submission.png", "submission.tex"]);
 
 const LaunchSchema = z.strictObject({
@@ -71,7 +70,6 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
   );
   app.route("/", authRoutes());
 
-  // Everyone signed in may judge and see run files; only the owner launches and watches jobs.
   for (const prefix of ["/api/*", "/files/*", "/runs/*"]) app.use(prefix, requireUser);
   for (const prefix of [
     "/api/jobs",
@@ -208,8 +206,7 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     return c.json(await assignmentsView());
   });
 
-  // Runs are addressed by id, so a blind listing never reveals the batch. Judges are blind
-  // whatever they ask for; the owner asks for it on the Judge tab.
+  // A judge is blind however they ask; the query only lets the owner ask to be.
   const viewFor = async (c: Context<AuthEnv>, blind?: boolean): Promise<RunView> => ({
     blind: blind ?? c.req.query("blind") !== undefined,
     judging: await judgingContext(c.get("user"))

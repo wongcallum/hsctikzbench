@@ -6,7 +6,6 @@ import { createRenderer, rendererFlags, type RendererFlags } from "./renderer.ts
 
 export const DEFAULT_PROMPT = new URL("../prompt.md", import.meta.url);
 
-/** Flags shared by every command that runs the agent. */
 export interface AgentFlags extends ModelFlags, RendererFlags {
   readonly maxTurns: number;
   readonly prompt?: string;

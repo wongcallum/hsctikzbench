@@ -27,7 +27,7 @@ export interface RunResult {
   harness?: HarnessInfo;
 }
 
-/** What the run was measured under; absent on runs from before renders were scaled. */
+/** Absent on runs from before renders were scaled. */
 export interface HarnessInfo {
   renderer: string;
   fit: string;

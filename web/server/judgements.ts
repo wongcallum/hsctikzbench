@@ -17,7 +17,6 @@ import { loginKey, type User } from "./users.ts";
 export const JUDGEMENTS_DIR = "judgements";
 export const RESOLUTION_FILE = "resolution.json";
 
-/** Who is looking at runs, and what they are assigned to judge. */
 export interface JudgingContext {
   readonly login: string;
   readonly role: UserRole;
@@ -27,13 +26,9 @@ export interface JudgingContext {
   readonly judges: ReadonlyMap<string, string[]>;
 }
 
-/** Who is asking for runs, and whether they may learn where the runs came from. */
 export interface RunView {
-  /**
-   * Drops everything that could say which model made a run, and narrows the listing to the
-   * viewer's assigned batches. Always in force for judges; the owner asks for it on the Judge
-   * tab and is unblinded elsewhere.
-   */
+  /** Always in force for judges; the owner asks for it on the Judge tab. Drops anything
+   * naming the model and narrows the listing to the viewer's assigned batches. */
   blind: boolean;
   judging: JudgingContext;
 }
@@ -48,10 +43,8 @@ export async function judgingContext(user: User): Promise<JudgingContext> {
   };
 }
 
-/** Whether a batch is assigned to the viewer, which is what voting on it takes. */
 export const mayJudge = (judging: JudgingContext, batch: string) => judging.batches.has(batch);
 
-/** Whether the viewer may see a batch at all: assigned to them, or the owner unblinded. */
 export const maySee = (view: RunView, batch: string) =>
   mayJudge(view.judging, batch) || (!view.blind && view.judging.role === "owner");
 
@@ -140,12 +133,7 @@ export function ownJudgement(judgements: StoredJudgement[], login: string): Judg
   return judgement;
 }
 
-/**
- * A resolution settles a run until a judge votes against it afterwards (reopened); a
- * `needs_review` resolution holds the run. Without one the votes must agree: a split, or any
- * `needs_review`, is disputed, and a run is pending until every assigned judge has voted. The
- * owner's own vote is one vote among the judges'.
- */
+/** The owner's own vote is one vote among the judges'; only a resolution settles as owner. */
 export function standing(
   judgements: StoredJudgement[],
   resolution: StoredResolution | null,
@@ -177,11 +165,8 @@ export function standing(
   return { verdict: [...verdicts][0] as "pass" | "fail", by: "judges", missing: [], cause: null };
 }
 
-/**
- * Run ids are keyed with a secret so a judge who guesses a batch name cannot confirm it by
- * recomputing the id. Without a configured secret the key is fixed, so ids survive restarts
- * in development.
- */
+/** Keyed with a secret so a judge who guesses a batch name cannot confirm it by recomputing
+ * the id. */
 export const runId = (batch: string, stem: string) =>
   createHmac("sha256", config.runIdSecret).update(`${batch}/${stem}`).digest("hex").slice(0, 12);
 

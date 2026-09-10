@@ -13,7 +13,6 @@ const VERDICT = { pass: "green", fail: "red", needs_review: "orange" } as const;
 
 const list = (logins: string[]) => logins.join(", ");
 
-/** Why the run needs the owner, naming the judges involved. */
 function disputeNote(run: Run): string {
   const standing = run.standing!;
   const votes = run.judgements ?? [];
@@ -36,7 +35,6 @@ function disputeNote(run: Run): string {
   }
 }
 
-/** Where the run stands across the votes. Rendered only for the owner, who is told. */
 export function StandingItem({ run }: { run: Run }) {
   const standing = run.standing;
   if (!standing) return null;
@@ -72,7 +70,6 @@ export function StandingItem({ run }: { run: Run }) {
   );
 }
 
-/** The owner's resolution of the run, when one has been given. Owner only. */
 export function ResolutionItem({ run }: { run: Run }) {
   const resolution = run.resolution;
   if (!resolution) return null;
@@ -94,7 +91,6 @@ export function ResolutionItem({ run }: { run: Run }) {
   );
 }
 
-/** Every judge's vote and reason side by side. Owner only. */
 export function JudgeVerdicts({ run, title = "Votes" }: { run: Run; title?: string }) {
   const judgements = run.judgements;
   if (!judgements) return null;

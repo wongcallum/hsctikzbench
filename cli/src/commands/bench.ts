@@ -213,7 +213,6 @@ function selectJobs(manifest: readonly Exam[], flags: BenchFlags): Job[] {
   return jobs.filter((j) => stems.has(j.stem));
 }
 
-/** Reads the sample's crop and checks it against the digest recorded in the manifest. */
 async function loadCrop(cropsDir: string, { sample, stem }: Job): Promise<Buffer> {
   const file = join(cropsDir, `${stem}.png`);
   let png: Buffer;

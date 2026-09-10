@@ -51,7 +51,7 @@ export function clearStoredOptions(): void {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // ignore
+    /* nothing to clear */
   }
 }
 

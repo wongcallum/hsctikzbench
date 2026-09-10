@@ -107,9 +107,9 @@ function count(counts: StatusCounts, phase: SamplePhase, result: { status: RunSt
 export type { RunView };
 
 export interface RunContext {
-  /** Whether the run directory exists; a missing one is pending. */
+  /** A missing run directory is pending. */
   exists: boolean;
-  /** Whether the batch's job is still running, which makes an unfinished run live. */
+  /** An unfinished run counts as live only while the batch's job runs. */
   running: boolean;
   progress: SampleProgress | null;
   view: RunView;

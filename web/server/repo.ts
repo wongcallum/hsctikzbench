@@ -76,7 +76,7 @@ async function onPath(bin: string): Promise<boolean> {
       await access(path.join(dir, bin), constants.X_OK);
       return true;
     } catch {
-      // keep looking
+      /* not here */
     }
   }
   return false;

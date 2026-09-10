@@ -236,7 +236,7 @@ function LaunchForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Remember the options for next time; the batch name is left out on purpose.
+  // The batch name is left out on purpose: a new run should not reuse it.
   useEffect(() => {
     saveStoredOptions({
       provider: providerId,

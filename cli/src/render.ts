@@ -21,7 +21,6 @@ const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const IHDR_WIDTH_OFFSET = 16;
 const IHDR_HEIGHT_OFFSET = 20;
 
-/** Reads the dimensions out of a PNG's IHDR, which is always its first chunk. */
 export function pngSize(png: Buffer): PngSize {
   if (png.length < IHDR_HEIGHT_OFFSET + 4 || !png.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
     throw new RendererError("expected a PNG");
@@ -102,7 +101,6 @@ function rasterError(log: string, command: string): string {
   return `${rendererMessage(log, command)}\n${tail(log, LOG_TAIL_LINES)}`;
 }
 
-// not verified by human yet.
 export function extractLatexError(log: string): string {
   const lines = log.split("\n");
   const start = lines.findIndex((l) => l.startsWith("!"));

@@ -23,13 +23,11 @@ export const relative = (ms: number) => {
 
 export const words = (s: string) => s.replaceAll("_", " ");
 
-/** "Q12 (a)" for a manifest sample; the stem for one the manifest does not know. */
 export function sampleLabel(sample: Pick<SampleInfo, "question" | "option" | "stem">): string {
   if (!sample.question) return sample.stem;
   return sample.option ? `Q${sample.question} (${sample.option})` : `Q${sample.question}`;
 }
 
-/** How a run is named in a selector: its batch when known, otherwise its position. */
 export function runLabel(runs: readonly Run[], run: Run): string {
   if (run.source) return run.source.batch;
   return `Run ${runs.findIndex((r) => r.id === run.id) + 1}`;

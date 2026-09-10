@@ -10,7 +10,7 @@ const AssignmentsSchema = z.record(z.string().regex(LOGIN), z.array(z.string().r
 
 let cached: { mtimeMs: number; size: number; assignments: Assignments } | null = null;
 
-/** Login (lower-cased) to the batches that login may judge. Re-read when the file changes. */
+/** Keyed by lower-cased login. */
 export async function loadAssignments(): Promise<Assignments> {
   let info;
   try {
@@ -61,7 +61,6 @@ export async function saveAssignments(body: unknown): Promise<Assignments> {
   return assignments;
 }
 
-/** Judges assigned to each batch, keyed by batch name. */
 export function judgesByBatch(assignments: Assignments): Map<string, string[]> {
   const byBatch = new Map<string, string[]>();
   for (const [login, batches] of Object.entries(assignments)) {

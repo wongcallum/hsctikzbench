@@ -1,7 +1,6 @@
 import { hasSubmission, type Run, type SampleSummary, type UserRole } from "../shared/types.ts";
 import type { Mode } from "./location.ts";
 
-/** Where one user's judging of a run stands. */
 export type JudgingState =
   | "running"
   | "unjudgeable"
@@ -10,10 +9,8 @@ export type JudgingState =
   | "pass"
   | "fail";
 
-/** Where the run stands once every judge's verdict is combined. */
 export type ResolvedState = "running" | "unjudgeable" | "pending" | "disputed" | "pass" | "fail";
 
-/** Whether the run has both a submitted image and a reference crop to judge it against. */
 export const isJudgeable = (sample: SampleSummary, run: Run) =>
   hasSubmission(run) && sample.hasCrop;
 
@@ -24,10 +21,7 @@ export function judgingState(sample: SampleSummary, run: Run): JudgingState {
   return run.judgement?.verdict ?? "unjudged";
 }
 
-/**
- * The run's settled state. Only the owner, unblinded, is told how the votes combine; in a
- * blind listing this is the viewer's own vote, which is all they may know.
- */
+/** With no standing to go on, a blind listing falls back to the viewer's own vote. */
 export function resolvedState(sample: SampleSummary, run: Run): ResolvedState {
   const own = judgingState(sample, run);
   if (own === "running" || own === "unjudgeable") return own;
@@ -44,7 +38,6 @@ export function isPending(sample: SampleSummary, run: Run): boolean {
 export const isDisputed = (sample: SampleSummary, run: Run) =>
   resolvedState(sample, run) === "disputed";
 
-/** Whether any of the sample's runs is still waiting on a verdict. */
 export const hasPending = (sample: SampleSummary): boolean =>
   sample.runs.some((run) => isPending(sample, run));
 
@@ -53,10 +46,7 @@ const listable: Record<Exclude<Mode, "view">, (sample: SampleSummary, run: Run) 
   resolve: isDisputed
 };
 
-/**
- * Samples the sidebar lists: judging and resolving drop the ones with nothing left to do, but
- * keep the selected sample with a judgeable run so it never vanishes from under the judge.
- */
+/** The selected sample is kept once judged, so it never vanishes from under the judge. */
 export const listedSamples = (
   samples: SampleSummary[],
   mode: Mode,
@@ -70,10 +60,7 @@ export const listedSamples = (
           (s.stem === selected && s.runs.some((run) => isJudgeable(s, run)))
       );
 
-/**
- * Runs the selector lists: judging and resolving drop the ones with nothing to do, but keep
- * the selected judgeable run so it does not vanish the moment its verdict is saved.
- */
+/** The selected run is kept, so it does not vanish the moment its verdict is saved. */
 export const listedRuns = (sample: SampleSummary, mode: Mode, selected: string | null): Run[] =>
   mode === "view"
     ? sample.runs
@@ -96,7 +83,6 @@ export interface JudgingCounts {
   passed: number;
 }
 
-/** Every run in listing order: samples in manifest order, each sample's runs in listed order. */
 export const sampleRuns = (samples: SampleSummary[]): SampleRun[] =>
   samples.flatMap((sample) => sample.runs.map((run) => ({ sample, run })));
 
@@ -149,7 +135,6 @@ export function scoreSummary(pairs: SampleRun[]): string {
   return `${progress} · faithful reproduction ${((passed / considered) * 100).toFixed(1)}%`;
 }
 
-/** A judge's own progress through what is assigned to them. */
 export function assignedSummary(pairs: SampleRun[]): string {
   const { total, running, unjudgeable, pending } = judgingCounts(pairs, true);
   const assigned = total - running - unjudgeable;
@@ -162,10 +147,7 @@ export interface ScoreLine {
   summary: string;
 }
 
-/**
- * One score line per batch when the listing names batches. A blind listing holds only the
- * viewer's assignment, so it gets a single line on how far through it they are.
- */
+/** A blind listing names no batches, so it gets one line on the viewer's own progress. */
 export function scoreLines(samples: SampleSummary[], mode: Mode, role: UserRole): ScoreLine[] {
   const pairs = sampleRuns(samples);
   if (pairs.length === 0) return [{ batch: null, summary: "no runs" }];

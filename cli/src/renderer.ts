@@ -21,7 +21,7 @@ export interface ExecResult {
 
 export interface Renderer {
   readonly description: string;
-  /** Makes the backend usable, e.g. by fetching a missing image. Called once per command. */
+  /** Called once per command, before any exec. */
   prepare(): Promise<void>;
   exec(args: string[], input?: string | Buffer): Promise<ExecResult>;
 }

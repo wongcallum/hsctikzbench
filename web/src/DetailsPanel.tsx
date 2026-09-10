@@ -11,11 +11,10 @@ interface Props {
   run: Run | null;
   busy: boolean;
   onReset: () => void;
-  /** The job's log lines for this sample, when the batch page has them. */
   lines?: LogLine[];
 }
 
-/** Everything the owner may know about a run: provenance, cost, transcript, source and log. */
+/** Owner only: it shows provenance and cost. */
 export function DetailsPanel({ run, busy, onReset, lines }: Props) {
   if (!run) {
     return (

@@ -24,9 +24,7 @@ export interface JudgeProgress {
 
 export interface AssignmentsView {
   assignments: Assignments;
-  /** Every login in the users file with its role; all of them can be assigned. */
   users: Record<string, UserRole>;
-  /** Batches on disk. */
   batches: string[];
   /** Per judge, per assigned batch: judgeable runs and how many they have judged. */
   progress: Record<string, Record<string, JudgeProgress>>;
@@ -96,13 +94,11 @@ export type SseEvent =
 
 export type SamplePhase = "pending" | "running" | "done" | "interrupted";
 
-/** The part of a result that says how the run went without saying what produced it. */
 export type RunOutcome = Pick<
   RunResult,
   "status" | "error" | "turns" | "renders" | "successfulRenders"
 >;
 
-/** The part of a result that identifies the model and what it cost. */
 export type RunModel = Pick<
   RunResult,
   "provider" | "model" | "reasoning" | "usage" | "durationMs" | "startedAt" | "harness"
@@ -116,14 +112,9 @@ export interface RunSource {
 
 export type ResolvedVerdict = "pass" | "fail" | "disputed" | "pending";
 
-/**
- * Why a disputed run needs the owner: the votes split; a judge asked for review; the owner
- * asked to look again (held); a judge voted against the resolution after it was given
- * (reopened).
- */
+/** held: the owner asked to look again. reopened: a judge voted against the resolution. */
 export type DisputeCause = "split" | "needs_review" | "held" | "reopened";
 
-/** Where a run stands once the votes and any resolution combine. */
 export interface Standing {
   verdict: ResolvedVerdict;
   /** What settled it: the owner's resolution, or the judges' unanimous votes. */
@@ -133,7 +124,6 @@ export interface Standing {
   cause: DisputeCause | null;
 }
 
-/** One sample's run in one batch. */
 export interface Run {
   id: string;
   phase: SamplePhase;
@@ -156,7 +146,7 @@ export interface Run {
 
 export const hasSubmission = (run: Run) => run.result?.status === "submitted" && run.hasSubmission;
 
-/** A manifest sample plus what the dataset has for it. Fields are blank for unknown stems. */
+/** Fields are blank for a stem the manifest does not know. */
 export interface SampleInfo {
   stem: string;
   exam: string;
@@ -167,12 +157,10 @@ export interface SampleInfo {
   hasCrop: boolean;
 }
 
-/** A sample with its run in every batch. */
 export interface SampleSummary extends SampleInfo {
   runs: Run[];
 }
 
-/** A sample with its run in one batch. */
 export interface BatchSample extends SampleInfo {
   run: Run;
 }

@@ -209,7 +209,6 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
         continue;
       }
 
-      // submit
       if (!lastGoodRender) {
         context.messages.push(
           toolResult(
@@ -226,8 +225,7 @@ export async function runAgent(opts: RunOptions): Promise<RunResult> {
       break;
     }
   } catch (e) {
-    // e.g. the renderer backend became unavailable mid-run. Keep whatever transcript we
-    // have rather than losing the run.
+    // Keep whatever transcript we have rather than losing the run.
     status = "error";
     error = e instanceof Error ? e.message : String(e);
     turnLog(`crashed: ${error}`);

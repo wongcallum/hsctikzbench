@@ -14,7 +14,6 @@ const JUDGING = {
   fail: { color: "red", label: "fail" }
 } as const;
 
-/** The run's status: its result, or how far along it is. */
 export function StatusBadge({ run }: { run: Run }) {
   const status = runStatus(run);
   return (
@@ -30,7 +29,6 @@ interface Props {
   own: boolean;
 }
 
-/** Run status and judging badges for one run. */
 export function RunBadges({ sample, run, own }: Props & { run: Run }) {
   const state = own ? judgingState(sample, run) : resolvedState(sample, run);
   const judging = JUDGING[state];
@@ -45,7 +43,6 @@ export function RunBadges({ sample, run, own }: Props & { run: Run }) {
   );
 }
 
-/** Judging progress across a sample's runs, or nothing when it has none. */
 export function SampleBadges({ sample, own }: Props) {
   const runs = sample.runs;
   if (runs.length === 0) return null;

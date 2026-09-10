@@ -55,7 +55,7 @@ async function refreshRunIndex(): Promise<RunIndex> {
   return (runIndex = { manifest, batches, locations });
 }
 
-/** Finds a run by id. The viewer is told nothing about runs in batches they may not see. */
+/** A run in a batch the viewer may not see is a 404, so an id on its own reveals nothing. */
 export async function locateRun(id: string, view: RunView): Promise<RunLocation> {
   let location = (runIndex ?? (await refreshRunIndex())).locations.get(id);
   if (!location) location = (await refreshRunIndex()).locations.get(id);
@@ -153,7 +153,6 @@ function parseJudgement(body: unknown) {
   return parsed.data;
 }
 
-/** A run with a submission and a reference crop, or the reason it cannot be judged. */
 async function judgeableRun(location: RunLocation, view: RunView): Promise<Run> {
   const run = await readFinishedRun(location, view);
   if (!run.result) throw new HttpError(409, "run has not finished");
@@ -164,11 +163,7 @@ async function judgeableRun(location: RunLocation, view: RunView): Promise<Run> 
   return run;
 }
 
-/**
- * Writes the requesting user's vote and returns the run as they may see it. Voting takes an
- * assignment, whoever votes: the run is located as if blind, so the owner cannot vote on a
- * batch they are not assigned to.
- */
+/** Located as if blind, so the owner cannot vote on a batch they are not assigned to. */
 export async function saveJudgement(id: string, body: unknown, view: RunView): Promise<Run> {
   const judgement = parseJudgement(body);
   const location = await locateRun(id, { ...view, blind: true });
@@ -185,7 +180,7 @@ export async function clearJudgement(id: string, view: RunView): Promise<Run> {
   return readFinishedRun(location, view);
 }
 
-/** Writes the owner's resolution. The route admits only owners; any batch is theirs to settle. */
+/** No assignment check: the route admits only owners, and any batch is theirs to settle. */
 export async function saveResolution(id: string, body: unknown, view: RunView): Promise<Run> {
   const judgement = parseJudgement(body);
   const location = await locateRun(id, view);
@@ -200,7 +195,6 @@ export async function clearResolution(id: string, view: RunView): Promise<Run> {
   return readFinishedRun(location, view);
 }
 
-/** The assignment table with each judge's progress, for the owner's editor. */
 export async function assignmentsView(): Promise<AssignmentsView> {
   const [assignments, users, batches] = await Promise.all([
     loadAssignments(),
@@ -237,7 +231,6 @@ export async function assignmentsView(): Promise<AssignmentsView> {
   return { assignments, users: Object.fromEntries(users), batches, progress };
 }
 
-/** Stems in a batch with a submission and a reference crop, i.e. runs a judge can act on. */
 async function listJudgeable(batch: string): Promise<string[]> {
   const dir = path.join(config.runsDir, batch);
   const stems = await listDirs(dir);
