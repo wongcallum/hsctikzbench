@@ -145,9 +145,7 @@ export function authRoutes(): Hono<AuthEnv> {
     return c.body(null, 204);
   });
 
-  app.get("/api/auth", (c) =>
-    c.json({ mode: config.singleUser ? "single" : "github" })
-  );
+  app.get("/api/auth", (c) => c.json({ mode: config.singleUser ? "single" : "github" }));
 
   app.get("/api/me", requireUser, (c) => c.json(c.get("user")));
 
