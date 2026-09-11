@@ -20,9 +20,10 @@
         pkgs:
         let
           renderer = pkgs.callPackage ./nix/renderer.nix { };
+          hsctikzbench = pkgs.callPackage ./nix/hsctikzbench.nix { };
         in
         {
-          inherit renderer;
+          inherit renderer hsctikzbench;
           default = renderer;
         }
         # the image holds Linux binaries, so only a Linux builder can produce it

@@ -57,9 +57,17 @@ pnpm dev
 pnpm build && pnpm start
 ```
 
+### Nix
+
+```sh
+nix build .#hsctikzbench
+DATA_DIR=/var/lib/hsctikzbench SESSION_SECRET=... GITHUB_CLIENT_ID=... GITHUB_CLIENT_SECRET=... PUBLIC_URL=https://... result/bin/hsctikzbench-web
+HSCTIKZBENCH_DATA_DIR=/var/lib/hsctikzbench result/bin/hsctikzbench --help
+```
+
 ### Judgement
 
-This repository is built around a multi-judge model, where judges (including the owner) can individually pass, fail or flag for review each run assigned to them, and conflicts are resolved in a separate interface by the owner. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `web/users.json`:
+This repository is built around a multi-judge model, where judges (including the owner) can individually pass, fail or flag for review each run assigned to them, and conflicts are resolved in a separate interface by the owner. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `data/users.json`:
 
 ```json
 { "owner": { "role": "owner" }, "judge": { "role": "judge" } }

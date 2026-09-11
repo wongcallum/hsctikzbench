@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { numberParser } from "@stricli/core";
 import { modelFlags, resolveModel, type ModelFlags } from "./model.ts";
+import { DEFAULT_PROMPT } from "./paths.ts";
 import { buildSystemPrompt, checkTexCapabilities } from "./prompt.ts";
 import { createRenderer, rendererFlags, type RendererFlags } from "./renderer.ts";
-
-export const DEFAULT_PROMPT = new URL("../prompt.md", import.meta.url);
 
 export interface AgentFlags extends ModelFlags, RendererFlags {
   readonly maxTurns: number;

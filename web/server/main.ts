@@ -12,13 +12,13 @@ await jobs.load();
 
 const app = createApi(jobs);
 
-const dist = path.join(config.root, "dist");
 if (config.production) {
-  if (!existsSync(path.join(dist, "index.html"))) {
-    console.error(`no built UI in ${dist}; run pnpm build first`);
+  if (!existsSync(path.join(config.clientDir, "index.html"))) {
+    console.error(`no built UI in ${config.clientDir}; run pnpm build first`);
     process.exit(1);
   }
-  const root = path.relative(process.cwd(), dist) || ".";
+  // serveStatic only takes a root relative to the working directory.
+  const root = path.relative(process.cwd(), config.clientDir) || ".";
   app.use("/*", serveStatic({ root }));
   app.get("*", serveStatic({ root, path: "index.html" }));
 }
@@ -26,6 +26,7 @@ if (config.production) {
 const server = serve({ fetch: app.fetch, port: config.port, hostname: config.host }, (address) => {
   console.log(`listening on http://${address.address}:${address.port}`);
   console.log(`public URL: ${config.publicUrl}`);
+  console.log(`data: ${config.dataDir}`);
   console.log(`runs: ${config.runsDir}`);
   console.log(`state: ${config.stateDir}`);
   console.log(`users: ${config.usersFile}`);

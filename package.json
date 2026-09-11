@@ -6,7 +6,7 @@
     "cli": "node --import tsx cli/src/cli.ts",
     "dev": "pnpm --filter hsctikzbench-web dev",
     "dev:fake": "pnpm --filter hsctikzbench-web dev:fake",
-    "build": "pnpm --filter hsctikzbench-web build",
+    "build": "pnpm -r build",
     "start": "pnpm --filter hsctikzbench-web start",
     "typecheck": "pnpm -r typecheck",
     "lint": "oxlint",
@@ -17,9 +17,14 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "esbuild": "^0.28.2",
     "oxfmt": "^0.66.0",
     "oxlint": "^1.81.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
   }
 }

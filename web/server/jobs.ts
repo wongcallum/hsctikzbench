@@ -13,7 +13,7 @@ import type {
   SampleProgress,
   SseEvent
 } from "../shared/types.ts";
-import { config } from "./env.ts";
+import { benchEntry, config } from "./env.ts";
 
 const CANCEL_GRACE_MS = 15_000;
 const SHUTDOWN_GRACE_MS = 10_000;
@@ -274,6 +274,12 @@ function buildCommand(params: LaunchParams, outDir: string): { command: string[]
     String(params.jobs),
     "--renderer",
     params.renderer,
+    "--manifest",
+    config.manifest,
+    "--crops",
+    config.cropsDir,
+    "--auth",
+    config.authFile,
     "--out",
     outDir,
     "--progress-fd",
@@ -287,12 +293,7 @@ function buildCommand(params: LaunchParams, outDir: string): { command: string[]
     const override = config.benchCommand.split(/\s+/).filter((s) => s !== "");
     return { command: [...override, ...args], cwd: config.root };
   }
-  return {
-    // The tsx bin re-execs node as a child and only forwards stdio 0-2, so fd 3 would reach
-    // the bench as tsx's IPC channel instead of the progress pipe. Load tsx in-process.
-    command: [process.execPath, "--import", "tsx", "src/cli.ts", ...args],
-    cwd: config.cliDir
-  };
+  return { command: [...benchEntry.command, ...args], cwd: benchEntry.cwd };
 }
 
 function pipeLines(stream: NodeJS.ReadableStream | null, onLine: (text: string) => void): void {

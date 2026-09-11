@@ -2,6 +2,5 @@ result
 result-*
 node_modules
 data
+cli/dist
 web/dist
-web/state
-web/users.json

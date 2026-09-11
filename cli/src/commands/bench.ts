@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { buildCommand, numberParser } from "@stricli/core";
 import pMap from "p-map";
 import { prepareAgent, agentFlags, type AgentFlags } from "../agent.ts";
@@ -9,11 +8,8 @@ import type { LocalContext } from "../context.ts";
 import { runAgent } from "../loop.ts";
 import { examId, parseManifest, sampleStem, type Exam, type Sample } from "../manifest.ts";
 import { OutputDir, type RunResult, type RunStatus } from "../output.ts";
+import { DEFAULT_CROPS_DIR, DEFAULT_MANIFEST } from "../paths.ts";
 import { openProgress, type SampleOutcome } from "../progress.ts";
-
-const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
-const DATASET_DIR = join(REPO_ROOT, "dataset");
-const DATA_DIR = join(REPO_ROOT, "data");
 
 interface BenchFlags extends AgentFlags {
   readonly manifest: string;
@@ -139,13 +135,13 @@ export const benchCommand = buildCommand({
         kind: "parsed",
         parse: String,
         brief: "Path to the dataset manifest",
-        default: join(DATASET_DIR, "manifest.json")
+        default: DEFAULT_MANIFEST
       },
       crops: {
         kind: "parsed",
         parse: String,
         brief: "Directory holding <stem>.png for each sample, as written by dataset build",
-        default: join(DATA_DIR, "crops")
+        default: DEFAULT_CROPS_DIR
       },
       out: {
         kind: "parsed",

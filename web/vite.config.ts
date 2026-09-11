@@ -5,6 +5,7 @@ const API = process.env["WEB_API"] ?? "http://127.0.0.1:8787";
 
 export default defineConfig({
   plugins: [react()],
+  build: { outDir: "dist/client" },
   server: {
     proxy: Object.fromEntries(
       ["/api", "/auth", "/files", "/runs"].map((prefix) => [

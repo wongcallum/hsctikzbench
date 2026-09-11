@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { buildCommand, buildRouteMap, numberParser } from "@stricli/core";
 import pMap from "p-map";
 import type { LocalContext } from "../context.ts";
@@ -13,25 +12,22 @@ import {
   type Exam,
   type Sample
 } from "../manifest.ts";
+import { DEFAULT_CROPS_DIR, DEFAULT_MANIFEST, DEFAULT_PDFS_DIR } from "../paths.ts";
 import { crop } from "../render.ts";
 import { createRenderer, rendererFlags, type Renderer, type RendererFlags } from "../renderer.ts";
-
-const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
-const DATASET_DIR = join(REPO_ROOT, "dataset");
-const DATA_DIR = join(REPO_ROOT, "data");
 
 const manifestFlag = {
   kind: "parsed",
   parse: String,
   brief: "Path to the dataset manifest",
-  default: join(DATASET_DIR, "manifest.json")
+  default: DEFAULT_MANIFEST
 } as const;
 
 const pdfsFlag = {
   kind: "parsed",
   parse: String,
   brief: "Directory holding <year>-<course>.pdf for each exam",
-  default: join(DATA_DIR, "pdfs")
+  default: DEFAULT_PDFS_DIR
 } as const;
 
 const onlyFlag = {
@@ -148,7 +144,7 @@ const buildCommandDef = buildCommand({
         kind: "parsed",
         parse: String,
         brief: "Directory to write crops into",
-        default: join(DATA_DIR, "crops")
+        default: DEFAULT_CROPS_DIR
       },
       only: onlyFlag,
       jobs: {
