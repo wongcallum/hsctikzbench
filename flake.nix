@@ -31,5 +31,7 @@
           image = pkgs.callPackage ./nix/image.nix { inherit renderer; };
         }
       );
+
+      formatter = forAllSystems (pkgs: pkgs.nixfmt-tree);
     };
 }
