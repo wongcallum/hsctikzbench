@@ -1,6 +1,5 @@
 import type { Category, Role } from "hsctikzbench-cli/manifest";
 import type { RunResult, RunStatus } from "hsctikzbench-cli/output";
-import type { Judgement, StoredJudgement, StoredResolution } from "./judge.ts";
 
 export type { RunResult, RunStatus };
 
@@ -110,20 +109,6 @@ export interface RunSource {
   model: RunModel | null;
 }
 
-export type ResolvedVerdict = "pass" | "fail" | "disputed" | "pending";
-
-/** held: the owner asked to look again. reopened: a judge voted against the resolution. */
-export type DisputeCause = "split" | "needs_review" | "held" | "reopened";
-
-export interface Standing {
-  verdict: ResolvedVerdict;
-  /** What settled it: the owner's resolution, or the judges' unanimous votes. */
-  by: "owner" | "judges" | null;
-  /** Assigned judges who have not voted. */
-  missing: string[];
-  cause: DisputeCause | null;
-}
-
 export interface Run {
   id: string;
   phase: SamplePhase;
@@ -131,14 +116,6 @@ export interface Run {
   hasSubmission: boolean;
   /** Render file names under `renders/`, in order. */
   renders: string[];
-  /** The requesting user's own vote. */
-  judgement: Judgement | null;
-  /** Every judge's vote. Owner only, and never in a blind listing. */
-  judgements: StoredJudgement[] | null;
-  /** The owner's settling verdict, if given. Owner only, and never in a blind listing. */
-  resolution: StoredResolution | null;
-  /** Where the run stands across the votes. Owner only, and never in a blind listing. */
-  standing: Standing | null;
   source: RunSource | null;
   /** Live progress while the job runs. Absent from blind listings. */
   progress: SampleProgress | null;

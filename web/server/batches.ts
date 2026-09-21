@@ -15,15 +15,7 @@ import type {
 } from "../shared/types.ts";
 import { config } from "./env.ts";
 import type { JobManager } from "./jobs.ts";
-import {
-  ownJudgement,
-  readJudgements,
-  readResolution,
-  runId,
-  standing,
-  type JudgingContext,
-  type RunView
-} from "./judgements.ts";
+import { runId, type JudgingContext } from "./access.ts";
 import type { LoadedManifest } from "./repo.ts";
 
 interface CachedResult {
@@ -104,32 +96,26 @@ function count(counts: StatusCounts, phase: SamplePhase, result: { status: RunSt
   else if (phase !== "done") counts[phase]++;
 }
 
-export type { RunView };
-
 export interface RunContext {
   /** A missing run directory is pending. */
   exists: boolean;
   /** An unfinished run counts as live only while the batch's job runs. */
   running: boolean;
   progress: SampleProgress | null;
-  view: RunView;
+  judging: JudgingContext;
 }
 
+/** Judges get a blind run: nothing that names the batch or the model. */
 export async function readRun(batch: string, stem: string, ctx: RunContext): Promise<Run> {
   const dir = path.join(config.runsDir, batch, stem);
-  const { judging } = ctx.view;
-  const blind = ctx.view.blind || judging.role !== "owner";
-  const [{ result }, hasSubmission, renders, judgements, resolution] = ctx.exists
+  const blind = ctx.judging.role !== "owner";
+  const [{ result }, hasSubmission, renders] = ctx.exists
     ? await Promise.all([
         readResult(dir),
         isFile(path.join(dir, "submission.png")),
-        listRenders(dir),
-        readJudgements(dir),
-        readResolution(dir)
+        listRenders(dir)
       ])
-    : [{ result: null }, false, [], [], null];
-  // Only the owner, and only unblinded, learns what the others said or how a run stands.
-  const unblinded = !blind;
+    : [{ result: null }, false, []];
   return {
     id: runId(batch, stem),
     phase: phaseOf(result, ctx.exists, ctx.running),
@@ -143,10 +129,6 @@ export async function readRun(batch: string, stem: string, ctx: RunContext): Pro
     },
     hasSubmission,
     renders,
-    judgement: ownJudgement(judgements, judging.login),
-    judgements: unblinded ? judgements : null,
-    resolution: unblinded ? resolution : null,
-    standing: unblinded ? standing(judgements, resolution, judging.judges.get(batch) ?? []) : null,
     source: blind
       ? null
       : {
@@ -274,7 +256,7 @@ export async function batchDetail(
           exists: existing.has(stem),
           running,
           progress: progress?.samples[stem] ?? null,
-          view: { blind: false, judging }
+          judging
         })
       ]);
       return { ...info, run };

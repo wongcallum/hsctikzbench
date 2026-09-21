@@ -27,9 +27,9 @@ import { judgesByBatch, loadAssignments } from "./assignments.ts";
 import { hasCrop, isFile, listDirs, readResult, sampleInfo } from "./batches.ts";
 import { config } from "./env.ts";
 import { HttpError } from "./http.ts";
-import { locateRun } from "./judge.ts";
-import { runId, type JudgingContext } from "./judgements.ts";
+import { runId, type JudgingContext } from "./access.ts";
 import { loadManifest } from "./repo.ts";
+import { locateRun } from "./samples.ts";
 import { loadUsers, loginKey } from "./users.ts";
 
 /** Batches in play for pairs: everything assigned to anyone. */
@@ -220,10 +220,9 @@ export async function recordOutcome(
 ): Promise<CompareSample> {
   const input = parseOutcome(body);
   const [{ exam, sample }, pool] = await Promise.all([locateSample(stem), poolBatches()]);
-  const view = { blind: true, judging };
   const [left, right] = await Promise.all([
-    locateRun(input.left, view),
-    locateRun(input.right, view)
+    locateRun(input.left, judging, true),
+    locateRun(input.right, judging, true)
   ]);
   if (left.stem !== stem || right.stem !== stem)
     throw new HttpError(400, "runs are not of this sample");
