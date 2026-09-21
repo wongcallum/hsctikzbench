@@ -6,6 +6,7 @@ interface Props {
   detail?: string;
   src: string | null;
   emptyText: string;
+  style?: CSSProperties;
 }
 
 const frame: CSSProperties = {
@@ -20,9 +21,9 @@ const fitted: CSSProperties = {
   objectFit: "contain"
 };
 
-export function ImagePane({ label, detail, src, emptyText }: Props) {
+export function ImagePane({ label, detail, src, emptyText, style }: Props) {
   return (
-    <Flex direction="column" gap="2" minHeight="0" minWidth="0">
+    <Flex direction="column" gap="2" minHeight="0" minWidth="0" style={style}>
       <Flex align="baseline" gap="2">
         <Text size="2" weight="bold">
           {label}

@@ -21,13 +21,10 @@ interface Props {
   run: Run | null;
   /** The listed subset to offer, which may be narrower than `sample.runs`. */
   runs: Run[];
-  dirty: boolean;
   selectedRender: string | null;
   onSelectRun: (id: string) => void;
   onSelectRender: (name: string | null) => void;
   error: string | null;
-  /** Badge the viewer's own judging rather than the settled verdict. */
-  own: boolean;
   panelWidth?: string;
   children: ReactNode;
 }
@@ -36,12 +33,10 @@ export function SampleView({
   sample,
   run,
   runs,
-  dirty,
   selectedRender,
   onSelectRun,
   onSelectRender,
   error,
-  own,
   panelWidth = "360px",
   children
 }: Props) {
@@ -64,11 +59,6 @@ export function SampleView({
           {sample.role && (
             <Badge color="gray" variant="outline" size="1">
               {words(sample.role)}
-            </Badge>
-          )}
-          {dirty && (
-            <Badge color="orange" variant="soft" size="1">
-              unsaved
             </Badge>
           )}
           {run?.result?.error && (
@@ -99,7 +89,7 @@ export function SampleView({
                       </Text>
                     )}
                     <Flex align="center" gap="2" wrap="wrap">
-                      <RunBadges sample={sample} run={candidate} own={own} />
+                      <RunBadges sample={sample} run={candidate} />
                     </Flex>
                   </Flex>
                 </RadioCards.Item>

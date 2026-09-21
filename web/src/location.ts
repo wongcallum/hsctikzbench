@@ -1,11 +1,12 @@
 import { useMemo, useSyncExternalStore } from "react";
 
-/** judge: blind, own verdicts. resolve: unblinded, settling disputes. view: everything. */
-export type Mode = "judge" | "resolve" | "view";
+/** judge: blind pairwise comparison. view: everything, owner only. */
+export type Mode = "judge" | "view";
 
 export interface JudgeLocation {
   mode: Mode;
   stem: string | null;
+  /** Only meaningful in view mode; comparison shows pairs, not runs. */
   run: string | null;
 }
 
@@ -29,9 +30,8 @@ export function parseHash(hash: string): Route {
   if (head === "batch" && a) return { page: "batch", name: a, stem: b || null };
   if (head === "new" && a) return { page: "launch", from: a };
   if (head === "assign") return { page: "assign" };
-  if (head === "judge" || head === "resolve" || head === "view") {
-    return { page: "judge", mode: head, stem: a || null, run: b || null };
-  }
+  if (head === "judge") return { page: "judge", mode: head, stem: a || null, run: null };
+  if (head === "view") return { page: "judge", mode: head, stem: a || null, run: b || null };
   return { page: "launch", from: null };
 }
 

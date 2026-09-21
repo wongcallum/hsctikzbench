@@ -1,41 +1,35 @@
 import { Badge, Box, Button, Flex, Heading, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
-import { memo, useEffect, useState } from "react";
-import type { SampleSummary } from "../shared/types.ts";
-import { SampleBadges } from "./badges.tsx";
+import { memo, useEffect, useState, type ReactElement, type ReactNode } from "react";
+import type { SampleInfo } from "../shared/types.ts";
 import { sampleLabel, words } from "./format.ts";
-import type { Mode } from "./location.ts";
-import type { ScoreLine } from "./sample.ts";
 
-interface Props {
-  samples: SampleSummary[];
-  scores: ScoreLine[];
+interface Props<T extends SampleInfo> {
+  heading: string;
+  samples: T[];
+  /** Summary lines shown under the heading. */
+  lines: string[];
   empty: string;
   selected: string | null;
-  mode: Mode;
   loading: boolean;
+  badges: (sample: T) => ReactNode;
   onSelect: (stem: string) => void;
   onRefresh: () => void;
 }
 
-const HEADINGS: Record<Mode, string> = {
-  judge: "To judge",
-  resolve: "To resolve",
-  view: "Samples"
-};
-
 // Memoised because rebuilding a few hundred RadioCards rows costs upwards of 150ms; callers
-// must keep onSelect and onRefresh stable for that to hold.
-export const SampleSidebar = memo(function SampleSidebar({
+// must keep badges, onSelect and onRefresh stable for that to hold.
+export const SampleSidebar = memo(function SampleSidebar<T extends SampleInfo>({
+  heading,
   samples,
-  scores,
+  lines,
   empty,
   selected,
-  mode,
   loading,
+  badges,
   onSelect,
   onRefresh
-}: Props) {
-  const groups = new Map<string, SampleSummary[]>();
+}: Props<T>) {
+  const groups = new Map<string, T[]>();
   for (const sample of samples) {
     const group = groups.get(sample.exam);
     if (group) group.push(sample);
@@ -65,24 +59,20 @@ export const SampleSidebar = memo(function SampleSidebar({
   return (
     <Flex direction="column" minHeight="0">
       <Flex align="center" justify="between" p="3" gap="2">
-        <Heading size="3">{HEADINGS[mode]}</Heading>
+        <Heading size="3">{heading}</Heading>
         <Button size="1" variant="soft" onClick={onRefresh} disabled={loading}>
           Refresh
         </Button>
       </Flex>
-      <Flex direction="column" px="3" pb="2" gap="1">
-        {scores.map(({ batch, summary }) => (
-          <Text key={batch ?? ""} size="1" color="gray">
-            {batch !== null && (
-              <>
-                <Text weight="bold">{batch}</Text>
-                {" · "}
-              </>
-            )}
-            {summary}
-          </Text>
-        ))}
-      </Flex>
+      {lines.length > 0 && (
+        <Flex direction="column" px="3" pb="2" gap="1">
+          {lines.map((line) => (
+            <Text key={line} size="1" color="gray">
+              {line}
+            </Text>
+          ))}
+        </Flex>
+      )}
       <Box flexGrow="1" minHeight="0">
         <ScrollArea type="auto" scrollbars="vertical">
           <Box px="3" pb="3">
@@ -132,7 +122,7 @@ export const SampleSidebar = memo(function SampleSidebar({
                               <Badge color="gray" variant="outline" size="1">
                                 {words(sample.category)}
                               </Badge>
-                              <SampleBadges sample={sample} own={mode === "judge"} />
+                              {badges(sample)}
                             </Flex>
                           </Flex>
                         </RadioCards.Item>
@@ -147,4 +137,4 @@ export const SampleSidebar = memo(function SampleSidebar({
       </Box>
     </Flex>
   );
-});
+}) as <T extends SampleInfo>(props: Props<T>) => ReactElement;

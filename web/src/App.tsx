@@ -6,10 +6,11 @@ import { Assignments } from "./Assignments.tsx";
 import { BatchView } from "./BatchView.tsx";
 import { SIGNED_OUT_EVENT } from "./http.ts";
 import { BatchSidebar } from "./BatchSidebar.tsx";
-import { JudgeApp } from "./JudgeApp.tsx";
+import { CompareApp } from "./CompareApp.tsx";
 import { Launch } from "./Launch.tsx";
 import { confirmLeave, hrefFor, navigate, useRoute, type Route } from "./location.ts";
 import { SignIn } from "./SignIn.tsx";
+import { ViewApp } from "./ViewApp.tsx";
 
 const BATCH_POLL_MS = 3000;
 
@@ -40,12 +41,14 @@ export function App() {
       <TopNav route={route} me={me} onSignOut={() => setMe(null)} />
       <Separator size="4" />
       <Box flexGrow="1" minHeight="0">
-        {route.page === "judge" ? (
-          <JudgeApp
-            location={route}
-            setLocation={(next) => navigate({ page: "judge", ...next })}
+        {route.page === "judge" && route.mode === "judge" ? (
+          <CompareApp
+            stem={route.stem}
+            setStem={(stem) => navigate({ page: "judge", mode: "judge", stem, run: null })}
             role={me.role}
           />
+        ) : route.page === "judge" ? (
+          <ViewApp location={route} setLocation={(next) => navigate({ page: "judge", ...next })} />
         ) : route.page === "assign" ? (
           <Assignments />
         ) : (
@@ -67,7 +70,6 @@ function TopNav({ route, me, onSignOut }: { route: Route; me: Me; onSignOut: () 
           route.page === "launch" || route.page === "batch"
         ],
         ["Judge", "#/judge", judging("judge")],
-        ["Resolve", "#/resolve", judging("resolve")],
         ["View", "#/view", judging("view")],
         ["Judges", "#/assign", route.page === "assign"]
       ]
