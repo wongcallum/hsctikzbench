@@ -11,7 +11,7 @@ import {
   Text
 } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Assignments as Table_, AssignmentsView } from "../shared/types.ts";
+import type { Assignments as Table_, AssignmentsView, JudgeProgress } from "../shared/types.ts";
 import { fetchAssignments, saveAssignments } from "./api.ts";
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -97,9 +97,9 @@ export function Assignments() {
             </Flex>
           </Flex>
           <Text size="2" color="gray">
-            Tick the batches each login should judge. Everyone votes blind on what is assigned to
-            them, you included; resolving is separate and covers every batch. Counts are judgeable
-            runs the login has voted on over the batch's total.
+            Tick the batches each login should compare. Pairs are drawn across every batch assigned
+            to anyone, and a login is shown the pairs whose two batches are both ticked for them,
+            you included. Progress is pairs judged over pairs they may judge.
           </Text>
           {error && (
             <Callout.Root color="red" size="1">
@@ -116,6 +116,7 @@ export function Assignments() {
               <Table.Header>
                 <Table.Row>
                   <Table.ColumnHeaderCell>Judge</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Progress</Table.ColumnHeaderCell>
                   {view.batches.map((batch) => (
                     <Table.ColumnHeaderCell key={batch}>
                       <Text size="1" style={{ whiteSpace: "nowrap" }}>
@@ -146,29 +147,18 @@ export function Assignments() {
                         )}
                       </Flex>
                     </Table.RowHeaderCell>
-                    {view.batches.map((batch) => {
-                      const on = draft[login]?.includes(batch) ?? false;
-                      const progress = view.progress[login]?.[batch];
-                      return (
-                        <Table.Cell key={batch}>
-                          <Flex direction="column" align="start" gap="1">
-                            <Checkbox
-                              checked={on}
-                              onCheckedChange={(value) => toggle(login, batch, value === true)}
-                              aria-label={`${login} judges ${batch}`}
-                            />
-                            {on && progress && (
-                              <Text
-                                size="1"
-                                color={progress.judged === progress.total ? "green" : "gray"}
-                              >
-                                {progress.judged}/{progress.total}
-                              </Text>
-                            )}
-                          </Flex>
-                        </Table.Cell>
-                      );
-                    })}
+                    <Table.Cell>
+                      <Progress progress={view.progress[login]} />
+                    </Table.Cell>
+                    {view.batches.map((batch) => (
+                      <Table.Cell key={batch}>
+                        <Checkbox
+                          checked={draft[login]?.includes(batch) ?? false}
+                          onCheckedChange={(value) => toggle(login, batch, value === true)}
+                          aria-label={`${login} compares ${batch}`}
+                        />
+                      </Table.Cell>
+                    ))}
                   </Table.Row>
                 ))}
               </Table.Body>
@@ -177,5 +167,20 @@ export function Assignments() {
         </Flex>
       </Box>
     </ScrollArea>
+  );
+}
+
+function Progress({ progress }: { progress: JudgeProgress | undefined }) {
+  if (!progress || progress.total === 0) {
+    return (
+      <Text size="1" color="gray">
+        —
+      </Text>
+    );
+  }
+  return (
+    <Text size="1" color={progress.done === progress.total ? "green" : "gray"}>
+      {progress.done}/{progress.total}
+    </Text>
   );
 }

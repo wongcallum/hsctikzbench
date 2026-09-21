@@ -16,15 +16,21 @@ import {
   type StoredOutcome
 } from "hsctikzbench-cli/comparisons";
 import { OutcomeInputSchema } from "../shared/compare.ts";
-import type { ComparePair, CompareSample, ManifestSample } from "../shared/types.ts";
-import { loadAssignments } from "./assignments.ts";
-import { hasCrop, isFile, readResult, sampleInfo } from "./batches.ts";
+import type {
+  AssignmentsView,
+  ComparePair,
+  CompareSample,
+  JudgeProgress,
+  ManifestSample
+} from "../shared/types.ts";
+import { judgesByBatch, loadAssignments } from "./assignments.ts";
+import { hasCrop, isFile, listDirs, readResult, sampleInfo } from "./batches.ts";
 import { config } from "./env.ts";
 import { HttpError } from "./http.ts";
 import { locateRun } from "./judge.ts";
 import { runId, type JudgingContext } from "./judgements.ts";
 import { loadManifest } from "./repo.ts";
-import { loginKey } from "./users.ts";
+import { loadUsers, loginKey } from "./users.ts";
 
 /** Batches in play for pairs: everything assigned to anyone. */
 export async function poolBatches(): Promise<string[]> {
@@ -261,4 +267,31 @@ export async function undoOutcome(stem: string, judging: JudgingContext): Promis
     else await writeFile(file, kept.map(serializeOutcome).join(""));
     return compareSample(stem, exam, sample, pool, judging);
   });
+}
+
+export async function assignmentsView(): Promise<AssignmentsView> {
+  const [assignments, users, batches] = await Promise.all([
+    loadAssignments(),
+    loadUsers(),
+    listDirs(config.runsDir)
+  ]);
+  const judges = judgesByBatch(assignments);
+  const progress: Record<string, JudgeProgress> = {};
+  await Promise.all(
+    Object.entries(assignments).map(async ([login, assigned]) => {
+      const samples = await listCompare({
+        login,
+        role: users.get(login) ?? "judge",
+        batches: new Set(assigned),
+        judges
+      });
+      const total: JudgeProgress = { done: 0, total: 0 };
+      for (const sample of samples) {
+        total.done += sample.done;
+        total.total += sample.total;
+      }
+      progress[login] = total;
+    })
+  );
+  return { assignments, users: Object.fromEntries(users), batches, progress };
 }

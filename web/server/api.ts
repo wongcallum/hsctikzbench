@@ -8,12 +8,11 @@ import { BATCH_NAME, type LaunchParams } from "../shared/types.ts";
 import { saveAssignments } from "./assignments.ts";
 import { authRoutes, requireOwner, requireUser, type AuthEnv } from "./auth.ts";
 import { batchDetail, listBatches } from "./batches.ts";
-import { getCompare, listCompare, recordOutcome, undoOutcome } from "./compare.ts";
+import { assignmentsView, getCompare, listCompare, recordOutcome, undoOutcome } from "./compare.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
 import {
-  assignmentsView,
   clearJudgement,
   clearResolution,
   getSample,

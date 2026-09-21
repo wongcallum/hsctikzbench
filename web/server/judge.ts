@@ -2,21 +2,17 @@ import path from "node:path";
 import { JudgementInputSchema } from "../shared/judge.ts";
 import {
   hasSubmission,
-  type AssignmentsView,
-  type JudgeProgress,
   type ManifestSample,
   type Run,
   type SampleProgress,
   type SampleSummary
 } from "../shared/types.ts";
-import { loadAssignments } from "./assignments.ts";
-import { hasCrop, isDir, isFile, listDirs, readResult, readRun, sampleInfo } from "./batches.ts";
+import { hasCrop, isDir, listDirs, readRun, sampleInfo } from "./batches.ts";
 import { config } from "./env.ts";
 import { HttpError } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
 import {
   blindOrder,
-  judgementFile,
   maySee,
   removeJudgement,
   removeResolution,
@@ -26,7 +22,6 @@ import {
   type RunView
 } from "./judgements.ts";
 import { loadManifest, type LoadedManifest } from "./repo.ts";
-import { loadUsers } from "./users.ts";
 
 export interface RunLocation {
   readonly id: string;
@@ -193,57 +188,4 @@ export async function clearResolution(id: string, view: RunView): Promise<Run> {
   const location = await locateRun(id, view);
   await removeResolution(location.dir);
   return readFinishedRun(location, view);
-}
-
-export async function assignmentsView(): Promise<AssignmentsView> {
-  const [assignments, users, batches] = await Promise.all([
-    loadAssignments(),
-    loadUsers(),
-    listDirs(config.runsDir)
-  ]);
-  const judgeable = new Map<string, Promise<string[]>>();
-  const judgeableStems = (batch: string) => {
-    let pending = judgeable.get(batch);
-    if (!pending) {
-      pending = listJudgeable(batch);
-      judgeable.set(batch, pending);
-    }
-    return pending;
-  };
-  const progress: AssignmentsView["progress"] = {};
-  await Promise.all(
-    Object.entries(assignments).map(async ([login, assigned]) => {
-      const byBatch: Record<string, JudgeProgress> = {};
-      await Promise.all(
-        assigned.map(async (batch) => {
-          const stems = await judgeableStems(batch);
-          const judged = await Promise.all(
-            stems.map((stem) =>
-              isFile(judgementFile(path.join(config.runsDir, batch, stem), login))
-            )
-          );
-          byBatch[batch] = { judged: judged.filter(Boolean).length, total: stems.length };
-        })
-      );
-      progress[login] = byBatch;
-    })
-  );
-  return { assignments, users: Object.fromEntries(users), batches, progress };
-}
-
-async function listJudgeable(batch: string): Promise<string[]> {
-  const dir = path.join(config.runsDir, batch);
-  const stems = await listDirs(dir);
-  const checks = await Promise.all(
-    stems.map(async (stem) => {
-      const runDir = path.join(dir, stem);
-      const [{ result }, submitted, crop] = await Promise.all([
-        readResult(runDir),
-        isFile(path.join(runDir, "submission.png")),
-        hasCrop(stem)
-      ]);
-      return result?.status === "submitted" && submitted && crop;
-    })
-  );
-  return stems.filter((_, i) => checks[i]);
 }

@@ -17,8 +17,9 @@ export interface Me {
 /** Which batches each login judges. The owner judges by assignment like anyone else. */
 export type Assignments = Record<string, string[]>;
 
+/** Pairs the judge may compare, and how many they have. */
 export interface JudgeProgress {
-  judged: number;
+  done: number;
   total: number;
 }
 
@@ -26,8 +27,7 @@ export interface AssignmentsView {
   assignments: Assignments;
   users: Record<string, UserRole>;
   batches: string[];
-  /** Per judge, per assigned batch: judgeable runs and how many they have judged. */
-  progress: Record<string, Record<string, JudgeProgress>>;
+  progress: Record<string, JudgeProgress>;
 }
 
 export type JobStatus = "running" | "succeeded" | "failed" | "cancelled" | "interrupted";
