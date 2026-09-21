@@ -144,6 +144,21 @@ export interface Run {
   progress: SampleProgress | null;
 }
 
+/** One pair as shown to a judge: run ids, left and right, sides fixed per judge. */
+export interface ComparePair {
+  left: string;
+  right: string;
+}
+
+export interface CompareSample extends SampleInfo {
+  /** Pairs the viewer may judge and has not, in the order they were drawn. */
+  pending: ComparePair[];
+  /** Pairs the viewer may judge that they have recorded an outcome for. */
+  done: number;
+  /** Pairs the viewer may judge. */
+  total: number;
+}
+
 export const hasSubmission = (run: Run) => run.result?.status === "submitted" && run.hasSubmission;
 
 /** Fields are blank for a stem the manifest does not know. */

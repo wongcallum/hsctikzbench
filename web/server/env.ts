@@ -20,6 +20,9 @@ export const env = createEnv({
       .default(path.join(ROOT_DIR, "dataset", "manifest.json")),
     CROPS_DIR: z.string().min(1).default(inData("crops")),
     RUNS_DIR: z.string().min(1).default(inData("runs")),
+    COMPARISONS_DIR: z.string().min(1).default(inData("comparisons")),
+    /** Pairs each eligible run is drawn into, at least. */
+    COMPARISONS_PER_RUN: z.coerce.number().int().min(1).default(3),
     AUTH_FILE: z.string().min(1).default(inData("auth.json")),
     RUNNER_STATE_DIR: z.string().min(1).default(inData("state")),
     PORT: z.coerce.number().int().positive().default(8787),
@@ -63,6 +66,8 @@ export const config = {
   manifest: path.resolve(env.MANIFEST),
   cropsDir: path.resolve(env.CROPS_DIR),
   runsDir: path.resolve(env.RUNS_DIR),
+  comparisonsDir: path.resolve(env.COMPARISONS_DIR),
+  comparisonsPerRun: env.COMPARISONS_PER_RUN,
   authFile: path.resolve(env.AUTH_FILE),
   stateDir: path.resolve(env.RUNNER_STATE_DIR),
   port: env.PORT,

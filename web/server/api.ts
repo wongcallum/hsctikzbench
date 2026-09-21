@@ -8,6 +8,7 @@ import { BATCH_NAME, type LaunchParams } from "../shared/types.ts";
 import { saveAssignments } from "./assignments.ts";
 import { authRoutes, requireOwner, requireUser, type AuthEnv } from "./auth.ts";
 import { batchDetail, listBatches } from "./batches.ts";
+import { getCompare, listCompare, recordOutcome, undoOutcome } from "./compare.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
@@ -219,6 +220,29 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     if (!STEM.test(stem)) throw new HttpError(400, "bad sample stem");
     return c.json(await getSample(stem, jobs, await viewFor(c)));
   });
+
+  // Comparisons are blind by nature: pairs carry run ids only, and the sides are the judge's own.
+  const judgingFor = (c: Context<AuthEnv>) => judgingContext(c.get("user"));
+
+  const stemParam = (c: Context<AuthEnv>) => {
+    const stem = c.req.param("stem") ?? "";
+    if (!STEM.test(stem)) throw new HttpError(400, "bad sample stem");
+    return stem;
+  };
+
+  app.get("/api/compare", async (c) => c.json(await listCompare(await judgingFor(c))));
+
+  app.get("/api/compare/:stem", async (c) =>
+    c.json(await getCompare(stemParam(c), await judgingFor(c)))
+  );
+
+  app.post("/api/compare/:stem", async (c) =>
+    c.json(await recordOutcome(stemParam(c), await jsonBody(c), await judgingFor(c)))
+  );
+
+  app.delete("/api/compare/:stem/last", async (c) =>
+    c.json(await undoOutcome(stemParam(c), await judgingFor(c)))
+  );
 
   app.put("/api/runs/:id/judgement", async (c) =>
     c.json(await saveJudgement(c.req.param("id"), await jsonBody(c), await viewFor(c)))

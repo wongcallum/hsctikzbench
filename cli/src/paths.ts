@@ -12,3 +12,6 @@ export const DATA_DIR = process.env["HSCTIKZBENCH_DATA_DIR"] ?? join(ROOT_DIR, "
 export const DEFAULT_PDFS_DIR = join(DATA_DIR, "pdfs");
 export const DEFAULT_CROPS_DIR = join(DATA_DIR, "crops");
 export const DEFAULT_AUTH_FILE = join(DATA_DIR, "auth.json");
+export const DEFAULT_RUNS_DIR = join(DATA_DIR, "runs");
+export const DEFAULT_COMPARISONS_DIR = join(DATA_DIR, "comparisons");
+export const DEFAULT_ASSIGNMENTS_FILE = join(DATA_DIR, "state", "assignments.json");
