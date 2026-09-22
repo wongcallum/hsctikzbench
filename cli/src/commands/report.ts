@@ -62,6 +62,7 @@ interface ItemRow {
 interface Scope {
   name: string;
   samples: number;
+  anchor: string | null;
   rows: ItemRow[];
 }
 
@@ -254,7 +255,7 @@ function scope(
   rows.sort(
     (x, y) => (y.score ?? -Infinity) - (x.score ?? -Infinity) || x.item.localeCompare(y.item)
   );
-  return { name, samples: samples.length, rows };
+  return { name, samples: samples.length, anchor, rows };
 }
 
 function agreement(samples: readonly Sample[]): Agreement {
@@ -316,6 +317,12 @@ function render(report: Report): string {
     if (scope.rows.length === 0) continue;
     out.push("");
     out.push(`## ${scope.name} (${scope.samples} samples)`);
+    if (report.baseline !== null && scope.anchor === null) {
+      out.push(
+        `note: ${report.baseline} has no comparisons here, so these scores are centred on ` +
+          "their mean instead and do not line up with the other scopes'"
+      );
+    }
     out.push(
       table([
         ["model", "batches", "runs", "failed", "compared", "score", "95% interval", "vs baseline"],
@@ -326,7 +333,7 @@ function render(report: Report): string {
           String(row.failed),
           String(row.comparisons),
           fixed(row.score, 2),
-          row.interval && row.item !== report.baseline
+          row.interval && row.item !== scope.anchor
             ? `${fixed(row.interval.low, 2)} to ${fixed(row.interval.high, 2)}`
             : "—",
           percent(row.vsBaseline)
