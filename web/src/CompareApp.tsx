@@ -37,6 +37,7 @@ export function CompareApp({ stem, setStem, role }: Props) {
   // Outcomes are applied locally at once and sent one after another, so a quick undo cannot
   // overtake the outcome it undoes.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const queued = useRef(0);
 
   const refresh = useCallback(async () => {
     const id = ++refreshId.current;
@@ -87,9 +88,13 @@ export function CompareApp({ stem, setStem, role }: Props) {
 
   const enqueue = useCallback(
     (work: () => Promise<CompareSample>) => {
+      queued.current++;
       queue.current = queue.current.then(work).then(
-        (next) => replace(next),
+        (next) => {
+          if (--queued.current === 0) replace(next);
+        },
         (e: unknown) => {
+          queued.current--;
           setActionError(errorMessage(e));
           void refresh();
         }
