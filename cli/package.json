@@ -6,6 +6,7 @@
   "exports": {
     "./manifest": "./src/manifest.ts",
     "./output": "./src/output.ts",
+    "./comparisons": "./src/comparisons.ts",
     "./context": "./src/context.ts",
     "./model": "./src/model.ts",
     "./progress": "./src/progress.ts"

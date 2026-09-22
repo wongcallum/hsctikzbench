@@ -5,24 +5,16 @@ import { bodyLimit } from "hono/body-limit";
 import { streamSSE } from "hono/streaming";
 import * as z from "zod";
 import { BATCH_NAME, type LaunchParams } from "../shared/types.ts";
+import { judgingContext } from "./access.ts";
 import { saveAssignments } from "./assignments.ts";
 import { authRoutes, requireOwner, requireUser, type AuthEnv } from "./auth.ts";
 import { batchDetail, listBatches } from "./batches.ts";
+import { assignmentsView, getCompare, listCompare, recordOutcome, undoOutcome } from "./compare.ts";
 import { config, repoProblems } from "./env.ts";
 import { HttpError, jsonBody } from "./http.ts";
 import type { JobManager } from "./jobs.ts";
-import {
-  assignmentsView,
-  clearJudgement,
-  clearResolution,
-  getSample,
-  listSamples,
-  locateRun,
-  saveJudgement,
-  saveResolution
-} from "./judge.ts";
-import { judgingContext, type RunView } from "./judgements.ts";
 import { collectInfo, loadManifest } from "./repo.ts";
+import { getSample, listSamples, locateRun } from "./samples.ts";
 
 const RENDERERS = ["auto", "local", "podman", "docker", "nerdctl"] as const;
 const MAX_BODY = 1 << 20;
@@ -77,8 +69,7 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     "/api/info",
     "/api/batches",
     "/api/batches/*",
-    "/api/assignments",
-    "/api/runs/:id/resolution"
+    "/api/assignments"
   ]) {
     app.use(prefix, requireOwner);
   }
@@ -206,35 +197,35 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     return c.json(await assignmentsView());
   });
 
-  // A judge is blind however they ask; the query only lets the owner ask to be.
-  const viewFor = async (c: Context<AuthEnv>, blind?: boolean): Promise<RunView> => ({
-    blind: blind ?? c.req.query("blind") !== undefined,
-    judging: await judgingContext(c.get("user"))
-  });
+  // Judges are blind whatever they ask for; the context settles that on the server.
+  const judgingFor = (c: Context<AuthEnv>) => judgingContext(c.get("user"));
 
-  app.get("/api/samples", async (c) => c.json(await listSamples(jobs, await viewFor(c))));
-
-  app.get("/api/samples/:stem", async (c) => {
-    const stem = c.req.param("stem");
+  const stemParam = (c: Context<AuthEnv>) => {
+    const stem = c.req.param("stem") ?? "";
     if (!STEM.test(stem)) throw new HttpError(400, "bad sample stem");
-    return c.json(await getSample(stem, jobs, await viewFor(c)));
-  });
+    return stem;
+  };
 
-  app.put("/api/runs/:id/judgement", async (c) =>
-    c.json(await saveJudgement(c.req.param("id"), await jsonBody(c), await viewFor(c)))
+  app.get("/api/samples", async (c) => c.json(await listSamples(jobs, await judgingFor(c))));
+
+  app.get("/api/samples/:stem", async (c) =>
+    c.json(await getSample(stemParam(c), jobs, await judgingFor(c)))
   );
 
-  app.delete("/api/runs/:id/judgement", async (c) =>
-    c.json(await clearJudgement(c.req.param("id"), await viewFor(c)))
+  // Pairs carry run ids only, and which side a run is on is the judge's own.
+
+  app.get("/api/compare", async (c) => c.json(await listCompare(await judgingFor(c))));
+
+  app.get("/api/compare/:stem", async (c) =>
+    c.json(await getCompare(stemParam(c), await judgingFor(c)))
   );
 
-  // Resolving is done with every vote in view, so these never answer blind.
-  app.put("/api/runs/:id/resolution", async (c) =>
-    c.json(await saveResolution(c.req.param("id"), await jsonBody(c), await viewFor(c, false)))
+  app.post("/api/compare/:stem", async (c) =>
+    c.json(await recordOutcome(stemParam(c), await jsonBody(c), await judgingFor(c)))
   );
 
-  app.delete("/api/runs/:id/resolution", async (c) =>
-    c.json(await clearResolution(c.req.param("id"), await viewFor(c, false)))
+  app.delete("/api/compare/:stem/last", async (c) =>
+    c.json(await undoOutcome(stemParam(c), await judgingFor(c)))
   );
 
   app.get("/files/crops/:file", async (c) => {
@@ -250,7 +241,7 @@ export function createApi(jobs: JobManager): Hono<AuthEnv> {
     if (!rest) return c.notFound();
     const user = c.get("user");
     if (user.role !== "owner" && !judgeMayRead(rest)) return c.notFound();
-    const run = await locateRun(c.req.param("id"), await viewFor(c, false));
+    const run = await locateRun(c.req.param("id"), await judgingFor(c));
     return sendFile(c, path.join(run.dir, ...rest));
   });
 

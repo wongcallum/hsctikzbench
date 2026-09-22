@@ -1,7 +1,7 @@
 import { Box, Button, Flex } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BatchSample as BatchSampleData, LogLine, SampleSummary } from "../shared/types.ts";
-import { clearJudgement, fetchSample } from "./api.ts";
+import { fetchSample } from "./api.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { hrefFor, navigate } from "./location.ts";
 import { SampleView } from "./SampleView.tsx";
@@ -12,16 +12,14 @@ interface Props {
   sample: BatchSampleData;
   lines: LogLine[];
   backHref: string;
-  onChanged: () => void;
 }
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** The batch's own run comes live from the page; its runs in other batches are fetched here. */
-export function BatchSample({ batch, sample: live, lines, backHref, onChanged }: Props) {
+export function BatchSample({ batch, sample: live, lines, backHref }: Props) {
   const [summary, setSummary] = useState<SampleSummary | null>(null);
   const [selectedRender, setSelectedRender] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stem = live.stem;
   const phase = live.run.phase;
@@ -56,16 +54,6 @@ export function BatchSample({ batch, sample: live, lines, backHref, onChanged }:
     [sample, batch, stem]
   );
 
-  const reset = useCallback(() => {
-    if (busy || !live.run.judgement) return;
-    if (!window.confirm("Reset the saved judgement for this run?")) return;
-    setBusy(true);
-    setError(null);
-    clearJudgement(live.run.id, false)
-      .then(onChanged, (e: unknown) => setError(errorMessage(e)))
-      .finally(() => setBusy(false));
-  }, [busy, live.run, onChanged]);
-
   return (
     <Flex direction="column" height="100%" minHeight="0">
       <Box px="4" pt="3" flexShrink="0">
@@ -77,16 +65,12 @@ export function BatchSample({ batch, sample: live, lines, backHref, onChanged }:
         key={live.run.id}
         sample={sample}
         run={live.run}
-        runs={sample.runs}
-        dirty={false}
         selectedRender={selectedRender}
         onSelectRun={selectRun}
         onSelectRender={setSelectedRender}
         error={error}
-        own={false}
-        panelWidth="clamp(360px, 30%, 480px)"
       >
-        <DetailsPanel run={live.run} busy={busy} onReset={reset} lines={lines} />
+        <DetailsPanel run={live.run} lines={lines} />
       </SampleView>
     </Flex>
   );

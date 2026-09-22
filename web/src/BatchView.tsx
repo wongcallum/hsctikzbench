@@ -295,7 +295,6 @@ export function BatchView({ name, stem, onChanged }: Props) {
             sample={selected}
             lines={lines.filter((l) => isShown(l) && l.text.includes(selected.stem))}
             backHref={hrefFor({ page: "batch", name, stem: null })}
-            onChanged={() => void load()}
           />
         ) : (
           <ScrollArea type="auto" scrollbars="vertical">

@@ -1,16 +1,16 @@
-import type { JudgementInput } from "../shared/judge.ts";
+import type { OutcomeInput } from "../shared/compare.ts";
 import type {
   Assignments,
   AssignmentsView,
   AuthMode,
   BatchDetail,
   BatchSummary,
+  CompareSample,
   Info,
   Job,
   JobProgress,
   LaunchParams,
   Me,
-  Run,
   SampleSummary,
   SseEvent
 } from "../shared/types.ts";
@@ -40,27 +40,15 @@ export const launchJob = (params: LaunchParams) => request<Job>("/api/jobs", jso
 export const cancelJob = (id: string) =>
   request<Job>(`/api/jobs/${encodeURIComponent(id)}/cancel`, json("POST"));
 
-const blinded = (url: string, blind: boolean) => (blind ? `${url}?blind` : url);
-
-export const fetchSamples = (blind: boolean) =>
-  request<SampleSummary[]>(blinded("/api/samples", blind));
+export const fetchSamples = () => request<SampleSummary[]>("/api/samples");
 export const fetchSample = (stem: string) =>
   request<SampleSummary>(`/api/samples/${encodeURIComponent(stem)}`);
 
-export const saveJudgement = (runId: string, judgement: JudgementInput, blind: boolean) =>
-  request<Run>(
-    blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind),
-    json("PUT", judgement)
-  );
-export const clearJudgement = (runId: string, blind: boolean) =>
-  request<Run>(blinded(`/api/runs/${encodeURIComponent(runId)}/judgement`, blind), {
-    method: "DELETE"
-  });
-
-export const saveResolution = (runId: string, judgement: JudgementInput) =>
-  request<Run>(`/api/runs/${encodeURIComponent(runId)}/resolution`, json("PUT", judgement));
-export const clearResolution = (runId: string) =>
-  request<Run>(`/api/runs/${encodeURIComponent(runId)}/resolution`, { method: "DELETE" });
+export const fetchCompare = () => request<CompareSample[]>("/api/compare");
+export const recordOutcome = (stem: string, outcome: OutcomeInput) =>
+  request<CompareSample>(`/api/compare/${encodeURIComponent(stem)}`, json("POST", outcome));
+export const undoOutcome = (stem: string) =>
+  request<CompareSample>(`/api/compare/${encodeURIComponent(stem)}/last`, { method: "DELETE" });
 
 export const fetchAssignments = () => request<AssignmentsView>("/api/assignments");
 export const saveAssignments = (assignments: Assignments) =>

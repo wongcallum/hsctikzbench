@@ -1,21 +1,19 @@
-import { Box, Button, DataList, Flex, Heading, Kbd, Link, Tabs, Text } from "@radix-ui/themes";
+import { Box, DataList, Flex, Heading, Link, Tabs, Text } from "@radix-ui/themes";
 import { useEffect, useState, type ReactNode } from "react";
 import type { LogLine, Run } from "../shared/types.ts";
 import { runFileUrl } from "./api.ts";
 import { duration, money, words } from "./format.ts";
+import { KeyHints } from "./hints.tsx";
 import { LogLines } from "./LogPane.tsx";
 import { pre, Transcript, type TranscriptFile } from "./Transcript.tsx";
-import { JudgeVerdicts, ResolutionItem, StandingItem } from "./Verdicts.tsx";
 
 interface Props {
   run: Run | null;
-  busy: boolean;
-  onReset: () => void;
   lines?: LogLine[];
 }
 
 /** Owner only: it shows provenance and cost. */
-export function DetailsPanel({ run, busy, onReset, lines }: Props) {
+export function DetailsPanel({ run, lines }: Props) {
   if (!run) {
     return (
       <Flex direction="column" gap="3">
@@ -36,7 +34,7 @@ export function DetailsPanel({ run, busy, onReset, lines }: Props) {
       </Tabs.List>
       <Box pt="3">
         <Tabs.Content value="details">
-          <Details run={run} busy={busy} onReset={onReset} />
+          <Details run={run} />
         </Tabs.Content>
         <Tabs.Content value="transcript">
           <TranscriptLoader run={run} />
@@ -54,11 +52,10 @@ export function DetailsPanel({ run, busy, onReset, lines }: Props) {
   );
 }
 
-function Details({ run, busy, onReset }: { run: Run; busy: boolean; onReset: () => void }) {
+function Details({ run }: { run: Run }) {
   const source = run.source;
   const model = source?.model ?? null;
   const result = run.result;
-  const judgement = run.judgement;
   return (
     <Flex direction="column" gap="3">
       <DataList.Root size="2">
@@ -96,13 +93,7 @@ function Details({ run, busy, onReset }: { run: Run; busy: boolean; onReset: () 
         {!result && run.progress?.lastLine && (
           <Item label="Last line">{run.progress.lastLine}</Item>
         )}
-        <StandingItem run={run} />
-        <ResolutionItem run={run} />
-        <Item label="Your vote">{judgement ? words(judgement.verdict) : "none"}</Item>
-        {judgement?.reason && <Item label="Reason">{judgement.reason}</Item>}
-        {judgement && <Item label="Judged">{new Date(judgement.judgedAt).toLocaleString()}</Item>}
       </DataList.Root>
-      <JudgeVerdicts run={run} />
       <Flex gap="3" wrap="wrap">
         {run.hasSubmission && (
           <Link size="2" href={runFileUrl(run.id, "submission.tex")} target="_blank">
@@ -115,16 +106,12 @@ function Details({ run, busy, onReset }: { run: Run; busy: boolean; onReset: () 
           </Link>
         )}
       </Flex>
-      {judgement && (
-        <Flex>
-          <Button size="2" variant="soft" color="gray" onClick={onReset} disabled={busy}>
-            Reset your vote
-          </Button>
-        </Flex>
-      )}
-      <Text size="1" color="gray">
-        <Kbd>↑</Kbd>/<Kbd>↓</Kbd> samples <Kbd>←</Kbd>/<Kbd>→</Kbd> runs
-      </Text>
+      <KeyHints
+        hints={[
+          { keys: ["↑", "↓"], label: "samples" },
+          { keys: ["←", "→"], label: "runs" }
+        ]}
+      />
     </Flex>
   );
 }

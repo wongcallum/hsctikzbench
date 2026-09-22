@@ -55,6 +55,9 @@ pnpm cli bench ... --renderer docker
 # web ui
 pnpm dev
 pnpm build && pnpm start
+
+# report
+pnpm cli report --baseline gpt-5.6-sol-low --json report.json
 ```
 
 ### Nix
@@ -67,7 +70,7 @@ HSCTIKZBENCH_DATA_DIR=/var/lib/hsctikzbench result/bin/hsctikzbench --help
 
 ### Judgement
 
-This repository is built around a multi-judge model, where judges (including the owner) can individually pass, fail or flag for review each run assigned to them, and conflicts are resolved in a separate interface by the owner. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `data/users.json`:
+This repository is built around a multi-judge model, where judges blindly compare two submissions against the reference figure. The model configurations are assigned a score and ranked against each other using a Bradley-Terry model fitted on these judgements. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `data/users.json`:
 
 ```json
 { "owner": { "role": "owner" }, "judge": { "role": "judge" } }
