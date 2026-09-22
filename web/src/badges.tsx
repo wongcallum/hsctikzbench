@@ -40,7 +40,7 @@ export function SampleBadges({ sample }: { sample: SampleSummary }) {
           {counts.running} running
         </Badge>
       )}
-      {counts.noReference > 0 && (
+      {counts.noReference && (
         <Badge color="gray" variant="soft" size="1">
           no reference
         </Badge>

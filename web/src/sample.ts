@@ -4,16 +4,19 @@ export interface RunCounts {
   total: number;
   running: number;
   submitted: number;
-  noReference: number;
+  noReference: boolean;
 }
 
 export function runCounts(sample: SampleSummary): RunCounts {
-  const counts: RunCounts = { total: sample.runs.length, running: 0, submitted: 0, noReference: 0 };
+  const counts: RunCounts = {
+    total: sample.runs.length,
+    running: 0,
+    submitted: 0,
+    noReference: !sample.hasCrop
+  };
   for (const run of sample.runs) {
     if (!run.result) counts.running++;
-    else if (!hasSubmission(run)) continue;
-    else if (!sample.hasCrop) counts.noReference++;
-    else counts.submitted++;
+    else if (hasSubmission(run)) counts.submitted++;
   }
   return counts;
 }
