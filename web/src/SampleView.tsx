@@ -19,32 +19,28 @@ import { RenderStrip } from "./RenderStrip.tsx";
 interface Props {
   sample: SampleSummary;
   run: Run | null;
-  /** The listed subset to offer, which may be narrower than `sample.runs`. */
-  runs: Run[];
   selectedRender: string | null;
   onSelectRun: (id: string) => void;
   onSelectRender: (name: string | null) => void;
-  error: string | null;
-  panelWidth?: string;
+  error?: string | null;
   children: ReactNode;
 }
 
 export function SampleView({
   sample,
   run,
-  runs,
   selectedRender,
   onSelectRun,
   onSelectRender,
   error,
-  panelWidth = "360px",
   children
 }: Props) {
+  const { runs } = sample;
   const submittedRender = run && hasSubmission(run) ? (run.renders.at(-1) ?? null) : null;
   const result = run ? resultImage(run, selectedRender) : null;
 
   return (
-    <Grid columns={`1fr auto ${panelWidth}`} minHeight="0" minWidth="0">
+    <Grid columns="1fr auto clamp(360px, 30%, 480px)" minHeight="0" minWidth="0">
       <Flex direction="column" minHeight="0" minWidth="0">
         <Flex align="center" gap="2" p="4" pb="2" wrap="wrap">
           <Heading size="3">{sampleLabel(sample)}</Heading>

@@ -1,7 +1,4 @@
-import { hasSubmission, type Run, type SampleSummary } from "../shared/types.ts";
-
-export const hasReference = (sample: SampleSummary, run: Run) =>
-  hasSubmission(run) && sample.hasCrop;
+import { hasSubmission, type SampleSummary } from "../shared/types.ts";
 
 export interface RunCounts {
   total: number;

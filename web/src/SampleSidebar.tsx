@@ -6,8 +6,7 @@ import { sampleLabel, words } from "./format.ts";
 interface Props<T extends SampleInfo> {
   heading: string;
   samples: T[];
-  /** Summary lines shown under the heading. */
-  lines: string[];
+  summary?: string;
   empty: string;
   selected: string | null;
   loading: boolean;
@@ -21,7 +20,7 @@ interface Props<T extends SampleInfo> {
 export const SampleSidebar = memo(function SampleSidebar<T extends SampleInfo>({
   heading,
   samples,
-  lines,
+  summary,
   empty,
   selected,
   loading,
@@ -64,14 +63,12 @@ export const SampleSidebar = memo(function SampleSidebar<T extends SampleInfo>({
           Refresh
         </Button>
       </Flex>
-      {lines.length > 0 && (
-        <Flex direction="column" px="3" pb="2" gap="1">
-          {lines.map((line) => (
-            <Text key={line} size="1" color="gray">
-              {line}
-            </Text>
-          ))}
-        </Flex>
+      {summary && (
+        <Box px="3" pb="2">
+          <Text size="1" color="gray">
+            {summary}
+          </Text>
+        </Box>
       )}
       <Box flexGrow="1" minHeight="0">
         <ScrollArea type="auto" scrollbars="vertical">

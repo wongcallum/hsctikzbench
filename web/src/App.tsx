@@ -8,7 +8,7 @@ import { SIGNED_OUT_EVENT } from "./http.ts";
 import { BatchSidebar } from "./BatchSidebar.tsx";
 import { CompareApp } from "./CompareApp.tsx";
 import { Launch } from "./Launch.tsx";
-import { confirmLeave, hrefFor, navigate, useRoute, type Route } from "./location.ts";
+import { hrefFor, navigate, useRoute, type Route } from "./location.ts";
 import { SignIn } from "./SignIn.tsx";
 import { ViewApp } from "./ViewApp.tsx";
 
@@ -76,7 +76,6 @@ function TopNav({ route, me, onSignOut }: { route: Route; me: Me; onSignOut: () 
     : [["Judge", "#/judge", true]];
   const [signingOut, setSigningOut] = useState(false);
   const leave = async () => {
-    if (!confirmLeave()) return;
     setSigningOut(true);
     try {
       await signOut();
@@ -92,14 +91,7 @@ function TopNav({ route, me, onSignOut }: { route: Route; me: Me; onSignOut: () 
       <Heading size="3">HSCTikZBench</Heading>
       <TabNav.Root>
         {tabs.map(([label, href, active]) => (
-          <TabNav.Link
-            key={label}
-            href={href}
-            active={active}
-            onClick={(event) => {
-              if (!confirmLeave()) event.preventDefault();
-            }}
-          >
+          <TabNav.Link key={label} href={href} active={active}>
             {label}
           </TabNav.Link>
         ))}

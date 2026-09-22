@@ -65,12 +65,10 @@ export function BatchSample({ batch, sample: live, lines, backHref }: Props) {
         key={live.run.id}
         sample={sample}
         run={live.run}
-        runs={sample.runs}
         selectedRender={selectedRender}
         onSelectRun={selectRun}
         onSelectRender={setSelectedRender}
         error={error}
-        panelWidth="clamp(360px, 30%, 480px)"
       >
         <DetailsPanel run={live.run} lines={lines} />
       </SampleView>

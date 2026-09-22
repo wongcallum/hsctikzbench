@@ -68,18 +68,17 @@ export async function readJudgeOutcomes(dir: string, login: string): Promise<Sto
   return parseOutcomes(file, text);
 }
 
-/** Keyed by the login the file is named for. */
-export async function readOutcomes(dir: string): Promise<Map<string, StoredOutcome[]>> {
+/** All recorded outcomes, including separate votes from different judges on the same pair. */
+export async function readOutcomes(dir: string): Promise<StoredOutcome[]> {
   let names: string[];
   try {
     names = await readdir(dir);
   } catch (e) {
-    if (isMissing(e)) return new Map();
+    if (isMissing(e)) return [];
     throw e;
   }
   const logins = names.filter((n) => n.endsWith(".jsonl")).map((n) => n.slice(0, -6));
-  const read = await Promise.all(logins.map((login) => readJudgeOutcomes(dir, login)));
-  return new Map(logins.map((login, i) => [login, read[i]!]));
+  return (await Promise.all(logins.map((login) => readJudgeOutcomes(dir, login)))).flat();
 }
 
 export function parseOutcomes(file: string, text: string): StoredOutcome[] {

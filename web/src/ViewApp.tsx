@@ -1,6 +1,6 @@
 import { Callout, Flex, Grid, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Run, SampleSummary } from "../shared/types.ts";
+import type { SampleSummary } from "../shared/types.ts";
 import { fetchSamples } from "./api.ts";
 import { SampleBadges } from "./badges.tsx";
 import { DetailsPanel } from "./DetailsPanel.tsx";
@@ -23,7 +23,6 @@ interface Props {
 }
 
 const badges = (sample: SampleSummary) => <SampleBadges sample={sample} />;
-const NO_LINES: string[] = [];
 
 /** Owner only: every run of every sample, with provenance. */
 export function ViewApp({ location, setLocation }: Props) {
@@ -116,7 +115,6 @@ export function ViewApp({ location, setLocation }: Props) {
       <SampleSidebar
         heading="Samples"
         samples={samples}
-        lines={NO_LINES}
         empty="The manifest has no samples."
         selected={sample?.stem ?? null}
         loading={loading}
@@ -136,14 +134,11 @@ export function ViewApp({ location, setLocation }: Props) {
           key={`${sample.stem}/${run?.id ?? ""}`}
           sample={sample}
           run={run}
-          runs={runs}
           selectedRender={selectedRender}
           onSelectRun={(id) => select(sample.stem, id)}
           onSelectRender={setSelectedRender}
-          error={null}
-          panelWidth="clamp(360px, 30%, 480px)"
         >
-          <DetailsPanel run={run as Run | null} />
+          <DetailsPanel run={run} />
         </SampleView>
       ) : (
         <Flex p="4">

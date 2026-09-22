@@ -1,5 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
-import { appendFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   orderPair,
@@ -23,7 +23,7 @@ import type {
   JudgeProgress,
   ManifestSample
 } from "../shared/types.ts";
-import { judgesByBatch, loadAssignments } from "./assignments.ts";
+import { loadAssignments } from "./assignments.ts";
 import { hasCrop, isFile, listDirs, readResult, sampleInfo } from "./batches.ts";
 import { config } from "./env.ts";
 import { HttpError } from "./http.ts";
@@ -73,12 +73,12 @@ export function drawPairs(
   perRun: number
 ): Pair[] {
   const runs = [...eligible].sort();
-  const inPlay = new Set(runs);
+  const minimum = Math.min(perRun, runs.length - 1);
   const counts = new Map(runs.map((run) => [run, 0]));
   const seen = new Set<string>();
   const bump = (pair: Pair) => {
     seen.add(pairKey(pair));
-    if (inPlay.has(pair.a) && inPlay.has(pair.b)) {
+    if (counts.has(pair.a) && counts.has(pair.b)) {
       counts.set(pair.a, counts.get(pair.a)! + 1);
       counts.set(pair.b, counts.get(pair.b)! + 1);
     }
@@ -87,21 +87,16 @@ export function drawPairs(
 
   const random = seededRandom(`${stem}:${existing.length}`);
   const drawn: Pair[] = [];
-  const saturated = new Set<string>();
   for (;;) {
     let short: string | null = null;
     for (const run of runs) {
-      if (saturated.has(run) || counts.get(run)! >= perRun) continue;
+      if (counts.get(run)! >= minimum) continue;
       if (short === null || counts.get(run)! < counts.get(short)!) short = run;
     }
     if (short === null) break;
     const partners = runs.filter(
       (run) => run !== short && !seen.has(pairKey(orderPair(short, run)))
     );
-    if (partners.length === 0) {
-      saturated.add(short);
-      continue;
-    }
     const pair = orderPair(short, partners[Math.floor(random() * partners.length)]!);
     drawn.push(pair);
     bump(pair);
@@ -115,7 +110,7 @@ const locks = new Map<string, Promise<unknown>>();
 
 function withSample<T>(stem: string, work: () => Promise<T>): Promise<T> {
   const previous = locks.get(stem) ?? Promise.resolve();
-  const next = previous.then(work, work);
+  const next = previous.then(work);
   locks.set(
     stem,
     next.catch(() => undefined)
@@ -123,13 +118,8 @@ function withSample<T>(stem: string, work: () => Promise<T>): Promise<T> {
   return next;
 }
 
-interface SampleState {
-  eligible: Set<string>;
-  pairs: Pair[];
-}
-
-/** The sample's pairs, drawn up to the minimum for every eligible run in the pool. */
-async function ensurePairs(stem: string, pool: readonly string[]): Promise<SampleState> {
+/** Draw up to the minimum for every eligible run, then return the currently eligible pairs. */
+async function ensurePairs(stem: string, pool: readonly string[]): Promise<Pair[]> {
   const dir = sampleDir(config.comparisonsDir, stem);
   const [eligible, existing] = await Promise.all([eligibleRuns(stem, pool), readPairs(dir)]);
   const drawn = drawPairs(stem, existing, eligible, config.comparisonsPerRun);
@@ -138,7 +128,8 @@ async function ensurePairs(stem: string, pool: readonly string[]): Promise<Sampl
     await mkdir(dir, { recursive: true });
     await writeFile(pairsFile(dir), serializePairs(pairs));
   }
-  return { eligible: new Set(eligible), pairs };
+  const inPlay = new Set(eligible);
+  return pairs.filter((pair) => inPlay.has(pair.a) && inPlay.has(pair.b));
 }
 
 /** Which side the judge sees the pair's `b` on. Fixed per judge so reloads do not swap it. */
@@ -159,17 +150,13 @@ async function compareSample(
   pool: readonly string[],
   judging: JudgingContext
 ): Promise<CompareSample> {
-  const [info, state, outcomes] = await Promise.all([
+  const [info, pairs, outcomes] = await Promise.all([
     sampleInfo(stem, exam, meta),
     ensurePairs(stem, pool),
     readJudgeOutcomes(sampleDir(config.comparisonsDir, stem), loginKey(judging.login))
   ]);
-  const servable = state.pairs.filter(
-    (pair) =>
-      state.eligible.has(pair.a) &&
-      state.eligible.has(pair.b) &&
-      judging.batches.has(pair.a) &&
-      judging.batches.has(pair.b)
+  const servable = pairs.filter(
+    (pair) => judging.batches.has(pair.a) && judging.batches.has(pair.b)
   );
   const judged = new Set(outcomes.map(pairKey));
   const pending = servable.filter((pair) => !judged.has(pairKey(pair)));
@@ -246,7 +233,6 @@ export async function recordOutcome(
       throw new HttpError(409, "you have already judged this pair");
     }
     const stored: StoredOutcome = { ...pair, outcome, judgedAt: new Date().toISOString() };
-    await mkdir(dir, { recursive: true });
     await appendFile(outcomesFile(dir, login), serializeOutcome(stored));
     return compareSample(stem, exam, sample, pool, judging);
   });
@@ -260,10 +246,8 @@ export async function undoOutcome(stem: string, judging: JudgingContext): Promis
     const login = loginKey(judging.login);
     const outcomes = await readJudgeOutcomes(dir, login);
     if (outcomes.length === 0) throw new HttpError(409, "nothing to undo on this sample");
-    const kept = outcomes.slice(0, -1);
-    const file = outcomesFile(dir, login);
-    if (kept.length === 0) await rm(file, { force: true });
-    else await writeFile(file, kept.map(serializeOutcome).join(""));
+    outcomes.pop();
+    await writeFile(outcomesFile(dir, login), outcomes.map(serializeOutcome).join(""));
     return compareSample(stem, exam, sample, pool, judging);
   });
 }
@@ -274,15 +258,13 @@ export async function assignmentsView(): Promise<AssignmentsView> {
     loadUsers(),
     listDirs(config.runsDir)
   ]);
-  const judges = judgesByBatch(assignments);
   const progress: Record<string, JudgeProgress> = {};
   await Promise.all(
     Object.entries(assignments).map(async ([login, assigned]) => {
       const samples = await listCompare({
         login,
         role: users.get(login) ?? "judge",
-        batches: new Set(assigned),
-        judges
+        batches: new Set(assigned)
       });
       const total: JudgeProgress = { done: 0, total: 0 };
       for (const sample of samples) {

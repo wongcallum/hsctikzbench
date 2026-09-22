@@ -68,19 +68,16 @@ export function CompareApp({ stem, setStem, role }: Props) {
     if (sample && sample.stem !== stem) setStem(sample.stem);
   }, [sample, stem, setStem]);
 
-  const totals = useMemo(() => {
+  const summary = useMemo(() => {
+    if (samples.length === 0) return undefined;
     let done = 0;
     let total = 0;
     for (const s of samples) {
       done += s.done;
       total += s.total;
     }
-    return { done, total };
+    return `${done} of ${total} pairs judged`;
   }, [samples]);
-  const lines = useMemo(
-    () => (samples.length === 0 ? [] : [`${totals.done} of ${totals.total} pairs judged`]),
-    [samples.length, totals]
-  );
 
   const replace = useCallback(
     (next: CompareSample) =>
@@ -90,7 +87,7 @@ export function CompareApp({ stem, setStem, role }: Props) {
 
   const enqueue = useCallback(
     (work: () => Promise<CompareSample>) => {
-      queue.current = queue.current.then(work, work).then(
+      queue.current = queue.current.then(work).then(
         (next) => replace(next),
         (e: unknown) => {
           setActionError(errorMessage(e));
@@ -106,7 +103,7 @@ export function CompareApp({ stem, setStem, role }: Props) {
       if (!sample) return;
       const index = listed.findIndex((s) => s.stem === sample.stem);
       for (let i = 1; i <= listed.length; i++) {
-        const next = listed[(index + step * i + listed.length * i) % listed.length]!;
+        const next = listed[(index + step * i + listed.length) % listed.length]!;
         if (!pendingOnly || next.pending.length > 0) {
           if (next.stem !== sample.stem) setStem(next.stem);
           return;
@@ -177,7 +174,7 @@ export function CompareApp({ stem, setStem, role }: Props) {
       <SampleSidebar
         heading="To compare"
         samples={listed}
-        lines={lines}
+        summary={summary}
         empty={empty}
         selected={sample?.stem ?? null}
         loading={loading}

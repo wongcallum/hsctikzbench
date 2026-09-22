@@ -9,14 +9,7 @@ import {
   type Comparison,
   type Interval
 } from "../bradleyterry.ts";
-import {
-  pairKey,
-  readOutcomes,
-  readPairs,
-  sampleDir,
-  type Outcome,
-  type StoredOutcome
-} from "../comparisons.ts";
+import { pairKey, readOutcomes, sampleDir, type StoredOutcome } from "../comparisons.ts";
 import type { LocalContext } from "../context.ts";
 import { parseManifest, sampleStem, type Category } from "../manifest.ts";
 import { RESULT_FILE, type RunResult } from "../output.ts";
@@ -51,7 +44,7 @@ interface Sample {
   readonly category: Category;
   /** Keyed by batch; a batch that has not run the sample is absent. */
   readonly runs: Map<string, RunInfo>;
-  readonly outcomes: Map<string, StoredOutcome[]>;
+  readonly outcomes: StoredOutcome[];
 }
 
 interface ItemRow {
@@ -133,8 +126,6 @@ async function loadSamples(flags: ReportFlags, pool: readonly string[]): Promise
         Promise.all(pool.map((batch) => readRun(flags.runs, batch, stem))),
         readOutcomes(sampleDir(flags.comparisons, stem))
       ]);
-      // Pairs are read only to fail loudly on a corrupt file.
-      await readPairs(sampleDir(flags.comparisons, stem));
       samples.push({
         stem,
         category: sample.category,
@@ -170,29 +161,27 @@ function gather(samples: readonly Sample[]): Gathered {
     const submitted = [...sample.runs.values()].filter((run) => run.submitted);
     const failed = [...sample.runs.values()].filter((run) => !run.submitted);
     let appearances = 0;
-    for (const outcomes of sample.outcomes.values()) {
-      for (const outcome of outcomes) {
-        const a = sample.runs.get(outcome.a);
-        const b = sample.runs.get(outcome.b);
-        if (!a?.submitted || !b?.submitted) {
-          stale++;
-          continue;
-        }
-        appearances += 2;
-        if (a.item === b.item) {
-          sameModel++;
-          continue;
-        }
-        count(a.item);
-        count(b.item);
-        comparisons.push({
-          a: a.item,
-          b: b.item,
-          outcome: outcome.outcome,
-          weight: 1,
-          group: sample.stem
-        });
+    for (const outcome of sample.outcomes) {
+      const a = sample.runs.get(outcome.a);
+      const b = sample.runs.get(outcome.b);
+      if (!a?.submitted || !b?.submitted) {
+        stale++;
+        continue;
       }
+      appearances += 2;
+      if (a.item === b.item) {
+        sameModel++;
+        continue;
+      }
+      count(a.item);
+      count(b.item);
+      comparisons.push({
+        a: a.item,
+        b: b.item,
+        outcome: outcome.outcome,
+        weight: 1,
+        group: sample.stem
+      });
     }
     if (failed.length === 0 || submitted.length === 0 || appearances === 0) continue;
     const opponents = submitted.length + failed.length - 1;
@@ -227,19 +216,17 @@ function scope(
   baseline: string | null,
   flags: ReportFlags
 ): Scope {
-  const batches = new Map<string, Set<string>>();
-  const runs = new Map<string, number>();
-  const failed = new Map<string, number>();
+  const stats = new Map<string, { batches: Set<string>; runs: number; failed: number }>();
   for (const sample of samples) {
     for (const run of sample.runs.values()) {
-      let set = batches.get(run.item);
-      if (!set) batches.set(run.item, (set = new Set()));
-      set.add(run.batch);
-      runs.set(run.item, (runs.get(run.item) ?? 0) + 1);
-      if (!run.submitted) failed.set(run.item, (failed.get(run.item) ?? 0) + 1);
+      let item = stats.get(run.item);
+      if (!item) stats.set(run.item, (item = { batches: new Set(), runs: 0, failed: 0 }));
+      item.batches.add(run.batch);
+      item.runs++;
+      if (!run.submitted) item.failed++;
     }
   }
-  const items = [...batches.keys()].sort();
+  const items = [...stats.keys()].sort();
   const { comparisons, counted } = gather(samples);
   const anchor = baseline !== null && counted.has(baseline) ? baseline : null;
   const scores = centre(fitBradleyTerry(items, comparisons), anchor);
@@ -249,13 +236,14 @@ function scope(
     relativeTo: anchor
   });
   const rows = items.map((item): ItemRow => {
+    const { batches, runs, failed } = stats.get(item)!;
     const compared = (counted.get(item) ?? 0) > 0;
     const score = compared ? scores.get(item)! : null;
     return {
       item,
-      batches: [...batches.get(item)!].sort(),
-      runs: runs.get(item) ?? 0,
-      failed: failed.get(item) ?? 0,
+      batches: [...batches].sort(),
+      runs,
+      failed,
       comparisons: counted.get(item) ?? 0,
       score,
       interval: compared ? intervals.get(item)! : null,
@@ -274,20 +262,13 @@ function agreement(samples: readonly Sample[]): Agreement {
   let strict = 0;
   let lenient = 0;
   for (const sample of samples) {
-    const byPair = new Map<string, Outcome[]>();
-    for (const outcomes of sample.outcomes.values()) {
-      for (const outcome of outcomes) {
-        const key = pairKey(outcome);
-        const list = byPair.get(key);
-        if (list) list.push(outcome.outcome);
-        else byPair.set(key, [outcome.outcome]);
-      }
-    }
-    for (const outcomes of byPair.values()) {
+    for (const outcomes of Map.groupBy(sample.outcomes, pairKey).values()) {
       if (outcomes.length < 2) continue;
       pairs++;
-      if (outcomes.every((o) => o === outcomes[0])) strict++;
-      if (new Set(outcomes.filter((o) => o !== "tie")).size <= 1) lenient++;
+      const choices = new Set(outcomes.map((o) => o.outcome));
+      if (choices.size === 1) strict++;
+      choices.delete("tie");
+      if (choices.size <= 1) lenient++;
     }
   }
   return {

@@ -60,16 +60,3 @@ export async function saveAssignments(body: unknown): Promise<Assignments> {
   cached = null;
   return assignments;
 }
-
-export function judgesByBatch(assignments: Assignments): Map<string, string[]> {
-  const byBatch = new Map<string, string[]>();
-  for (const [login, batches] of Object.entries(assignments)) {
-    for (const batch of batches) {
-      const judges = byBatch.get(batch);
-      if (judges) judges.push(login);
-      else byBatch.set(batch, [login]);
-    }
-  }
-  for (const judges of byBatch.values()) judges.sort();
-  return byBatch;
-}

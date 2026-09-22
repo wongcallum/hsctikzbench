@@ -58,12 +58,6 @@ export const navigate = (route: Route) => {
   if (window.location.hash !== next) window.location.hash = next;
 };
 
-let leaveGuard: (() => boolean) | null = null;
-export const setLeaveGuard = (guard: (() => boolean) | null) => {
-  leaveGuard = guard;
-};
-export const confirmLeave = () => leaveGuard?.() ?? true;
-
 function subscribe(onChange: () => void): () => void {
   window.addEventListener("hashchange", onChange);
   return () => window.removeEventListener("hashchange", onChange);
