@@ -1,8 +1,9 @@
-import { Box, DataList, Flex, Heading, Kbd, Link, Tabs, Text } from "@radix-ui/themes";
+import { Box, DataList, Flex, Heading, Link, Tabs, Text } from "@radix-ui/themes";
 import { useEffect, useState, type ReactNode } from "react";
 import type { LogLine, Run } from "../shared/types.ts";
 import { runFileUrl } from "./api.ts";
 import { duration, money, words } from "./format.ts";
+import { KeyHints } from "./hints.tsx";
 import { LogLines } from "./LogPane.tsx";
 import { pre, Transcript, type TranscriptFile } from "./Transcript.tsx";
 
@@ -105,9 +106,12 @@ function Details({ run }: { run: Run }) {
           </Link>
         )}
       </Flex>
-      <Text size="1" color="gray">
-        <Kbd>↑</Kbd>/<Kbd>↓</Kbd> samples <Kbd>←</Kbd>/<Kbd>→</Kbd> runs
-      </Text>
+      <KeyHints
+        hints={[
+          { keys: ["↑", "↓"], label: "samples" },
+          { keys: ["←", "→"], label: "runs" }
+        ]}
+      />
     </Flex>
   );
 }

@@ -1,10 +1,11 @@
-import { Badge, Callout, Flex, Grid, Heading, Kbd, Separator, Text } from "@radix-ui/themes";
+import { Badge, Callout, Flex, Grid, Heading, Separator, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Choice } from "../shared/compare.ts";
 import type { ComparePair, CompareSample, UserRole } from "../shared/types.ts";
 import { cropUrl, fetchCompare, recordOutcome, runFileUrl, undoOutcome } from "./api.ts";
 import { CompareBadges } from "./badges.tsx";
 import { sampleLabel, words } from "./format.ts";
+import { KeyHints } from "./hints.tsx";
 import { ImagePane } from "./ImagePane.tsx";
 import { SampleSidebar } from "./SampleSidebar.tsx";
 
@@ -262,10 +263,16 @@ function Comparison({
       </Grid>
       <Flex align="center" gap="4" p="4" pt="3" wrap="wrap">
         <Text size="2">Which is closer to the reference?</Text>
-        <Text size="1" color="gray">
-          <Kbd>←</Kbd> A <Kbd>→</Kbd> B <Kbd>↓</Kbd> tie <Kbd>⌫</Kbd> undo <Kbd>j</Kbd>/<Kbd>k</Kbd>{" "}
-          samples <Kbd>space</Kbd> next pending
-        </Text>
+        <KeyHints
+          hints={[
+            { keys: ["←"], label: "A" },
+            { keys: ["→"], label: "B" },
+            { keys: ["↓"], label: "tie" },
+            { keys: ["⌫"], label: "undo" },
+            { keys: ["j", "k"], label: "samples" },
+            { keys: ["space"], label: "next pending" }
+          ]}
+        />
       </Flex>
     </Flex>
   );
