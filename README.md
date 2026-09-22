@@ -56,7 +56,7 @@ pnpm cli bench ... --renderer docker
 pnpm dev
 pnpm build && pnpm start
 
-# rank models over the recorded comparisons
+# report
 pnpm cli report --baseline gpt-5.6-sol-low --json report.json
 ```
 
@@ -70,26 +70,7 @@ HSCTIKZBENCH_DATA_DIR=/var/lib/hsctikzbench result/bin/hsctikzbench --help
 
 ### Judgement
 
-Runs are judged by pairwise comparison. A judge sees the reference figure above two blind
-submissions for the same sample and records which is closer to the reference, or a tie, with
-the arrow keys. Nobody places a run on a scale, and no reason is written down.
-
-The owner assigns batches to judges on the Judges tab. Every batch assigned to anyone is in
-the pool. When a sample is served, pairs are drawn among the pool's submitted runs on it
-until each appears in at least `COMPARISONS_PER_RUN` pairs (default 3), and stored in
-`data/comparisons/<sample>/pairs.json`, so every judge works through the same pairs and a
-batch added later only draws new pairs. A judge is shown the pairs whose two batches are
-both assigned to them. Outcomes go to `data/comparisons/<sample>/<login>.jsonl`.
-
-`pnpm cli report` fits a Bradley-Terry model over the outcomes with the model configuration
-(provider, model and reasoning) as the item, so repeat batches pool. It prints a score per
-model with a bootstrap interval over samples, overall and per category, a fitted win rate
-against `--baseline`, and how often judges agreed. A run with no submission counts as a loss
-against every submitted run on its sample.
-
-The development server runs in a single-user mode by default. To enable multi-judge mode,
-set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`
-and `PUBLIC_URL`, and create `data/users.json`:
+This repository is built around a multi-judge model, where judges blindly compare two submissions against the reference figure. The model configurations are assigned a score and ranked against each other using a Bradley-Terry model fitted on these judgements. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `data/users.json`:
 
 ```json
 { "owner": { "role": "owner" }, "judge": { "role": "judge" } }
