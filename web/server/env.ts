@@ -21,7 +21,7 @@ export const env = createEnv({
     CROPS_DIR: z.string().min(1).default(inData("crops")),
     RUNS_DIR: z.string().min(1).default(inData("runs")),
     COMPARISONS_DIR: z.string().min(1).default(inData("comparisons")),
-    /** Pairs each eligible run is drawn into, at least. */
+    /** Minimum number of pairs each eligible run is drawn into. */
     COMPARISONS_PER_RUN: z.coerce.number().int().min(1).default(3),
     AUTH_FILE: z.string().min(1).default(inData("auth.json")),
     RUNNER_STATE_DIR: z.string().min(1).default(inData("state")),
@@ -78,7 +78,7 @@ export const config = {
   assignmentsFile: path.resolve(
     env.ASSIGNMENTS_FILE ?? path.join(env.RUNNER_STATE_DIR, "assignments.json")
   ),
-  // Keys run ids. Fixed in development so ids survive restarts; production requires the secret.
+  // HMAC key for run ids. Fixed in development so ids survive restarts; production requires the secret.
   runIdSecret: env.SESSION_SECRET ?? "development",
   // Without a configured secret, sessions last only as long as the process.
   sessionSecret: env.SESSION_SECRET ?? randomBytes(32).toString("hex"),

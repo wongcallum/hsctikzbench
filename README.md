@@ -1,23 +1,28 @@
 # HSCTikZBench
 
-HSCTikZBench is a benchmark that measures various MLLMs (multimodal large language model) ability to reproduce figures from NSW HSC mathematics exams as LaTeX code in an agentic tool loop.
+HSCTikZBench is a benchmark that measures how well multimodal large language models (MLLMs) can reproduce figures from NSW HSC mathematics exams as LaTeX, working in an agentic tool loop.
 
-This repository includes a CLI which prepares, runs and records the benchmark, a renderer program which compiles LaTeX and rasterises PDFs to PNGs, the dataset manifest which figure samples are built from, and a web UI which allows humans to launch, watch, browse, and judge benchmark runs.
+This repository contains:
 
-For more details, please read the project report [here](<>).
+- a CLI that prepares, runs and records the benchmark
+- a renderer that compiles LaTeX and rasterises PDFs to PNGs
+- the dataset manifest that the figure samples are built from
+- a web UI for launching, watching, browsing and judging benchmark runs
+
+For more details, see the [project report](<>).
 
 ## Dataset
 
-We have not distributed the dataset in the form of image data, this is due to copyright constraints. This doesn't stop you from running the benchmark, however, because it is trivial to build the dataset from the dataset manifest:
+The dataset images are not distributed, for copyright reasons. You can build them yourself from the manifest:
 
 ```sh
 pnpm cli dataset fetch
 pnpm cli dataset build
 ```
 
-This downloads each PDF from the manifest into `data/pdfs/`, checks each PDF against their expected checksum in the manifest, crops every sample out of the PDFs, and then checks each sample against their expected checksum.
+This downloads each exam PDF listed in the manifest into `data/pdfs/`, verifies its checksum, crops every sample out of the PDFs, and verifies each crop's checksum.
 
-The manifest was created with an internal cropping and masking tool, which I will make available after some polishing.
+The manifest was made with an internal cropping and masking tool, which I'll release once it's polished.
 
 ## Usage
 
@@ -70,7 +75,9 @@ HSCTIKZBENCH_DATA_DIR=/var/lib/hsctikzbench result/bin/hsctikzbench --help
 
 ### Judgement
 
-This repository is built around a multi-judge model, where judges blindly compare two submissions against the reference figure. The model configurations are assigned a score and ranked against each other using a Bradley-Terry model fitted on these judgements. However, the development server runs in a single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `data/users.json`:
+Submissions are judged by humans, who blindly compare two submissions against the reference figure. A Bradley-Terry model fitted to these judgements scores and ranks the model configurations.
+
+The server runs in single-user mode by default. To enable multi-judge mode, set the environment variables `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` and `PUBLIC_URL`, and create `data/users.json`:
 
 ```json
 { "owner": { "role": "owner" }, "judge": { "role": "judge" } }

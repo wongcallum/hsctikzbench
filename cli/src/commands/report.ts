@@ -320,7 +320,7 @@ function render(report: Report): string {
     if (report.baseline !== null && scope.anchor === null) {
       out.push(
         `note: ${report.baseline} has no comparisons here, so these scores are centred on ` +
-          "their mean instead and do not line up with the other scopes'"
+          "their mean instead and are not comparable with other scopes"
       );
     }
     out.push(

@@ -16,10 +16,10 @@ import (
 	"strings"
 )
 
-// coordinates are fractions of page w/h, origin from top left
+// coordinates are fractions of the page width and height, measured from the top left
 type rect struct{ x, y, w, h float64 }
 
-// a box touching the right or bottom of the page edge may sum to fractionally more than one
+// a box touching the right or bottom edge of the page may sum to fractionally more than one
 const rectTolerance = 1.000001
 
 func parseRect(s string) (rect, error) {

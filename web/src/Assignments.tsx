@@ -99,7 +99,7 @@ export function Assignments() {
           <Text size="2" color="gray">
             Tick the batches each login should compare. Pairs are drawn across every batch assigned
             to anyone, and a login is shown the pairs whose two batches are both ticked for them,
-            you included. Progress is pairs judged over pairs they may judge.
+            you included. Progress counts pairs judged out of pairs available.
           </Text>
           {error && (
             <Callout.Root color="red" size="1">
